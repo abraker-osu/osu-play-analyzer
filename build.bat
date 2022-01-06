@@ -1,0 +1,1 @@
+python -O -m PyInstaller -n osu-performance-analyzer --onefile run.py

@@ -1,0 +1,7 @@
+/.vscode/*
+/venv/*
+*.pyc
+/data/*
+/build/*
+/dist/*
+/config.json
