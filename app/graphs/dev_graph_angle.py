@@ -23,7 +23,7 @@ class DevGraphAngle(QtGui.QWidget):
         self.AVG_T  = 12
 
         self.__dev_select = self.DEV_X
-        self.__avg_data_points = False
+        self.__avg_data_points = True
 
         # Main graph
         self.__graph = pyqtgraph.PlotWidget(title='Aim dev-x (angle)')
@@ -77,27 +77,28 @@ class DevGraphAngle(QtGui.QWidget):
         # Main plot - deviation vs osu!px
         # Adds a plot for every unique BPM recorded
         for bpm in unique_bpms:
-            angles = data[:, self.ANGLE]
+            bpm_select = bpm_data == bpm
+            angles = data[bpm_select, self.ANGLE]
 
             # Determine data selected by osu!px
             if self.__dev_select == self.DEV_X:
                 self.__graph.setTitle('Aim dev-x (angle)')
-                data_y = data[:, self.DEV_X]
+                data_y = data[bpm_select, self.DEV_X]
             elif self.__dev_select == self.DEV_Y:
                 self.__graph.setTitle('Aim dev-y (angle)')
-                data_y = np.std(data[:, self.DEV_Y])
+                data_y = data[bpm_select, self.DEV_Y]
             elif self.__dev_select == self.DEV_T:
                 self.__graph.setTitle('Aim dev-t (angle)')
-                data_y = np.std(data[:, self.DEV_T])
+                data_y = data[bpm_select, self.DEV_T]
             elif self.__dev_select == self.AVG_X:
                 self.__graph.setTitle('Aim avg-x (bpm)')
-                data_y = np.mean(data[:, self.AVG_X])
+                data_y = data[bpm_select, self.AVG_X]
             elif self.__dev_select == self.AVG_Y:
                 self.__graph.setTitle('Aim avg-y (bpm)')
-                data_y = np.mean(data[:, self.AVG_Y])
+                data_y = data[bpm_select, self.AVG_Y]
             elif self.__dev_select == self.AVG_T:
                 self.__graph.setTitle('Aim avg-t (bpm)')
-                data_y = np.mean(data[:, self.AVG_T])
+                data_y = data[bpm_select, self.AVG_T]
                 
             if self.__avg_data_points:
                 # Use best N points for data display
@@ -108,8 +109,8 @@ class DevGraphAngle(QtGui.QWidget):
                 angles = np.unique(angles)
 
                 # Get sort mapping to make points on line graph connect in proper order
-                idx_sort = np.argsort(data_x)
-                data_x = data_x[idx_sort]
+                idx_sort = np.argsort(angles)
+                data_x = angles[idx_sort]
                 data_y = data_y[idx_sort]
             else:
                 data_x = angles
