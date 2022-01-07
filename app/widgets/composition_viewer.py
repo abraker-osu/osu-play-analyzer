@@ -61,6 +61,8 @@ class CompositionViewer(QtGui.QWidget):
         self.__ID_VELOCITY     = 3
         self.__ID_BPM_INC_TIME = 4
         self.__ID_BPM_DEC_TIME = 5
+        self.__CS              = 6
+        self.__AR              = 7
 
         self.__id_x = None
         self.__id_y = None
@@ -72,6 +74,8 @@ class CompositionViewer(QtGui.QWidget):
              'VELOCITY'     : self.__ID_VELOCITY, 
              'BPM INC TIME' : self.__ID_BPM_INC_TIME,
              'BPM DEC TIME' : self.__ID_BPM_DEC_TIME,
+             'CS'           : self.__CS,
+             'AR'           : self.__AR,
         }
         self.num_selections = len(selections)
 
@@ -411,6 +415,12 @@ class CompositionViewer(QtGui.QWidget):
         if id_ == self.__ID_BPM_INC_TIME:
             return play_data[:, RecData.DT_INC]
 
+        if id_ == self.__CS:
+            return play_data[:, RecData.CS]
+
+        if id_ == self.__AR:
+            return play_data[:, RecData.AR]
+
         raise Exception(f'Unknown id: {id_}')
 
 
@@ -432,6 +442,12 @@ class CompositionViewer(QtGui.QWidget):
 
         if id_ == self.__ID_BPM_INC_TIME:
             return 'BPM Increase Time (ms)'
+
+        if id_ == self.__CS:
+            return 'CS'
+
+        if id_ == self.__AR:
+            return 'AR'
 
         raise Exception(f'Unknown id: {id_}')
 
