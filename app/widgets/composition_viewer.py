@@ -283,6 +283,9 @@ class CompositionViewer(QtGui.QWidget):
         for i in range(len(state['points'])):
             point = state['points'][i]
             state['points'][i] = pyqtgraph.Point(point[1], point[0])
+        
+        pos = state['pos']
+        state['pos'] = pyqtgraph.Point(pos[1], pos[0])
 
         # ROI plots don't like it when you set state while not being displayed
         # because it makes calls to `self.scene()` to remove stuff being displayed
@@ -324,7 +327,7 @@ class CompositionViewer(QtGui.QWidget):
 
         # Thanks https://stackoverflow.com/a/2922778
         '''
-        handles = [ pyqtgraph.Point(h.pos()) for h in roi_plot.getHandles() ]
+        handles = [ pyqtgraph.Point(h.pos()) + roi_plot.pos() for h in roi_plot.getHandles() ]
 
         is_in_roi = np.zeros((data.shape[0]), dtype=np.bool)
         iters = list(range(len(handles)))
