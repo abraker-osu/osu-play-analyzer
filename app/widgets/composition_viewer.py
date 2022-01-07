@@ -172,7 +172,23 @@ class CompositionViewer(QtGui.QWidget):
                 roi_id = self.__get_roi_id(id_x, id_y)
                 self.__update_roi_selection(roi_id, data)
 
-        self.__process_master_selection(emit_data=False)
+
+    def get_selected(self):
+        '''
+        Composes the selections in all planes together, and returns the resulting selected play data.
+        '''
+        if type(self.play_data) == type(None):
+            return
+
+        # Calculate master selection across all multidimensional planes
+        select = np.ones((self.play_data.shape[0]), dtype=np.bool)
+        for roi_selection in self.roi_selections.values():
+            select &= roi_selection['select']
+
+        play_data_out = self.play_data[select]
+        self.num_data_points_label.setText(f'Num data points selected: {play_data_out.shape[0]}')
+
+        return play_data_out
 
 
     def __get_roi_id(self, id_x, id_y):
@@ -290,7 +306,6 @@ class CompositionViewer(QtGui.QWidget):
             return
 
         # Calculate master selection across all multidimensional planes
-        # TODO: Figure out why this is not selecting anything
         select = np.ones((self.play_data.shape[0]), dtype=np.bool)
         for roi_selection in self.roi_selections.values():
             select &= roi_selection['select']

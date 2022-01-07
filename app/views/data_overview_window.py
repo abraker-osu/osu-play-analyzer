@@ -85,7 +85,7 @@ class DataOverviewWindow(QtGui.QWidget):
 
 
     def __show_map_event(self):
-        play_data = self.play_graph.get_selected()
+        play_data = self.composition_viewer.get_selected()
         unique_timestamps = np.unique(play_data[:, RecData.TIMESTAMP])
 
         if unique_timestamps.size == 0:
