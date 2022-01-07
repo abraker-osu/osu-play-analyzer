@@ -9,7 +9,7 @@ import numpy as np
 import pyqtgraph
 from pyqtgraph.Qt import QtGui, QtCore
 
-from osu_analysis import BeatmapIO, ReplayIO, StdMapData, StdReplayData, StdScoreData, Gamemode
+from osu_analysis import BeatmapIO, ReplayIO, StdMapData, StdReplayData, StdScoreData, Gamemode, Mod
 
 from app.misc.utils import Utils
 from app.misc.osu_utils import OsuUtils
@@ -205,8 +205,8 @@ class MapDisplayWindow(QtGui.QWidget):
         if len(map_file_name) == 0:
             return
         
-        self.__open_map_from_file_name(map_file_name)
         self.set_replay_from_play_data(play_data)
+        self.__open_map_from_file_name(map_file_name, play_data[0, RecData.MODS])
 
         self.status_label.setText('Warning: viewing play data, which contains only the basic scoring information.')
         
@@ -312,7 +312,7 @@ class MapDisplayWindow(QtGui.QWidget):
         self.__open_map_from_file_name(file_name)
 
 
-    def __open_map_from_file_name(self, file_name):
+    def __open_map_from_file_name(self, file_name, mods=0):
         try: beatmap = BeatmapIO.open_beatmap(file_name)
         except Exception as e:
             print(Utils.get_traceback(e, 'Error opening map'))
@@ -328,6 +328,13 @@ class MapDisplayWindow(QtGui.QWidget):
             return
 
         presses = StdMapData.get_presses(map_data)
+        mods = Mod(int(mods))
+
+        if mods.has_mod(Mod.DoubleTime) or mods.has_mod(Mod.Nightcore):
+            presses['time'] *= 0.75
+
+        if mods.has_mod(Mod.HalfTime):
+            presses['time'] *= 1.5
 
         map_data_t = presses['time']/1000
         map_data_x = presses['x']

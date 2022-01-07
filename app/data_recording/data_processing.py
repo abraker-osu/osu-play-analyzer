@@ -55,14 +55,18 @@ class DataProcessing():
     @staticmethod
     def process_mods(map_data, replay_data, replay):
         if replay.mods.has_mod('DT') or replay.mods.has_mod('NC'):
-            map_data.index /= 1.5
-            replay_data.index /= 1.5
+            map_data['time'] /= 1.5
+            replay_data['time'] /= 1.5
             return
 
         if replay.mods.has_mod('HT'):
-            map_data.index *= 1.5
-            replay_data.index *= 1.5
+            map_data['time'] *= 1.5
+            replay_data['time'] *= 1.5
             return
+
+        if replay.mods.has_mod('HR'):
+            map_data['x'] = -map_data['x']
+            map_data['y'] = -map_data['y']
 
     
     @staticmethod
@@ -82,7 +86,7 @@ class DataProcessing():
 
 
     @staticmethod
-    def get_difficulty_data(score_data):
+    def get_difficulty_data(score_data, ar):
         """
         Calculates the difficulty vector for each note
         diff_vec = 
@@ -274,6 +278,34 @@ class DataProcessing():
 
             return angles
 
+        def __get_notes_visible():
+            """
+            Gets the number of notes visible at each time point
+            Data that does not pertain to a valid entries is marked as np.nan
+            
+            Entries consist of score points related to press, release, etc. 
+            An entry is valid if:
+                - All entries are valid
+
+            # TODO: Figure out how I want to do this. Number of notes present is
+            #       not representative of visual difficulty due to sliders. Perhaps
+            #       total hitobject area is a better metric? Will need to be normalized
+            *       to CS.
+            #
+            #       See https://discord.com/channels/546120878908506119/886986744090734682/928768553899925535
+            #       for brief idea regarding area and overlap metrics.
+            """
+            timings = map_t[empty_filter]
+            ar_ms = OsuUtils.ar_to_ms(ar)
+
+            notes_visible = np.empty(map_x.shape[0]) * np.nan
+            for i in range(timings.shape[0]):
+                ar_select = (timings[i] <= timings) & (timings <= (timings[i] + ar_ms))
+                notes_visible[not_empty_idx_ref[i]] = np.count_nonzero(ar_select)
+
+            return notes_visible
+
+
         dt     = __get_note_dt()
         dt_dec = __get_dt_dec()
         dt_inc = __get_dt_inc()
@@ -322,7 +354,7 @@ class DataProcessing():
 
     @staticmethod
     def get_data(score_data, timestamp, map_md5, mods, cs, ar):
-        dt, dt_dec, dt_inc, ds, angles = DataProcessing.get_difficulty_data(score_data)
+        dt, dt_dec, dt_inc, ds, angles = DataProcessing.get_difficulty_data(score_data, ar)
         x_offsets, y_offsets, t_offsets = DataProcessing.get_performance_data(score_data)
         hash_mask = 0xFFFFFFFFFFFF0000
 
