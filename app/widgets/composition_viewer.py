@@ -189,6 +189,7 @@ class CompositionViewer(QtGui.QWidget):
 
         roi_plot = self.roi_selections[roi_id]['roi']
         self.roi_selections[roi_id]['select'] = self.__select_data_in_roi(roi_plot, data)
+        self.roi_selections[roi_id]['select'] |= np.isnan(data).any(axis=1)
 
 
     def __reset_roi_selections(self):
