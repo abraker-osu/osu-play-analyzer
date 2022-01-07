@@ -51,7 +51,7 @@ class OsuRecorder(QtCore.QObject):
             return
 
         if replay.game_mode != Gamemode.OSU:
-            print(f'{Gamemode(replay.game_mode)} gamemode is not supported')
+            print(f'{replay.game_mode} gamemode is not supported')
             return
 
         print('Determining beatmap...')
