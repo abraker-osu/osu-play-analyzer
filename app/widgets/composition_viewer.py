@@ -210,6 +210,10 @@ class CompositionViewer(QtGui.QWidget):
                 x0, x1 = np.min(filtered_data[:, 0]), np.max(filtered_data[:, 0])
                 y0, y1 = np.min(filtered_data[:, 1]), np.max(filtered_data[:, 1])
 
+                # Do not allow ROIs smaller than 1 pixel
+                if x0 == x1: x0 -= 1; x1 += 1
+                if y0 == y1: y0 -= 1; y1 += 1
+
                 roi_id = self.__get_roi_id(id_x, id_y)
                 roi_plot = self.roi_selections[roi_id]['roi']
 
