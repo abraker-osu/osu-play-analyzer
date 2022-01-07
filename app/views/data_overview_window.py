@@ -103,10 +103,9 @@ class DataOverviewWindow(QtGui.QWidget):
     def __open_replay_dialog(self):
         name_filter = 'osu! replay files (*.osr)'
 
-        file_name = QtGui.QFileDialog.getOpenFileName(self, 'Open replay',  f'{AppConfig.cfg["osu_dir"]}', name_filter)
-        file_name = file_name[0]
+        file_names = QtGui.QFileDialog.getOpenFileNames(self, 'Open replay',  f'{AppConfig.cfg["osu_dir"]}', name_filter)
+        for file_name in file_names[0]:
+            if len(file_name) == 0:
+                continue
 
-        if len(file_name) == 0:
-            return
-
-        OsuRecorder.handle_new_replay(file_name)
+            OsuRecorder.handle_new_replay(file_name)
