@@ -44,6 +44,12 @@ class OsuRecorder(QtCore.QObject):
             print(f'Error opening replay: {e}')
             return
 
+        # Check if replay already exists in data
+        unique_timestamps = np.unique(PlayData.data[:, RecData.TIMESTAMP])
+        if replay.timestamp.timestamp() in unique_timestamps:
+            print(f'Replay already exists in data: {replay.timestamp}')
+            return
+
         if replay.game_mode != Gamemode.OSU:
             print(f'{Gamemode(replay.game_mode)} gamemode is not supported')
             return
@@ -60,7 +66,7 @@ class OsuRecorder(QtCore.QObject):
 
         # Get data
         score_data = StdScoreData.get_score_data(replay_data, map_data)
-        data = DataProcessing.get_data(score_data, time.time(), beatmap.metadata.beatmap_md5, replay.mods.value, beatmap.difficulty.cs, beatmap.difficulty.ar)
+        data = DataProcessing.get_data(score_data, replay.timestamp.timestamp(), beatmap.metadata.beatmap_md5, replay.mods.value, beatmap.difficulty.cs, beatmap.difficulty.ar)
 
         # Save data and emit to notify other components that there is a new replay
         PlayData.save_data(data)
