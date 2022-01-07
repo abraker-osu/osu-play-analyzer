@@ -26,8 +26,8 @@ class App(QtGui.QMainWindow):
     def __contruct_gui(self):
         self.data_graphs_window   = DataGraphsWindow()
         self.data_overview_window = DataOverviewWindow()
-        self.map_architect_window = MapArchitectWindow()
         self.map_display_window   = MapDisplayWindow()
+        self.map_architect_window = MapArchitectWindow()
 
         self.setWindowTitle('osu! performance analyzer')
 
@@ -86,36 +86,36 @@ class App(QtGui.QMainWindow):
     def generate_map_button_clicked(self):
         self.data_graphs_window.hide() 
         self.data_overview_window.hide()
-        self.map_architect_window.show()
         self.map_display_window.show()
+        self.map_architect_window.show()
 
 
     def analyze_data_button_clicked(self):
         self.data_graphs_window.show() 
         self.data_overview_window.show()
-        self.map_architect_window.hide()
         self.map_display_window.hide()
+        self.map_architect_window.hide()
 
 
     def record_data_button_clicked(self):
         self.data_graphs_window.show() 
         self.data_overview_window.hide()
-        self.map_architect_window.show()
         self.map_display_window.hide()
+        self.map_architect_window.show()
 
 
     def browse_plays_button_clicked(self):
         self.data_graphs_window.hide() 
         self.data_overview_window.show()
-        self.map_architect_window.hide()
         self.map_display_window.show()
+        self.map_architect_window.hide()
 
 
     def train_skills_button_clicked(self):
         self.data_graphs_window.show() 
         self.data_overview_window.hide()
-        self.map_architect_window.hide()
         self.map_display_window.show()
+        self.map_architect_window.hide()
 
 
     def new_replay_event(self, data):
