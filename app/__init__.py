@@ -17,8 +17,6 @@ class App(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self)
         os.makedirs('data', exist_ok=True)
 
-        self.data_recorder = OsuRecorder()
-
         self.__contruct_gui()
         self.__connect_signals()
 
@@ -76,7 +74,7 @@ class App(QtGui.QMainWindow):
 
     def __connect_signals(self):
         self.map_display_window.data_loaded.connect(self.map_architect_window.notify_data_loaded)
-        self.data_recorder.new_replay_event.connect(self.new_replay_event)
+        OsuRecorder.new_replay_event.connect(self.new_replay_event)
         
         self.data_overview_window.show_map_event.connect(self.map_display_window.set_from_play_data)
         self.data_overview_window.show_map_event.connect(self.data_graphs_window.overview_single_map_selection_event)

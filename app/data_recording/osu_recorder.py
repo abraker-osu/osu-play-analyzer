@@ -5,18 +5,18 @@ import tinydb
 
 from PyQt5 import QtCore
 import numpy as np
+from app.data_recording.data import RecData
 
 from osu_analysis import BeatmapIO, ReplayIO, Gamemode
 from osu_analysis import StdScoreData
 
 from app.data_recording.data_processing import DataProcessing
 from app.data_recording.monitor import Monitor
-from app.data_recording.data import RecData
 
 from app.file_managers import AppConfig, MapsDB, PlayData
 
 
-class OsuRecorder(QtCore.QObject):
+class _OsuRecorder(QtCore.QObject):
 
     new_replay_event = QtCore.pyqtSignal(tuple)
 
@@ -26,14 +26,14 @@ class OsuRecorder(QtCore.QObject):
         QtCore.QObject.__init__(self)
 
         self.monitor = Monitor(AppConfig.cfg['osu_dir'])
-        self.monitor.create_replay_monitor('Replay Grapher', self.__handle_new_replay)
+        self.monitor.create_replay_monitor('Replay Grapher', self.handle_new_replay)
 
 
     def __del__(self):
         PlayData.data_file.close()
 
 
-    def __handle_new_replay(self, replay_file_name):
+    def handle_new_replay(self, replay_file_name):
         # Needed sleep to wait for osu! to finish writing the replay file
         time.sleep(2)
 
@@ -87,3 +87,6 @@ class OsuRecorder(QtCore.QObject):
             map_data[:, ManiaActionData.IDX_COL] = (num_keys - 1) - map_data[:, ManiaActionData.IDX_COL]
 
         return mods
+
+
+OsuRecorder = _OsuRecorder()

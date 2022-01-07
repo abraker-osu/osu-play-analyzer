@@ -21,7 +21,9 @@ from app.widgets.plays_graph import PlaysGraph
 from app.widgets.composition_viewer import CompositionViewer
 
 from app.data_recording.data import RecData
+from app.data_recording.osu_recorder import OsuRecorder
 
+from app.file_managers import AppConfig
 
 
 class DataOverviewWindow(QtGui.QWidget):
@@ -56,9 +58,17 @@ class DataOverviewWindow(QtGui.QWidget):
         self.splitter.addWidget(self.overview)
         self.splitter.addWidget(self.map_list)
 
+        self.file_menu = QtGui.QMenu("&File")
+        self.open_replay_action = QtGui.QAction("&Open *.osr", triggered=lambda: self.__open_replay_dialog())
+        self.file_menu.addAction(self.open_replay_action)
+
+        self.menu_bar  = QtGui.QMenuBar()
+        self.menu_bar.addMenu(self.file_menu)
+
         self.main_layout = QtGui.QHBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.addWidget(self.splitter)
+        self.main_layout.setMenuBar(self.menu_bar)
 
         self.map_list.map_selected.connect(self.__map_select_event)
         self.play_graph.region_changed.connect(self.composition_viewer.set_composition_from_play_data)
@@ -88,3 +98,15 @@ class DataOverviewWindow(QtGui.QWidget):
 
         self.status_label.setText('')
         self.show_map_event.emit(play_data)
+
+
+    def __open_replay_dialog(self):
+        name_filter = 'osu! replay files (*.osr)'
+
+        file_name = QtGui.QFileDialog.getOpenFileName(self, 'Open replay',  f'{AppConfig.cfg["osu_dir"]}', name_filter)
+        file_name = file_name[0]
+
+        if len(file_name) == 0:
+            return
+
+        OsuRecorder.handle_new_replay(file_name)
