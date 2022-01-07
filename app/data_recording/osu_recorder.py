@@ -33,9 +33,10 @@ class _OsuRecorder(QtCore.QObject):
         PlayData.data_file.close()
 
 
-    def handle_new_replay(self, replay_file_name):
-        # Needed sleep to wait for osu! to finish writing the replay file
-        time.sleep(2)
+    def handle_new_replay(self, replay_file_name, wait=True):
+        if wait:
+            # Needed sleep to wait for osu! to finish writing the replay file
+            time.sleep(2)
 
         #print('New replay detected!')
 

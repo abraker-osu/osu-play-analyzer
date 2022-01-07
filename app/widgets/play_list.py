@@ -45,6 +45,51 @@ class PlayList(QtGui.QListWidget):
         # TODO: Select all maps in the list
 
 
+    def load_latest_play(self):
+        play_data = PlayData.data.astype(np.uint64)
+
+        # Determine what was the latest play
+        data_filter = \
+            (play_data[:, RecData.TIMESTAMP] == play_data[0, RecData.TIMESTAMP])
+        play_data = play_data[data_filter]
+ 
+        maps_table = MapsDB.maps_table
+
+        map_hashes = play_data[:, RecData.MAP_HASH]
+        self.map_idx_hashes = np.unique(map_hashes)
+
+        # Go through unlisted maps
+        for map_hash in self.map_idx_hashes:
+            data_select = map_hashes == map_hash
+            unique_mods = np.unique(play_data[data_select, RecData.MODS])
+
+            # Since map_md5h is the integer representation of a portion of the lower 
+            # half of the md5 hash, there might be zeros in most significant digits of
+            # the resultant uin64 encoded value. It's possible to detect that by 
+            # checking size of the resulting hash string in hex form 
+            # (it must be 12 characters). From there, fill the front with zeros to 
+            # make it complete
+            map_md5h_str = hex(map_hash)[2:-4]
+            if len(map_md5h_str) < 12:
+                map_md5h_str = '0'*(12 - len(map_md5h_str)) + map_md5h_str
+
+            # Find the map the hash is related to in db
+            maps = maps_table.search(tinydb.where('md5h') == map_md5h_str)
+            if len(maps) == 0:
+                self.addItem(map_md5h_str)
+                continue
+
+            for map_mods in unique_mods:
+                map_mods = Mod(int(map_mods))
+
+                # Resolve mod
+                mods_text = map_mods.get_mods_txt()
+                mods_text = f' +{mods_text}' if len(mods_text) != 0 else ''
+
+                # Add map to list
+                self.addItem(maps[0]['path'].split('/')[-1] + mods_text)
+
+
     def reload_map_list(self):
         self.clear()
 
@@ -84,7 +129,6 @@ class PlayList(QtGui.QListWidget):
 
                 # Add map to list
                 self.addItem(maps[0]['path'].split('/')[-1] + mods_text)
-                #self.append(map_hash)
 
     
     def new_replay_event(self):

@@ -77,7 +77,7 @@ class DataOverviewWindow(QtGui.QWidget):
         
 
     def new_replay_event(self):
-        self.map_list.reload_map_list()
+        self.map_list.load_latest_play()
 
     
     def __map_select_event(self, play_data):
@@ -108,4 +108,4 @@ class DataOverviewWindow(QtGui.QWidget):
             if len(file_name) == 0:
                 continue
 
-            OsuRecorder.handle_new_replay(file_name)
+            OsuRecorder.handle_new_replay(file_name, wait=False)
