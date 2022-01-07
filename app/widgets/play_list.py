@@ -59,10 +59,20 @@ class PlayList(QtGui.QListWidget):
             data_select = map_hashes == map_hash
             unique_mods = np.unique(play_data[data_select, RecData.MODS])
 
+            # Since map_md5h is the integer representation of a portion of the lower 
+            # half of the md5 hash, there might be zeros in most significant digits of
+            # the resultant uin64 encoded value. It's possible to detect that by 
+            # checking size of the resulting hash string in hex form 
+            # (it must be 12 characters). From there, fill the front with zeros to 
+            # make it complete
+            map_md5h_str = hex(map_hash)[2:-4]
+            if len(map_md5h_str) < 12:
+                map_md5h_str = '0'*(12 - len(map_md5h_str)) + map_md5h_str
+
             # Find the map the hash is related to in db
-            maps = maps_table.search(tinydb.where('md5h') == hex(map_hash)[2:-4])
+            maps = maps_table.search(tinydb.where('md5h') == map_md5h_str)
             if len(maps) == 0:
-                self.addItem(map_hash)
+                self.addItem(map_md5h_str)
                 continue
 
             for map_mods in unique_mods:
