@@ -13,6 +13,7 @@ The is a selection menu on the side that allows the user to select which player'
 
 Design note: Maybe have a scatter plot instead. Really depends on how much data there is and how laggy it will get.
 """
+import pyqtgraph
 import tinydb
 import numpy as np
 from pyqtgraph.Qt import QtGui, QtCore
@@ -22,127 +23,153 @@ from app.file_managers import MapsDB, PlayData
 from osu_analysis import Mod
 
 
-class PlayList(QtGui.QListWidget):
+
+class PlayList(pyqtgraph.TableWidget):
 
     map_selected = QtCore.pyqtSignal(object)
 
-    def __init__(self, parent=None):
-        # TODO: Maybe change this to be a TableWidget from pyqtgraph 
-        #       so more columns can be seen and data can be sorted by those columns
-        QtGui.QListWidget.__init__(self, parent)
+    def __init__(self):
+        pyqtgraph.TableWidget.__init__(self)
 
+        self.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
         self.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
-
-        self.map_idx_hashes = np.asarray([])
-        self.selected_map_hash = None
+        self.verticalHeader().setDefaultSectionSize(10)
 
         self.reload_map_list()
-
-        if self.map_idx_hashes.size > 0:
-            self.setCurrentRow(0)
+        
+        if self.rowCount() > 0:
+            self.selectRow(0)
             
-        self.itemSelectionChanged.connect(self.__list_select_event)
+        self.selectionModel().selectionChanged.connect(self.__list_select_event)
         # TODO: Select all maps in the list
 
 
     def load_latest_play(self):
         play_data = PlayData.data.astype(np.uint64)
 
+        if PlayData.data.shape[0] == 0:
+            return
+
         # Determine what was the latest play
         data_filter = \
             (play_data[:, RecData.TIMESTAMP] == play_data[0, RecData.TIMESTAMP])
         play_data = play_data[data_filter]
- 
-        maps_table = MapsDB.maps_table
 
-        # Add map hash to end of list
-        map_hash = play_data[0, RecData.MAP_HASH]
-        if map_hash in self.map_idx_hashes:
+        # Get list of hashes and mods for loaded maps
+        md5s = np.asarray([ int(self.model().data(self.model().index(i, 0), role=QtCore.Qt.DisplayRole)) for i in range(self.rowCount()) ])
+        mods = np.asarray([ int(self.model().data(self.model().index(i, 1), role=QtCore.Qt.DisplayRole)) for i in range(self.rowCount()) ])
+
+        # Get map's md5 half hash and mods used in the play
+        map_md5 = play_data[0, RecData.MAP_HASH]
+        map_mod = play_data[0, RecData.MODS]
+
+        if (map_md5 in md5s) and (map_mod in mods):
             return
             
-        self.map_idx_hashes = np.insert(self.map_idx_hashes, self.map_idx_hashes.shape[0], map_hash)
+        map_md5h_str = self.__md5_to_md5h_str_func(map_md5)
+        map_name_str = self.__md5h_str_to_name_func(map_md5h_str)
+        map_mods_str = self.__mods_to_name_func(map_mod)
 
-        # Go through unlisted maps
-        mods = play_data[0, RecData.MODS]
+        data = np.empty(
+            shape=(1, ),
+            dtype=[
+                ('md5',  np.uint64),  # Map hash (int, not shown)
+                ('IMod', np.uint64),  # Mods used on the map (int, not shown)
+                ('Name', object),     # Name of the map 
+                ('Mods', object),     # Mods used on the map (string)
+            ]
+        )
 
+        data['md5']  = map_md5
+        data['IMod'] = map_mod
+        data['Name'] = map_name_str
+        data['Mods'] = map_mods_str
+        
+        self.appendData(data)
+
+
+    def reload_map_list(self):
+        self.clear()
+
+        if PlayData.data.shape[0] == 0:
+            return
+
+        md5_to_md5h_str  = np.vectorize(lambda md5: self.__md5_to_md5h_str_func(md5))
+        md5h_str_to_name = np.vectorize(lambda md5h_str: self.__md5h_str_to_name_func(md5h_str))
+        mod_to_name      = np.vectorize(lambda mod: self.__mods_to_name_func(mod))
+
+        map_hash_mods = PlayData.data[:, [ RecData.MAP_HASH, RecData.MODS ]].astype(np.uint64)
+        unique_map_hash_mods = np.unique(map_hash_mods, axis=0)
+
+        data = np.empty(
+            shape=(unique_map_hash_mods.shape[0], ),
+            dtype=[
+                ('md5',  np.uint64),  # Map hash (int, not shown)
+                ('IMod', np.uint64),  # Mods used on the map (int, not shown)
+                ('Name', object),     # Name of the map 
+                ('Mods', object),     # Mods used on the map (string)
+            ]
+        )
+
+        data['md5']  = unique_map_hash_mods[:, 0]
+        data['IMod'] = unique_map_hash_mods[:, 1]
+        data['Name'] = md5h_str_to_name(md5_to_md5h_str(data['md5']))
+        data['Mods'] = mod_to_name(data['IMod'])
+
+        self.setData(data)
+
+        self.setColumnHidden(0, True)
+        self.setColumnHidden(1, True)
+    
+
+    def new_replay_event(self):
+        pass
+
+    
+    def __list_select_event(self, _):
+        map_hash_mods = PlayData.data[:, [ RecData.MAP_HASH, RecData.MODS ]].astype(np.uint64)
+        select = np.zeros((map_hash_mods.shape[0], ), dtype=np.bool)
+
+        selection_model = self.selectionModel()
+        md5_selects = selection_model.selectedRows(column=0)
+        mod_selects = selection_model.selectedRows(column=1)
+
+        for md5, mod in zip(md5_selects, mod_selects):
+            md5 = int(md5.data(role=QtCore.Qt.DisplayRole))
+            mod = int(mod.data(role=QtCore.Qt.DisplayRole))
+
+            print(md5, mod)
+            
+            select |= ((md5 == map_hash_mods[:, 0]) & (mod == map_hash_mods[:, 1]))
+
+        self.map_selected.emit(PlayData.data[select])
+
+    
+    @staticmethod
+    def __md5_to_md5h_str_func(md5):
         # Since map_md5h is the integer representation of a portion of the lower 
         # half of the md5 hash, there might be zeros in most significant digits of
         # the resultant uin64 encoded value. It's possible to detect that by 
         # checking size of the resulting hash string in hex form 
         # (it must be 12 characters). From there, fill the front with zeros to 
         # make it complete
-        map_md5h_str = hex(map_hash)[2:-4]
+        map_md5h_str = hex(md5)[2:-4]
         if len(map_md5h_str) < 12:
             map_md5h_str = '0'*(12 - len(map_md5h_str)) + map_md5h_str
 
-        # Find the map the hash is related to in db
-        maps = maps_table.search(tinydb.where('md5h') == map_md5h_str)
-        if len(maps) == 0:
-            self.addItem(map_md5h_str)
-            return
-
-        map_mods = Mod(int(mods))
-
-        # Resolve mod
-        mods_text = map_mods.get_mods_txt()
-        mods_text = f' +{mods_text}' if len(mods_text) != 0 else ''
-
-        # Add map to list
-        self.addItem(maps[0]['path'].split('/')[-1] + mods_text)
+        return map_md5h_str
 
 
-    def reload_map_list(self):
-        self.clear()
+    @staticmethod
+    def __md5h_str_to_name_func(md5_str):
+        results = MapsDB.maps_table.search(tinydb.where('md5h') == md5_str)
+        if len(results) == 0:
+            return md5_str
 
-        play_data = PlayData.data.astype(np.uint64)
-        maps_table = MapsDB.maps_table
-
-        map_hashes = play_data[:, RecData.MAP_HASH]
-        self.map_idx_hashes = np.unique(map_hashes)
-
-        # Go through unlisted maps
-        for map_hash in self.map_idx_hashes:
-            data_select = map_hashes == map_hash
-            unique_mods = np.unique(play_data[data_select, RecData.MODS])
-
-            # Since map_md5h is the integer representation of a portion of the lower 
-            # half of the md5 hash, there might be zeros in most significant digits of
-            # the resultant uin64 encoded value. It's possible to detect that by 
-            # checking size of the resulting hash string in hex form 
-            # (it must be 12 characters). From there, fill the front with zeros to 
-            # make it complete
-            map_md5h_str = hex(map_hash)[2:-4]
-            if len(map_md5h_str) < 12:
-                map_md5h_str = '0'*(12 - len(map_md5h_str)) + map_md5h_str
-
-            # Find the map the hash is related to in db
-            maps = maps_table.search(tinydb.where('md5h') == map_md5h_str)
-            if len(maps) == 0:
-                self.addItem(map_md5h_str)
-                continue
-
-            for map_mods in unique_mods:
-                map_mods = Mod(int(map_mods))
-
-                # Resolve mod
-                mods_text = map_mods.get_mods_txt()
-                mods_text = f' +{mods_text}' if len(mods_text) != 0 else ''
-
-                # Add map to list
-                self.addItem(maps[0]['path'].split('/')[-1] + mods_text)
-
-    
-    def new_replay_event(self):
-        pass
+        return results[0]['path'].split('/')[-1]
 
 
-    def __list_select_event(self):
-        play_data_map_hashes = PlayData.data[:, RecData.MAP_HASH].astype(np.uint64)
-
-        idxs = np.asarray([ self.row(item) for item in self.selectedItems() ])
-        select = np.full_like(play_data_map_hashes, 0, dtype=np.bool)
-
-        for idx in idxs:
-            select |= (play_data_map_hashes == self.map_idx_hashes[idx])
-
-        self.map_selected.emit(PlayData.data[select])
+    @staticmethod
+    def __mods_to_name_func(mods):
+        mods_text = Mod(int(mods)).get_mods_txt()
+        return f' +{mods_text}' if len(mods_text) != 0 else ''

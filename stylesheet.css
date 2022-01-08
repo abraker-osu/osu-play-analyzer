@@ -187,7 +187,6 @@ QTabBar[colorToggle=true]::tab {
     background: #ff0000;  
 }
 
-
 QRadioButton:disabled {
     color:#929292;
 }
@@ -208,4 +207,18 @@ QProgressBar {
 QProgressBar::chunk {
     background-color: #114e13;
     width: 20px;
+}
+
+QTableView QTableCornerButton::section {
+    background: #222227;
+}
+
+QTableView QTableCornerButton::section:hover {
+    background: #353646;
+}
+
+QHeaderView::section {
+    background-color: #222227;
+    padding: 4px;
+    border: 1px solid #1d1d20;
 }
