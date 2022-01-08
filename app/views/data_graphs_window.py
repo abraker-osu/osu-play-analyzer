@@ -90,7 +90,8 @@ class DataGraphsWindow(QtGui.QMainWindow):
 
         # Sorts data into N-dimensional grid chunks numbered from 0 to num_bins - 1
         for i in range(col_data.shape[0]):
-            xmin, xmax = np.min(data[:, i]), np.max(data[:, i])
+            nan_filter = ~np.isnan(data[:, i])
+            xmin, xmax = np.min(data[nan_filter, i]), np.max(data[nan_filter, i])
             print(i, xmin, xmax)
 
             idxs[:, i] = np.digitize(data[:, i], np.linspace(col_data[i, 1], col_data[i, 2], num_bins))
