@@ -45,6 +45,7 @@ class DataOverviewWindow(QtGui.QWidget):
         self.play_graph = PlaysGraph()
         self.show_map_btn = QtGui.QPushButton('Show map')
         self.status_label = QtGui.QLabel('')
+        self.progress_bar = QtGui.QProgressBar()
         
         self.overview = QtGui.QWidget()
         self.overview_layout = QtGui.QVBoxLayout(self.overview)
@@ -53,6 +54,7 @@ class DataOverviewWindow(QtGui.QWidget):
         self.overview_layout.addWidget(self.play_graph)
         self.overview_layout.addWidget(self.show_map_btn)
         self.overview_layout.addWidget(self.status_label)
+        self.overview_layout.addWidget(self.progress_bar)
 
         self.splitter = QtGui.QSplitter()
         self.splitter.addWidget(self.overview)
@@ -69,6 +71,8 @@ class DataOverviewWindow(QtGui.QWidget):
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.addWidget(self.splitter)
         self.main_layout.setMenuBar(self.menu_bar)
+
+        self.progress_bar.hide()
 
         self.map_list.map_selected.connect(self.__map_select_event)
         self.play_graph.region_changed.connect(self.composition_viewer.set_composition_from_play_data)
@@ -103,9 +107,20 @@ class DataOverviewWindow(QtGui.QWidget):
     def __open_replay_dialog(self):
         name_filter = 'osu! replay files (*.osr)'
 
-        file_names = QtGui.QFileDialog.getOpenFileNames(self, 'Open replay',  f'{AppConfig.cfg["osu_dir"]}', name_filter)
-        for file_name in file_names[0]:
-            if len(file_name) == 0:
-                continue
+        self.status_label.hide()
+        self.progress_bar.show()
 
+        file_names = QtGui.QFileDialog.getOpenFileNames(self, 'Open replay',  f'{AppConfig.cfg["osu_dir"]}', name_filter)[0]
+        if len(file_names) == 0:
+            return
+
+        num_files = len(file_names)
+
+        for file_name, i in zip(file_names, range(num_files)):
             OsuRecorder.handle_new_replay(file_name, wait=False)
+
+            self.progress_bar.setValue(100 * i / num_files)
+            QtGui.QApplication.processEvents()
+
+        self.progress_bar.hide()
+        self.status_label.show()

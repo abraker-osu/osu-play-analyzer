@@ -1,9 +1,6 @@
-import os
-import sys
 import time
-import tinydb
 
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtWidgets 
 import numpy as np
 from app.data_recording.data import RecData
 
@@ -45,6 +42,8 @@ class _OsuRecorder(QtCore.QObject):
             print(f'Error opening replay: {e}')
             return
 
+        QtWidgets.QApplication.processEvents()
+
         # Check if replay already exists in data
         unique_timestamps = np.unique(PlayData.data[:, RecData.TIMESTAMP])
         if replay.timestamp.timestamp() in unique_timestamps:
@@ -61,6 +60,8 @@ class _OsuRecorder(QtCore.QObject):
             return
 
         beatmap = BeatmapIO.open_beatmap(map_file_name)
+        QtWidgets.QApplication.processEvents()
+
         map_data = DataProcessing.get_map_data_from_object(beatmap)
         replay_data = DataProcessing.get_replay_data_from_object(replay)
         DataProcessing.process_mods(map_data, replay_data, replay)
@@ -68,6 +69,8 @@ class _OsuRecorder(QtCore.QObject):
         # Get data
         score_data = StdScoreData.get_score_data(replay_data, map_data)
         data = DataProcessing.get_data(score_data, replay.timestamp.timestamp(), beatmap.metadata.beatmap_md5, replay.mods.value, beatmap.difficulty.cs, beatmap.difficulty.ar)
+
+        QtWidgets.QApplication.processEvents()
 
         # Save data and emit to notify other components that there is a new replay
         PlayData.save_data(data)
