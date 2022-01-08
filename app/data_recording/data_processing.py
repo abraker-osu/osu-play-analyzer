@@ -112,6 +112,9 @@ class DataProcessing():
         note_start_idx_ref = np.arange(note_start_select.shape[0])[note_start_select]
         not_empty_idx_ref = np.arange(empty_filter.shape[0])[empty_filter]
 
+        if not_empty_idx_ref.shape[0] <= 3:
+            print('Warning: Not enough notes to calculate difficulty')
+
         def __get_note_dt():
             """
             Gets the time interal between each note
