@@ -15,6 +15,8 @@ from app.graphs.aim_graph import AimGraph
 from app.graphs.dev_graph_angle import DevGraphAngle
 from app.graphs.dev_graph_vel import DevGraphVel
 
+from app.graphs.graph_toffset_bpm import GraphTOffsetBPM
+
 from app.data_recording.data import RecData
 from app.file_managers import PlayData
 
@@ -28,6 +30,8 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.hit_offset_graph = HitOffsetGraph()
         self.aim_display = AimGraph()
 
+        self.toffset_bpm = GraphTOffsetBPM()
+
         self.dev_graph_angle = DevGraphAngle()
         self.dev_graph_vel = DevGraphVel()
 
@@ -36,7 +40,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.replay_tabs.addTab(self.aim_display, 'Aim display')
 
         self.map_tabs = QtGui.QTabWidget()
-        self.map_tabs.addTab(QtGui.QLabel('TODO'), 'Map Graph1')
+        self.map_tabs.addTab(self.toffset_bpm, 'T-offset vs BPM')
         self.map_tabs.addTab(QtGui.QLabel('TODO'), 'Map Graph2')
 
         self.play_data_tabs = QtGui.QTabWidget()
@@ -56,26 +60,27 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.hit_offset_graph.plot_data(play_data)
         self.aim_display.plot_data(play_data)
 
+        self.toffset_bpm.plot_data(play_data)
+
 
     def overview_single_map_selection_event(self, play_data):
         self.hit_offset_graph.plot_data(play_data)
         self.aim_display.plot_data(play_data)
 
+        self.toffset_bpm.plot_data(play_data)
+
 
     def set_from_play_data(self, play_data):
-        # TODO: Process play data to get deviation and mean data.
-        #
-        #       The processing will need to section the data
-        #       into grid chunks and then process each chunk to get deviation and mean data.
-        #       Will need to come up with a good way to divide the data into chunks; the data is
-        #       7D and having 7 nested for loops checking each range in volume is not good for performance.
-        #       Maybe have a seperate data file keeping track of timestamp and hash, and have it contain the
-        #       deviation, mean, etc data. It would be written to when there is a new play. Though that 
-        #       doesn't avoid the 7 nested loops problem.
         if play_data.shape[0] == 0:
             # TODO: Clear plots
             return
 
+        self.toffset_bpm.plot_data(play_data)
+
+        self.__graph_deviation_data(play_data)
+    
+
+    def __graph_deviation_data(self, play_data):
         col_data = np.asarray([
               #   COL        MIN  MAX
             [ RecData.CS,     0,   10 ],
