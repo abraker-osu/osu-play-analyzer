@@ -130,7 +130,7 @@ class DataProcessing():
 
             # Not enough note presses
             if note_start_idx_ref.shape[0] <= 2:
-                return dt_inc
+                return dt
 
             dt[note_start_idx_ref[1:]] = note_start_map_t[1:] - note_start_map_t[:-1]
 
