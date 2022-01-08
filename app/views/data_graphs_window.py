@@ -13,6 +13,7 @@ from app.graphs.hit_offset_graph import HitOffsetGraph
 from app.graphs.aim_graph import AimGraph
 
 from app.graphs.dev_graph_angle import DevGraphAngle
+from app.graphs.dev_graph_vel import DevGraphVel
 
 from app.data_recording.data import RecData
 from app.file_managers import PlayData
@@ -28,6 +29,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.aim_display = AimGraph()
 
         self.dev_graph_angle = DevGraphAngle()
+        self.dev_graph_vel = DevGraphVel()
 
         self.replay_tabs = QtGui.QTabWidget()
         self.replay_tabs.addTab(self.hit_offset_graph, 'Hit offsets')
@@ -39,6 +41,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
 
         self.play_data_tabs = QtGui.QTabWidget()
         self.play_data_tabs.addTab(self.dev_graph_angle, 'Dev vs Angle')
+        self.play_data_tabs.addTab(self.dev_graph_vel, 'Dev vs Velocity')
         
         self.main_widget = QtGui.QTabWidget()
         self.main_widget.addTab(self.replay_tabs, 'Replay graphs')
@@ -140,3 +143,4 @@ class DataGraphsWindow(QtGui.QMainWindow):
         # as well as how many there are, and that can be iterated over to get the mean and deviation.
 
         self.dev_graph_angle.plot_data(dev_data)
+        self.dev_graph_vel.plot_data(dev_data)
