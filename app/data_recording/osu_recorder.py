@@ -35,7 +35,7 @@ class _OsuRecorder(QtCore.QObject):
             # Needed sleep to wait for osu! to finish writing the replay file
             time.sleep(2)
 
-        #print('New replay detected!')
+        print('Processing replay:', replay_file_name)
 
         try: replay = ReplayIO.open_replay(replay_file_name)
         except Exception as e:
@@ -59,6 +59,7 @@ class _OsuRecorder(QtCore.QObject):
         if len(map_file_name) == 0:
             return
 
+        print('Processing beatmap:', map_file_name)
         beatmap = BeatmapIO.open_beatmap(map_file_name)
         QtWidgets.QApplication.processEvents()
 
