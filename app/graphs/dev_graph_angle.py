@@ -60,7 +60,7 @@ class DevGraphAngle(QtGui.QWidget):
         # Clear plots for redraw
         self.__graph.clearPlots()
 
-        bpm_data = 4*6000/data[:, self.DT]
+        bpm_data = 15000/data[:, self.DT]
         unique_bpms = np.unique(bpm_data)
 
         bpm_lut = pyqtgraph.ColorMap(

@@ -419,7 +419,7 @@ class CompositionViewer(QtGui.QWidget):
     def __id_to_data(self, id_, play_data):
         if id_ == self.__ID_BPM:
             # Convert 1/ms -> BPM then put it in terms of 1/4 snap
-            return 4*6000/play_data[:, RecData.DT]
+            return 15000/play_data[:, RecData.DT]
 
         if id_ == self.__ID_ANGLE:
             return play_data[:, RecData.ANGLE]
