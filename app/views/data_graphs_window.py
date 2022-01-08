@@ -50,7 +50,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.main_widget = QtGui.QTabWidget()
         self.main_widget.addTab(self.replay_tabs, 'Replay graphs')
         self.main_widget.addTab(self.map_tabs, 'Map graphs')
-        self.main_widget.addTab(self.play_data_tabs, 'Play data graphs')
+        self.main_widget.addTab(self.play_data_tabs, 'Deviation data graphs')
         self.setCentralWidget(self.main_widget)
 
 
