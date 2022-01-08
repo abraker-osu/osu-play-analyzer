@@ -124,6 +124,11 @@ class DataProcessing():
             note_start_map_t = map_t[note_start_select]
 
             dt = np.empty(map_t.shape[0]) * np.nan
+
+            # Not enough note presses
+            if not_empty_idx_ref.shape[0] <= 2:
+                return dt_inc
+
             dt[note_start_idx_ref[1:]] = note_start_map_t[1:] - note_start_map_t[:-1]
 
             return dt
@@ -143,6 +148,10 @@ class DataProcessing():
             dt1 = note_start_map_t[2:] - note_start_map_t[1:-1]    # t2 - t1
 
             dt_dec = np.empty(map_t.shape[0]) * np.nan
+
+            # Not enough note presses
+            if not_empty_idx_ref.shape[0] <= 3:
+                return dt_dec
 
             # The first inverval decrease comes from lack of notes before the start of the map. 
             # The time since last decrease for first note is ALWAYS 0
@@ -188,6 +197,10 @@ class DataProcessing():
             dt1 = note_start_map_t[2:] - note_start_map_t[1:-1]    # t2 - t1
 
             dt_inc = np.empty(map_t.shape[0]) * np.nan
+
+            # Not enough note presses
+            if not_empty_idx_ref.shape[0] <= 3:
+                return dt_inc
 
             # The first inverval increase comes as soon as note t2 is further than expected
             # This makes the time since last increase for first and second notes ALWAYS 0
