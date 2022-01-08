@@ -129,7 +129,7 @@ class DataProcessing():
             dt = np.empty(map_t.shape[0]) * np.nan
 
             # Not enough note presses
-            if not_empty_idx_ref.shape[0] <= 2:
+            if note_start_idx_ref.shape[0] <= 2:
                 return dt_inc
 
             dt[note_start_idx_ref[1:]] = note_start_map_t[1:] - note_start_map_t[:-1]
@@ -153,7 +153,7 @@ class DataProcessing():
             dt_dec = np.empty(map_t.shape[0]) * np.nan
 
             # Not enough note presses
-            if not_empty_idx_ref.shape[0] <= 3:
+            if note_start_idx_ref.shape[0] <= 3:
                 return dt_dec
 
             # The first inverval decrease comes from lack of notes before the start of the map. 
@@ -202,7 +202,7 @@ class DataProcessing():
             dt_inc = np.empty(map_t.shape[0]) * np.nan
 
             # Not enough note presses
-            if not_empty_idx_ref.shape[0] <= 3:
+            if note_start_idx_ref.shape[0] <= 3:
                 return dt_inc
 
             # The first inverval increase comes as soon as note t2 is further than expected
@@ -252,6 +252,10 @@ class DataProcessing():
             dy = not_empty_map_y[1:] - not_empty_map_y[:-1]  # y1 - y0
 
             ds = np.empty(map_x.shape[0]) * np.nan
+
+            # Not enough notes
+            if not_empty_idx_ref.shape[0] <= 2:
+                return ds
             
             # Cursor is assumed to start on first note, so distance from prev point is 0
             ds[not_empty_idx_ref[0]] = 0
@@ -287,6 +291,10 @@ class DataProcessing():
             thetas = np.round(thetas)
 
             angles = np.empty(map_x.shape[0]) * np.nan
+
+            # Not enough notes
+            if not_empty_idx_ref.shape[0] <= 3:
+                return angles
             
             # angles[0] = np.nan (implicit)
             angles[not_empty_idx_ref[1:-1]] = thetas
@@ -320,7 +328,6 @@ class DataProcessing():
                 notes_visible[not_empty_idx_ref[i]] = np.count_nonzero(ar_select)
 
             return notes_visible
-
 
         dt     = __get_note_dt()
         dt_dec = __get_dt_dec()
