@@ -57,6 +57,9 @@ class PlayList(QtGui.QListWidget):
 
         # Add map hash to end of list
         map_hash = play_data[0, RecData.MAP_HASH]
+        if map_hash in self.map_idx_hashes:
+            return
+            
         self.map_idx_hashes = np.insert(self.map_idx_hashes, self.map_idx_hashes.shape[0], map_hash)
 
         # Go through unlisted maps
