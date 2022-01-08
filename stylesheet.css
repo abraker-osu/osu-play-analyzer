@@ -191,3 +191,21 @@ QTabBar[colorToggle=true]::tab {
 QRadioButton:disabled {
     color:#929292;
 }
+
+QScrollArea {
+    background-color: #222227;
+    border: 1px solid black;
+}
+
+QProgressBar {
+    border: 2px solid #222227;
+    color: #ffffff;
+    border-radius: 5px;
+    text-align: center;
+    font-weight: bold;
+}
+
+QProgressBar::chunk {
+    background-color: #114e13;
+    width: 20px;
+}
