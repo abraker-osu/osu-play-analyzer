@@ -260,7 +260,7 @@ class CompositionViewer(QtGui.QWidget):
 
                 self.__update_roi_selection(roi_id, data)
 
-        self.__process_master_selection(emit_data=False)
+        self.__process_master_selection(emit_data=True)
 
 
     def __roi_selection_event(self, emit_data):
