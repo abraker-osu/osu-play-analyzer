@@ -145,11 +145,6 @@ class CompositionViewer(QtGui.QWidget):
         the overview window. Updates the play data used to display the composition,
         and then proceeds to update everything else.
         '''
-        # Determine what was the latest play
-        data_filter = \
-            (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP)
-        play_data = play_data[data_filter]
-
         if play_data.shape[0] == 0:
             return
 

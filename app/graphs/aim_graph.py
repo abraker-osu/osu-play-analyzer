@@ -85,6 +85,7 @@ class AimGraph(QtGui.QWidget):
         self.dev_y.setFixedWidth(64 + 4*AimGraph.SCALE)
         self.dev_y.setYRange(-AimGraph.SIZE/2, AimGraph.SIZE/2)
 
+        '''
         # Covariance vectors scaled to 95% confidence interval
         self.lambda1 = pyqtgraph.ArrowItem(tailWidth=1.5, headLen=15, pxMode=False, pen=None, brush=(255, 255, 0, 100))
         self.lambda2 = pyqtgraph.ArrowItem(tailWidth=1.5, headLen=15, pxMode=False, pen=None, brush=(255, 255, 0, 100))
@@ -98,6 +99,7 @@ class AimGraph(QtGui.QWidget):
         self.cov_area.setPen(pyqtgraph.mkPen((0, 0, 0, 0)))
         self.cov_area.setBrush(pyqtgraph.mkBrush((133, 245, 255, 50)))
         self.win_hits.addItem(self.cov_area)
+        '''
 
         # Cov area metrics
         self.cov_area_metrics = pyqtgraph.TextItem('', anchor=(0, 0), )
@@ -139,11 +141,10 @@ class AimGraph(QtGui.QWidget):
             (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP)
         data = play_data[data_filter]
 
-        x_offsets = data[:, RecData.X_OFFSETS]
-        y_offsets = data[:, RecData.Y_OFFSETS]
+        offsets = data[:, [ RecData.X_OFFSETS, RecData.Y_OFFSETS ]]
 
         self.set_cs(data[0, RecData.CS])
-        self.plot_xy_data(x_offsets, y_offsets)
+        self.plot_xy_data(offsets[:, 0], offsets[:, 1])
 
 
     def plot_xy_data(self, aim_x_offsets, aim_y_offsets):
@@ -153,6 +154,7 @@ class AimGraph(QtGui.QWidget):
         # Plot aim data scatter plot
         self.plot_hits.setData(scaled_aim_x_offsets, scaled_aim_y_offsets, pen=None, symbol='o', symbolPen=None, symbolSize=5, symbolBrush=(100, 100, 255, 200))
 
+        '''
         angle_lambda1, angle_lambda2, scaled_x_dev, scaled_y_dev = self.calc_cov_area(scaled_aim_x_offsets, scaled_aim_y_offsets)
 
         self.lambda1.setStyle(angle=(-angle_lambda1 - 180), tailLen=scaled_x_dev)
@@ -171,9 +173,11 @@ class AimGraph(QtGui.QWidget):
             -lambda2_len*math.sin(self.lambda2.opts['angle'] * math.pi/180), 
         )
 
+
         # Plot covariance area
         self.cov_area.setRect(-scaled_x_dev, -scaled_y_dev, 2*scaled_x_dev, 2*scaled_y_dev)
         self.cov_area.setRotation(-angle_lambda1)
+        '''
 
         # Plot a histogram for x-dev
         y, x = np.histogram(scaled_aim_x_offsets, bins=np.linspace(-AimGraph.SIZE/2, AimGraph.SIZE/2, int(AimGraph.SIZE/5)))
@@ -186,14 +190,16 @@ class AimGraph(QtGui.QWidget):
         plot = self.dev_y.plot(x, y, stepMode='center', fillLevel=0, fillOutline=True, brush=(0, 0, 255, 150))
         plot.rotate(90)
 
+        '''
         # Update metrics
         angle_lambda1, angle_lambda2, x_dev, y_dev = self.calc_cov_area(aim_x_offsets, aim_y_offsets)
+        '''
 
         self.cov_area_metrics.setText(
-            f'θx-dev span: {2*x_dev:.2f} o!px @ 95% conf\n'
-            f'θy-dev span: {2*y_dev:.2f} o!px @ 95% conf\n'
-            f'θ-dev: {angle_lambda1:.2f}°\n'
-            f'\n'
+            #f'θx-dev span: {2*x_dev:.2f} o!px @ 95% conf\n'
+            #f'θy-dev span: {2*y_dev:.2f} o!px @ 95% conf\n'
+            #f'θ-dev: {angle_lambda1:.2f}°\n'
+            #f'\n'
             f'x-dev span: {2*2*np.std(aim_x_offsets):.2f} o!px @ 95% conf\n'
             f'y-dev span: {2*2*np.std(aim_y_offsets):.2f} o!px @ 95% conf\n'
             f'cs_px: {2*self.circle_item.radius/AimGraph.SCALE:.2f} o!px'

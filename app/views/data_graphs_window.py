@@ -2,6 +2,7 @@
 Window displaying various graphs pertaining to the data selected in the data_overview_window.
 A menubar on the top allows the user to select which graph to display.
 """
+from os import PathLike
 import numpy as np
 np.set_printoptions(suppress=True)
 
@@ -64,6 +65,9 @@ class DataGraphsWindow(QtGui.QMainWindow):
 
 
     def overview_single_map_selection_event(self, play_data):
+        """
+        Called when a single map is selected in the overview window.
+        """
         self.hit_offset_graph.plot_data(play_data)
         self.aim_display.plot_data(play_data)
 
@@ -93,14 +97,20 @@ class DataGraphsWindow(QtGui.QMainWindow):
         ])
 
         data = play_data[:, col_data[:, 0]]
+        if data.shape[0] == 0:
+            return
+
         idxs = np.zeros(data.shape)
         num_bins = 10
 
         # Sorts data into N-dimensional grid chunks numbered from 0 to num_bins - 1
         for i in range(col_data.shape[0]):
-            nan_filter = ~np.isnan(data[:, i])
-            xmin, xmax = np.min(data[nan_filter, i]), np.max(data[nan_filter, i])
-            print(i, xmin, xmax)
+            #nan_filter = ~np.isnan(data[:, i])
+            #filtered_data = data[nan_filter, i]
+
+            #if filtered_data.shape[0] != 0:
+            #    xmin, xmax = np.min(filtered_data), np.max(filtered_data)
+            #    print(i, xmin, xmax)
 
             idxs[:, i] = np.digitize(data[:, i], np.linspace(col_data[i, 1], col_data[i, 2], num_bins))
 
