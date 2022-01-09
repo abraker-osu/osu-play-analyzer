@@ -149,7 +149,7 @@ class HitOffsetGraph(QtGui.QWidget):
 
         hits = \
             (data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP)
-        data = play_data[hits]
+        data = data[hits]
 
         t_offsets = data[:, RecData.T_OFFSETS]
 
