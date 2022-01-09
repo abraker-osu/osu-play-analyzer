@@ -22,7 +22,7 @@ class MathUtils():
 
     @staticmethod
     def normal_distr(x, avg, std):
-        return 1/(std*((2*math.pi)**0.5))*math.exp(-0.5*((x - avg)/std)**2)
+        return 1/(std*((2*math.pi)**0.5))*np.exp(-0.5*((x - avg)/std)**2)
 
 
     @staticmethod
