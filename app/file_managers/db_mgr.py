@@ -82,7 +82,7 @@ class _MapsDB():
             return map_file_name
 
         if not reprocess_if_missing:
-            print('Associated beatmap not found. Do you have it?')
+            print('Associated beatmap not found. If you modified or added a new map since starting osu!, close osu! and rebuild db. Then try again.')
             return ''
 
         print('Associated beatmap not found, rebuilding maps database...')

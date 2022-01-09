@@ -55,7 +55,7 @@ class _OsuRecorder(QtCore.QObject):
             return
 
         print('Determining beatmap...')
-        map_file_name = MapsDB.get_map_file_name(replay.beatmap_hash, md5h=False, reprocess_if_missing=wait)
+        map_file_name = MapsDB.get_map_file_name(replay.beatmap_hash, md5h=False, reprocess_if_missing=False)
         if len(map_file_name) == 0:
             return
 
