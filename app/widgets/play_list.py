@@ -137,8 +137,6 @@ class PlayList(pyqtgraph.TableWidget):
         for md5, mod in zip(md5_selects, mod_selects):
             md5 = int(md5.data(role=QtCore.Qt.DisplayRole))
             mod = int(mod.data(role=QtCore.Qt.DisplayRole))
-
-            print(md5, mod)
             
             select |= ((md5 == map_hash_mods[:, 0]) & (mod == map_hash_mods[:, 1]))
 
