@@ -15,7 +15,7 @@ class GraphTOffsetBPM(QtGui.QWidget):
         self.__avg_data_points = True
 
         # Main graph
-        self.__graph = pyqtgraph.PlotWidget(title='Avg T-Offset vs BPM (colored BPM inc)')
+        self.__graph = pyqtgraph.PlotWidget(title='Avg T-Offset vs Note interval')
         self.__graph.getPlotItem().getAxis('left').enableAutoSIPrefix(False)
         self.__graph.getPlotItem().getAxis('bottom').enableAutoSIPrefix(False)
         self.__graph.enableAutoRange(axis='x', enable=False)
@@ -23,7 +23,7 @@ class GraphTOffsetBPM(QtGui.QWidget):
         #self.__graph.setLimits(xMin=-10, xMax=5000, yMin=-200, yMax=200)
         self.__graph.setRange(xRange=[-10, 300], yRange=[-200, 200])
         self.__graph.setLabel('left', 'T-Offset', units='ms', unitPrefix='')
-        self.__graph.setLabel('bottom', 'BPM', units='60/s', unitPrefix='')
+        self.__graph.setLabel('bottom', 'Note interval', units='ms', unitPrefix='')
         self.__graph.addLegend()
 
         # Used to set text in legend item
