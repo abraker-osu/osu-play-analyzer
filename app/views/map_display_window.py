@@ -5,6 +5,7 @@ The user can load beatmaps and replays via menubar on top.
 Maps being made in the map_architect_window are also displayed here
 """
 import numpy as np
+import pandas as pd
 
 import pyqtgraph
 from pyqtgraph.Qt import QtGui, QtCore
@@ -39,7 +40,8 @@ class MapDisplayWindow(QtGui.QWidget):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
 
-        self.map_data    = np.empty(shape=(0, 3))
+        self.timing_data = np.asarray([])
+        self.map_data    = {}
         self.replay_data = np.empty(shape=(0, 7))
 
         self.map_md5 = None
@@ -64,7 +66,7 @@ class MapDisplayWindow(QtGui.QWidget):
 
         # Pattern Visualization
         self.visual = pyqtgraph.PlotWidget(title='Pattern visualization')
-        self.plot_hits = self.visual.plot(title='Hit scatter', pen=None, symbol='o', symbolPen=None, symbolSize=100, symbolBrush=(100, 100, 255, 200), pxMode=False)
+        self.plot_notes = HitobjectPlot()
         self.plot_approach = self.visual.plot(pen=None, symbol='o', symbolPen=(100, 100, 255, 200), symbolBrush=None, symbolSize=100, pxMode=False)
         
         # Timing visualization
@@ -96,6 +98,8 @@ class MapDisplayWindow(QtGui.QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
 
+        self.visual.addItem(self.plot_notes)
+
         self.visual.showGrid(True, True)
         self.visual.setXRange(0, 540)
         self.visual.setYRange(-410, 0)
@@ -121,7 +125,7 @@ class MapDisplayWindow(QtGui.QWidget):
         self.__time_changed_event()
 
 
-    def set_map(self, data_x, data_y, data_t, cs, ar, md5=None):
+    def set_map_reduced(self, data_x, data_y, data_t, cs, ar, md5=None):
         if type(data_x) == type(None): return
         if type(data_y) == type(None): return
         if type(data_t) == type(None): return
@@ -129,11 +133,30 @@ class MapDisplayWindow(QtGui.QWidget):
         if type(ar) == type(None): return
         if type(cs) == type(None): return        
 
-        self.map_data = np.zeros((len(data_x), 3))
-        self.map_data[:, self.MAP_T] = data_t
-        self.map_data[:, self.MAP_X] = data_x
-        self.map_data[:, self.MAP_Y] = data_y
+        map_data = [ 
+            pd.DataFrame(
+            [
+                [ t + 0, x, y, StdMapData.TYPE_PRESS,   StdMapData.TYPE_CIRCLE ],
+                [ t + 1, x, y, StdMapData.TYPE_RELEASE, StdMapData.TYPE_CIRCLE ],
+            ],
+            columns=['time', 'x', 'y', 'type', 'object'])
+            for t, x, y in zip(data_t, data_x, data_y)
+        ]
+        map_data = pd.concat(map_data, axis=0, keys=range(len(map_data)), names=[ 'hitobject', 'aimpoint' ])
 
+        self.cs_px = OsuUtils.cs_to_px(cs)
+        self.ar_ms = OsuUtils.ar_to_ms(ar)/1000
+        self.map_md5 = md5
+
+        self.__draw_map_data()
+
+
+    def set_map_full(self, map_data, cs, ar, md5=None):
+        if type(map_data) == type(None): return
+        if type(cs) == type(None): return
+        if type(ar) == type(None): return
+
+        self.map_data = map_data
         self.cs_px = OsuUtils.cs_to_px(cs)
         self.ar_ms = OsuUtils.ar_to_ms(ar)/1000
         self.map_md5 = md5
@@ -186,13 +209,11 @@ class MapDisplayWindow(QtGui.QWidget):
 
 
     def new_replay_event(self, map_data, replay_data, cs, ar, name):
-        presses = StdMapData.get_presses(map_data)
+        map_data = map_data.copy()
+        map_data['time'] /= 1000
+        map_data['y'] = -map_data['y']
 
-        map_data_t = presses['time']/1000
-        map_data_x = presses['x']
-        map_data_y = -presses['y'] 
-
-        self.set_map(map_data_x, map_data_y, map_data_t, cs, ar)
+        self.set_map_full(map_data, cs, ar)
         self.set_replay_from_replay_data(replay_data)
 
         self.status_label.setText(f'Viewing: {name}')
@@ -218,19 +239,19 @@ class MapDisplayWindow(QtGui.QWidget):
         if type(self.ar_ms) == type(None): return
         if type(self.cs_px) == type(None): return
 
-        map_data_t = self.map_data[:, self.MAP_T]
-        map_data_x = self.map_data[:, self.MAP_X]
-        map_data_y = self.map_data[:, self.MAP_Y]
+        # Draw approach circles
+        presses = StdMapData.get_presses(self.map_data)
+        ar_select = (self.t <= presses['time']) & (presses['time'] <= (self.t + self.ar_ms))
+        approach_x, approach_y = presses['x'][ar_select].values, presses['y'][ar_select].values
+        sizes = OsuUtils.approach_circle_to_radius(self.cs_px, self.ar_ms, presses['time'][ar_select] - self.t)
 
-        ar_select = (self.t <= map_data_t) & (map_data_t <= (self.t + self.ar_ms))
+        self.plot_approach.setData(approach_x, approach_y, symbolSize=sizes)
 
-        self.plot_hits.setData(map_data_x[ar_select], map_data_y[ar_select], symbolSize=self.cs_px)
+        # Draw notes
+        self.plot_notes.set_map_display(self.t, self.map_data, self.ar_ms, self.cs_px)
 
-        sizes = OsuUtils.approach_circle_to_radius(self.cs_px, self.ar_ms, map_data_t[ar_select] - self.t)
-        self.plot_approach.setData(map_data_x[ar_select], map_data_y[ar_select], symbolSize=sizes)
-        self.visual.update()
-
-        self.hitobject_plot.setMap(map_data_t, map_data_t, np.full_like(map_data_t, StdMapData.TYPE_SLIDER))
+        # Draw note in timeline
+        self.hitobject_plot.set_map_timeline(self.map_data)
         self.timeline.update()
         
 
@@ -327,20 +348,18 @@ class MapDisplayWindow(QtGui.QWidget):
             print(Utils.get_traceback(e, 'Error reading map'))
             return
 
-        presses = StdMapData.get_presses(map_data)
         mods = Mod(int(mods))
 
         if mods.has_mod(Mod.DoubleTime) or mods.has_mod(Mod.Nightcore):
-            presses['time'] *= 0.75
+            map_data['time'] *= 0.75
 
         if mods.has_mod(Mod.HalfTime):
-            presses['time'] *= 1.5
+            map_data['time'] *= 1.5
+        
+        map_data['time'] /= 1000
+        map_data['y'] = -map_data['y']
 
-        map_data_t = presses['time']/1000
-        map_data_x = presses['x']
-        map_data_y = -presses['y'] 
-
-        self.set_map(map_data_x, map_data_y, map_data_t, beatmap.difficulty.cs, beatmap.difficulty.ar, beatmap.metadata.beatmap_md5)
+        self.set_map_full(map_data, beatmap.difficulty.cs, beatmap.difficulty.ar, beatmap.metadata.beatmap_md5)
 
         self.map_text = beatmap.metadata.name
         viewing_text = self.map_text + ' ' + self.replay_text

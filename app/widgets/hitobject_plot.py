@@ -18,13 +18,15 @@ class HitobjectPlot(pyqtgraph.GraphItem):
         self.setPen(self.pen)
     
 
-    def setMap(self, start_times=[], end_times=[], h_types=[], y_pos=0):
-        try:
-            if len(start_times) == 0 or len(end_times) == 0 or len(h_types) == 0:
-                self.scatter.clear()
-                self.pos = None
-                return
-        except ValueError: return
+    def set_map_timeline(self, map_data, y_pos=0):
+        self.scatter.clear()
+        
+        press_select = map_data['type'] == StdMapData.TYPE_PRESS
+        release_select = map_data['type'] == StdMapData.TYPE_RELEASE
+
+        start_times = map_data[press_select]['time']
+        end_times   = map_data[release_select]['time']
+        h_types     = map_data[press_select]['object']
 
         pos  = []
         adj  = []
@@ -47,7 +49,41 @@ class HitobjectPlot(pyqtgraph.GraphItem):
             else:
                 adj.append([ obj_num, obj_num ])
 
-        pos = np.array(pos, dtype=np.float)
-        adj = np.array(adj, dtype=np.int)
+        pos = np.asarray(pos, dtype=np.float)
+        adj = np.asarray(adj, dtype=np.int)
 
+        self.setData(pos=pos, adj=adj, size=size, symbol='o', pxMode=True)
+
+
+    def set_map_display(self, t, map_data, ar_ms, cs_px):
+        # Reset drawn with empty data (sliders don't disappear otherwise)
+        pos = np.zeros((0, 2), dtype=np.float)
+        adj = np.zeros((0, ), dtype=np.int)
+        self.setData(pos=pos, adj=adj, size=[], symbol='o', pxMode=True)
+        
+        # Select hitobjects within AR range of currently viewed timing
+        ar_select = (t <= map_data['time']) & (map_data['time'] <= (t + ar_ms))
+        hitobject_idxs = map_data[ar_select].index.get_level_values(0).drop_duplicates()
+        points = map_data.loc[hitobject_idxs]
+
+        num_points = len(points)
+        if num_points == 0:
+            return
+
+        release_select = points['type'].values == StdMapData.TYPE_RELEASE
+        press_select = points['type'].values == StdMapData.TYPE_PRESS
+
+        pos = np.zeros((num_points, 2), dtype=np.float)
+        pos[:, 0] = points['x'].values
+        pos[:, 1] = points['y'].values
+
+        adj = np.zeros((num_points, 2), dtype=np.int)
+        adj[:, 0] = np.arange(num_points)
+        adj[:, 1] = adj[:, 0] + 1
+        adj[release_select, 1] = adj[release_select, 0]
+
+        size = np.zeros((num_points, ), dtype=np.float)
+        size[press_select] = cs_px
+
+        self.pen.setWidth(cs_px)
         self.setData(pos=pos, adj=adj, size=size, symbol='o', pxMode=True)
