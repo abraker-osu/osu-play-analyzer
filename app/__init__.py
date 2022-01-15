@@ -80,6 +80,8 @@ class App(QtGui.QMainWindow):
         self.data_overview_window.show_map_event.connect(self.data_graphs_window.overview_single_map_selection_event)
         self.data_overview_window.region_changed.connect(self.data_graphs_window.set_from_play_data)
 
+        self.map_architect_window.gen_map_event.connect(self.map_display_window.set_from_generated)
+
 
     def generate_map_button_clicked(self):
         self.data_graphs_window.hide() 

@@ -7,7 +7,11 @@ Features:
 - Allows BPM, spacing and angle to be changed throughout generated pattern based on modulation
 - Allows to change map rate
 """
+import math
+import numpy as np
 from pyqtgraph.Qt import QtCore, QtGui
+
+from app.misc.osu_utils import OsuUtils
 
 
 
@@ -66,10 +70,13 @@ class _ValueLineEdit(QtGui.QLineEdit):
 
 
 
-class MapArchitectWindow(QtGui.QWidget):
+class MapArchitectWindow(QtGui.QMainWindow):
+
+    gen_map_event = QtCore.pyqtSignal(object, float, float)
 
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
+        QtGui.QMainWindow.__init__(self, parent)
+        self.setWindowTitle('Map Architect')
 
         self.OBJ_WIDTH   = 90
         self.OBJ_HEIGHT  = 25
@@ -81,8 +88,6 @@ class MapArchitectWindow(QtGui.QWidget):
         self.data_loaded = False
         self.controls = {}
 
-        self.setWindowTitle('Map architect')
-
         self.__init_components()
         self.__build_layout()
         self.__configure_components()
@@ -92,9 +97,9 @@ class MapArchitectWindow(QtGui.QWidget):
 
 
     def __init_components(self):        
-        self.spacing_label = QtGui.QLabel('Spacing:')
+        self.spacing_label = QtGui.QLabel('Spacings:')
         self.angles_label  = QtGui.QLabel('Angles:')
-        self.bpm_label     = QtGui.QLabel('BPM:')
+        self.bpm_label     = QtGui.QLabel('BPMs:')
         self.label_layout  = QtGui.QVBoxLayout()
 
         self.num_notes_txtbx  = _ValueLineEdit()
@@ -122,7 +127,9 @@ class MapArchitectWindow(QtGui.QWidget):
 
         self.ctrl_layout = QtGui.QHBoxLayout()
         self.add_btn = QtGui.QPushButton('Add')
-        self.main_layout = QtGui.QVBoxLayout(self)
+
+        self.main_widget = QtGui.QWidget()
+        self.main_layout = QtGui.QVBoxLayout(self.main_widget)
 
 
     def __build_layout(self):        
@@ -159,6 +166,8 @@ class MapArchitectWindow(QtGui.QWidget):
         self.main_layout.addLayout(self.ctrl_layout)
         self.main_layout.addLayout(self.map_ctrl_layout)
         self.main_layout.addWidget(self.add_btn)
+
+        self.setCentralWidget(self.main_widget)
 
 
     def __configure_components(self):
@@ -269,11 +278,15 @@ class MapArchitectWindow(QtGui.QWidget):
 
         self.controls[remove_btn] = ctrl_layout
 
+        self.__update_gen_map()
+
 
     def __remove_control(self, btn):
         self.note_ctrl_layout.removeItem(self.controls[btn])
         self.__del_layout(self.controls[btn])
         del self.controls[btn]
+
+        self.__update_gen_map()
 
 
     def __del_layout(self, layout):
@@ -295,33 +308,59 @@ class MapArchitectWindow(QtGui.QWidget):
     def __num_notes_enter_event(self, txtbx):
         num_notes = int(txtbx.text())
         print(f'Num notes entered: {num_notes}')
+        self.__update_gen_map()
 
     
     def __rotation_enter_event(self, txtbx):
         rotation = int(txtbx.text())
         print(f'Rotation entered: {rotation}')
+        self.__update_gen_map()
 
 
     def __cs_enter_event(self, txtbx):
         cs = float(txtbx.text())
         print(f'CS entered: {cs}')
+        self.__update_gen_map()
 
 
     def __ar_enter_event(self, txtbx):
         ar = float(txtbx.text())
         print(f'AR entered: {ar}')
+        self.__update_gen_map()
 
 
     def __spacing_enter_event(self, txtbx):
         spacing = int(txtbx.text())
         print(f'Spacing entered: {spacing}')
+        self.__update_gen_map()
 
 
     def __angles_enter_event(self, txtbx):
         angles = int(txtbx.text())
         print(f'Angles entered: {angles}')
+        self.__update_gen_map()
 
     
     def __bpm_enter_event(self, txtbx):
         bpm = int(txtbx.text())
         print(f'BPM entered: {bpm}')
+        self.__update_gen_map()
+
+
+    def __update_gen_map(self):
+        cs        = float(self.cs_txtbx.text())
+        ar        = float(self.ar_txtbx.text())
+
+        # Handle DT/NC vs nomod setting
+        rate_multiplier = 1.0 if (ar <= 10) else 1.5
+
+        spacings  = np.asarray([ int(self.controls[btn].itemAt(0).widget().text()) for btn in self.controls ])
+        angles    = np.asarray([ int(self.controls[btn].itemAt(1).widget().text()) for btn in self.controls ])*math.pi/180
+        times     = 15000/np.asarray([ int(self.controls[btn].itemAt(2).widget().text()) for btn in self.controls ])*rate_multiplier
+        num_notes = int(self.num_notes_txtbx.text())
+        rotation  = int(self.rotation_txtbx.text())*math.pi/180
+
+        gen_map, _ = OsuUtils.generate_pattern(rotation, spacings, times, angles, num_notes, 1)
+        self.gen_map_event.emit(gen_map, cs, ar)
+
+        ar = min(ar, 10) if (ar <= 10) else OsuUtils.ms_to_ar(OsuUtils.ar_to_ms(ar)*rate_multiplier)
