@@ -282,6 +282,9 @@ class MapArchitectWindow(QtGui.QMainWindow):
 
 
     def __remove_control(self, btn):
+        if len(self.controls) == 1:
+            return
+
         self.note_ctrl_layout.removeItem(self.controls[btn])
         self.__del_layout(self.controls[btn])
         del self.controls[btn]
