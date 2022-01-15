@@ -171,7 +171,7 @@ class MapArchitectWindow(QtGui.QMainWindow):
 
 
     def __configure_components(self):
-        self.num_notes_txtbx.setValidator(QtGui.QIntValidator(0, 500))
+        self.num_notes_txtbx.setValidator(QtGui.QIntValidator(3, 500))
         self.rotation_txtbx.setValidator(QtGui.QIntValidator(0, 180))
         self.cs_txtbx.setValidator(QtGui.QDoubleValidator(0, 10, 1))
         self.ar_txtbx.setValidator(QtGui.QDoubleValidator(0, 11, 1))
