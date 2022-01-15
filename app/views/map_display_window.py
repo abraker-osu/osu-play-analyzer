@@ -67,6 +67,8 @@ class MapDisplayWindow(QtGui.QWidget):
         # Pattern Visualization
         self.visual = pyqtgraph.PlotWidget(title='Pattern visualization')
         self.plot_notes = HitobjectPlot()
+        self.visual.addItem(self.plot_notes)
+        self.plot_cursor = self.visual.plot(pen=None, symbol='o', symbolPen=(0, 166, 31, 255), symbolBrush=None, symbolSize=2, pxMode=True)
         self.plot_approach = self.visual.plot(pen=None, symbol='o', symbolPen=(100, 100, 255, 200), symbolBrush=None, symbolSize=100, pxMode=False)
         
         # Timing visualization
@@ -79,8 +81,6 @@ class MapDisplayWindow(QtGui.QWidget):
         self.m2_timing_plot = TimingPlot()
 
         self.status_label = QtGui.QLabel()
-
-        self.cursor_plot = self.visual.plot(pen=None, symbol='o', symbolPen='y', symbolBrush=None, symbolSize=2, pxMode=True)
 
 
     def __build_layout(self):
@@ -97,8 +97,6 @@ class MapDisplayWindow(QtGui.QWidget):
 
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
-
-        self.visual.addItem(self.plot_notes)
 
         self.visual.showGrid(True, True)
         self.visual.setXRange(0, 540)
@@ -265,7 +263,7 @@ class MapDisplayWindow(QtGui.QWidget):
         replay_data_x = self.replay_data[select_time, self.REPLAY_X]
         replay_data_y = self.replay_data[select_time, self.REPLAY_Y]
         
-        self.cursor_plot.setData(replay_data_x, replay_data_y, symbolPen=(255, 255, 0, 100))
+        self.plot_cursor.setData(replay_data_x, replay_data_y)
         self.visual.update()
 
         k1_press_select = self.replay_data[:, self.REPLAY_K1] == StdReplayData.PRESS
