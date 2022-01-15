@@ -7,7 +7,7 @@ import math
 class OsuUtils():
 
     # Thanks joz#9960
-    def generate_pattern2(initial_angle: 'float', distance: 'float|list[float]', time: 'float|list[float]', angle: 'float|list[float]', n_points: 'int', n_repeats: 'int' = 1) -> np.array:
+    def generate_pattern(initial_angle: 'float', distance: 'float|list[float]', time: 'float|list[float]', angle: 'float|list[float]', n_points: 'int', n_repeats: 'int' = 1) -> np.array:
         """
         Create a pattern of osu circles.
 
@@ -47,13 +47,13 @@ class OsuUtils():
         delta_ts = np.pad(delta_ts, (1, (n_repeats - 1)*n_points), mode='symmetric')
         delta_ts[0] = 0
 
-        data = np.column_stack((points, np.cumsum(delta_ts)))
+        data = np.column_stack((np.cumsum(delta_ts), points))
 
         # osu! clips note positions into boundaries of the playfield
-        is_clip = np.any((data[:, 0] < 0) | (data[:, 0] > 512)) or np.any((data[:, 1] < 0) | (data[:, 1] > 384))
+        is_clip = np.any((data[:, 1] < 0) | (data[:, 1] > 512)) or np.any((data[:, 2] < 0) | (data[:, 2] > 384))
 
-        data[:, 0] = np.round(np.minimum(512, np.maximum(0, data[:, 0])))
-        data[:, 1] = np.round(np.minimum(384, np.maximum(0, data[:, 1])))
+        data[:, 1] = np.round(np.minimum(512, np.maximum(0, data[:, 1])))
+        data[:, 2] = np.round(np.minimum(384, np.maximum(0, data[:, 2])))
 
         return data, is_clip
 
