@@ -84,7 +84,8 @@ class MapDisplay(QtGui.QWidget):
 
 
     def __build_layout(self):
-        self.setWindowTitle('osu! Aim Tool Pattern Visualization')
+        self.visual.plotItem.hideButtons()
+        self.timeline.plotItem.hideButtons()
 
         self.menu_bar.addMenu(self.file_menu)
         self.file_menu.addAction(self.open_map_action)
