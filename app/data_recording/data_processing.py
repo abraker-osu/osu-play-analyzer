@@ -65,9 +65,9 @@ class DataProcessing():
             return
 
         if replay.mods.has_mod('HR'):
-            map_data['x'] = -map_data['x']
-            map_data['y'] = -map_data['y']
-
+            # Do nothing
+            pass
+            
     
     @staticmethod
     def get_score_data(map_data, replay_data, ar, cs):
@@ -338,7 +338,6 @@ class DataProcessing():
         return dt, dt_dec, dt_inc, ds, angles
 
 
-
     @staticmethod
     def get_performance_data(score_data):
         #hit_types_miss = score_data['type'] == StdScoreData.TYPE_MISS
@@ -426,7 +425,7 @@ class DataProcessing():
             dt,         # DT        
             dt_dec,     # DT_INC    
             dt_inc,     # DT_DEC    
-            ds,         # DS        
+            ds,         # DS
             angles,     # ANGLE     
             x_offsets,  # X_OFFSETS 
             y_offsets,  # Y_OFFSETS 

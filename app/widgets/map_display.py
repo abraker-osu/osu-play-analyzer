@@ -348,17 +348,27 @@ class MapDisplay(QtGui.QWidget):
             return
 
         mods = Mod(int(mods))
+        cs = beatmap.difficulty.cs
+        ar = beatmap.difficulty.ar
 
         if mods.has_mod(Mod.DoubleTime) or mods.has_mod(Mod.Nightcore):
             map_data['time'] *= 0.75
 
         if mods.has_mod(Mod.HalfTime):
             map_data['time'] *= 1.5
+
+        if mods.has_mod(Mod.HardRock):
+            cs *= 1.3
+            ar *= 1.4
+
+        if mods.has_mod(Mod.Easy):
+            cs *= 0.5
+            ar *= 0.5
         
         map_data['time'] /= 1000
         map_data['y'] = -map_data['y']
 
-        self.set_map_full(map_data, beatmap.difficulty.cs, beatmap.difficulty.ar, beatmap.metadata.beatmap_md5)
+        self.set_map_full(map_data, cs, ar, beatmap.metadata.beatmap_md5)
 
         self.map_text = beatmap.metadata.name
         viewing_text = self.map_text + ' ' + self.replay_text

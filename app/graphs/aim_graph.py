@@ -5,7 +5,7 @@ import pyqtgraph
 from pyqtgraph.Qt import QtGui
 from pyqtgraph.Qt import QtCore
 
-from osu_analysis import StdScoreData
+from osu_analysis import StdScoreData, Mod
 from app.data_recording.data import RecData
 
 
@@ -142,8 +142,13 @@ class AimGraph(QtGui.QWidget):
         data = play_data[data_filter]
 
         offsets = data[:, [ RecData.X_OFFSETS, RecData.Y_OFFSETS ]]
+        cs = data[0, RecData.CS]
 
-        self.set_cs(data[0, RecData.CS])
+        mods = Mod(int(data[0, RecData.MODS]))
+        if mods.has_mod(Mod.HardRock): cs *= 1.3
+        if mods.has_mod(Mod.Easy):     cs *= 0.5
+
+        self.set_cs(cs)
         self.plot_xy_data(offsets[:, 0], offsets[:, 1])
 
 
