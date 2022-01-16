@@ -8,7 +8,6 @@ from osu_analysis import StdScoreData
 from app.misc.utils import MathUtils
 from app.data_recording.data import RecData
 from app.widgets.miss_plot import MissPlotItem
-import osu_analysis
 
 
 class HitOffsetGraph(QtGui.QWidget):
@@ -86,7 +85,7 @@ class HitOffsetGraph(QtGui.QWidget):
         # Set plot data
         self.__plot.setData(hit_timings, hit_offsets, pen=None, symbol='o', symbolPen=None, symbolSize=2, symbolBrush=(100, 100, 255, 200))
         self.__graph.setLimits(xMin=xMin - 100, xMax=xMax + 100)
-        self.__graph.setRange(xRange=[xMin - 100, xMax + 100])
+        self.__graph.setRange(xRange=[ xMin - 100, xMax + 100 ])
 
 
     def __plot_misses(self, play_data):

@@ -11,6 +11,7 @@ from numpy.core.fromnumeric import transpose
 from pyqtgraph.Qt import QtGui
 
 from app.graphs.hit_offset_graph import HitOffsetGraph
+from app.graphs.hit_distr_graph import HitDistrGraph
 from app.graphs.aim_graph import AimGraph
 
 from app.graphs.dev_graph_angle import DevGraphAngle
@@ -29,6 +30,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.setWindowTitle('Data graphs')
     
         self.hit_offset_graph = HitOffsetGraph()
+        self.hit_distr_graph = HitDistrGraph()
         self.aim_display = AimGraph()
 
         self.toffset_bpm = GraphTOffsetBPM()
@@ -38,6 +40,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
 
         self.replay_tabs = QtGui.QTabWidget()
         self.replay_tabs.addTab(self.hit_offset_graph, 'Hit offsets')
+        self.replay_tabs.addTab(self.hit_distr_graph, 'Hit distribution')
         self.replay_tabs.addTab(self.aim_display, 'Aim display')
 
         self.map_tabs = QtGui.QTabWidget()
@@ -59,6 +62,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
         play_data = PlayData.data
 
         self.hit_offset_graph.plot_data(play_data)
+        self.hit_distr_graph.plot_data(play_data)
         self.aim_display.plot_data(play_data)
 
         self.toffset_bpm.plot_data(play_data)
@@ -69,6 +73,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
         Called when a single map is selected in the overview window.
         """
         self.hit_offset_graph.plot_data(play_data)
+        self.hit_distr_graph.plot_data(play_data)
         self.aim_display.plot_data(play_data)
 
         self.toffset_bpm.plot_data(play_data)
