@@ -57,7 +57,10 @@ class _OsuRecorder(QtCore.QObject):
         print('Determining beatmap...')
         map_file_name = MapsDB.get_map_file_name(replay.beatmap_hash, md5h=False, reprocess_if_missing=False)
         if len(map_file_name) == 0:
-            return
+            # See if it's a generated map, it has its md5 hash in the name
+            map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/osu_play_analyzer/{replay.beatmap_hash}.osu'
+            if not os.path.isfile(map_file_name):
+                return
 
         print('Processing beatmap:', map_file_name)
         beatmap = BeatmapIO.open_beatmap(map_file_name)

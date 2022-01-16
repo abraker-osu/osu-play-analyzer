@@ -7,11 +7,19 @@ Features:
 - Allows BPM, spacing and angle to be changed throughout generated pattern based on modulation
 - Allows to change map rate
 """
+import os
+import time
+import shutil
+import hashlib
 import math
 import numpy as np
+import textwrap
+
 from pyqtgraph.Qt import QtCore, QtGui
 
+from osu_analysis import BeatmapIO
 from app.misc.osu_utils import OsuUtils
+from app.file_managers import AppConfig
 
 
 
@@ -126,7 +134,10 @@ class MapArchitectWindow(QtGui.QMainWindow):
         self.map_ctrl_layout = QtGui.QHBoxLayout()
 
         self.ctrl_layout = QtGui.QHBoxLayout()
-        self.add_btn = QtGui.QPushButton('Add')
+
+        self.btn_layout = QtGui.QHBoxLayout()
+        self.add_btn = QtGui.QPushButton('Add Control')
+        self.gen_btn = QtGui.QPushButton('Generate Map')
 
         self.main_widget = QtGui.QWidget()
         self.main_layout = QtGui.QVBoxLayout(self.main_widget)
@@ -163,9 +174,12 @@ class MapArchitectWindow(QtGui.QMainWindow):
         self.ctrl_layout.addLayout(self.label_layout)
         self.ctrl_layout.addWidget(self.ctrl_scroll_area)
         
+        self.btn_layout.addWidget(self.add_btn)
+        self.btn_layout.addWidget(self.gen_btn)
+
         self.main_layout.addLayout(self.ctrl_layout)
         self.main_layout.addLayout(self.map_ctrl_layout)
-        self.main_layout.addWidget(self.add_btn)
+        self.main_layout.addLayout(self.btn_layout)
 
         self.setCentralWidget(self.main_widget)
 
@@ -221,6 +235,7 @@ class MapArchitectWindow(QtGui.QMainWindow):
 
     def __connect_signals(self):
         self.add_btn.clicked.connect(self.__add_control)
+        self.gen_btn.clicked.connect(self.__generate_map)
 
         self.num_notes_txtbx.returnPressed.connect(lambda txtbx=self.num_notes_txtbx: self.__num_notes_enter_event(txtbx))
         self.rotation_txtbx.returnPressed.connect(lambda txtbx=self.rotation_txtbx: self.__rotation_enter_event(txtbx))
@@ -306,6 +321,7 @@ class MapArchitectWindow(QtGui.QMainWindow):
 
             elif child_widget is not None:
                 child_widget.deleteLater()
+                
 
 
     def __num_notes_enter_event(self, txtbx):
@@ -366,4 +382,115 @@ class MapArchitectWindow(QtGui.QMainWindow):
         gen_map, _ = OsuUtils.generate_pattern(rotation, spacings, times, angles, num_notes, 1)
         self.gen_map_event.emit(gen_map, cs, ar)
 
+    
+    def __generate_map(self):
+        cs        = float(self.cs_txtbx.text())
+        ar        = float(self.ar_txtbx.text())
+
+        # Handle DT/NC vs nomod setting
+        rate_multiplier = 1.0 if (ar <= 10) else 1.5
+
+        spacings  = np.asarray([ int(self.controls[btn].itemAt(0).widget().text()) for btn in self.controls ])
+        angles    = np.asarray([ int(self.controls[btn].itemAt(1).widget().text()) for btn in self.controls ])*math.pi/180
+        times     = 15000/np.asarray([ int(self.controls[btn].itemAt(2).widget().text()) for btn in self.controls ])*rate_multiplier
+        num_notes = int(self.num_notes_txtbx.text())
+        rotation  = int(self.rotation_txtbx.text())*math.pi/180
+
+        gen_map, _ = OsuUtils.generate_pattern(rotation, spacings, times, angles, num_notes, 1)
         ar = min(ar, 10) if (ar <= 10) else OsuUtils.ms_to_ar(OsuUtils.ar_to_ms(ar)*rate_multiplier)
+
+        beatmap_data = textwrap.dedent(
+            f"""\
+            osu file format v14
+
+            [General]
+            AudioFilename: blank.mp3
+            AudioLeadIn: 0
+            PreviewTime: -1
+            Countdown: 0
+            SampleSet: Normal
+            StackLeniency: 0
+            Mode: 0
+            LetterboxInBreaks: 1
+            WidescreenStoryboard: 1
+
+            [Editor]
+            DistanceSpacing: 0.9
+            BeatDivisor: 1
+            GridSize: 32
+            TimelineZoom: 0.2000059
+
+            [Metadata]
+            Title:unknown
+            TitleUnicode:unknown
+            Artist:abraker
+            ArtistUnicode:abraker
+            Creator:abraker
+            Version:generated_{time.time()}
+            Source:
+            Tags:
+            BeatmapID:0
+            BeatmapSetID:882805
+
+            [Difficulty]
+            HPDrainRate:8
+            CircleSize:{cs}
+            OverallDifficulty:10
+            ApproachRate:{ar}
+            SliderMultiplier:1.4
+            SliderTickRate:1
+
+            [Events]\
+            """
+        )
+
+        # Generate notes
+        audio_offset = -48  # ms
+
+        for note in gen_map:
+            beatmap_data += textwrap.dedent(
+                f"""
+                Sample,{int(note[0] + audio_offset*rate_multiplier)},3,"pluck.wav",100\
+                """
+            )
+
+        beatmap_data += textwrap.dedent(
+            f"""
+
+            [TimingPoints]
+            0,1000,4,1,1,100,1,0
+
+            [HitObjects]\
+            """
+        )
+
+        for note in gen_map:
+            beatmap_data += textwrap.dedent(
+                f"""
+                {int(note[1])},{int(note[2])},{int(note[0] + audio_offset*rate_multiplier)},1,0,0:0:0:0:\
+                """
+            )
+
+        # Remove leading whitespace
+        beatmap_data = beatmap_data.split('\n')
+        for i in range(len(beatmap_data)):
+            beatmap_data[i] = beatmap_data[i].strip()
+        self.beatmap_data = '\n'.join(beatmap_data)
+
+        map_path = f'{AppConfig.cfg["osu_dir"]}/Songs/osu_play_analyzer'
+
+        # Write to beatmap file
+        os.makedirs(map_path, exist_ok=True)
+        BeatmapIO.save_beatmap(self.beatmap_data, 'res/tmp.osu')
+        map_md5 = hashlib.md5(open('res/tmp.osu', 'rb').read()).hexdigest()
+
+        if not os.path.isfile(f'{map_path}/{map_md5}.osu'):
+            shutil.copy2('res/tmp.osu', f'{map_path}/{map_md5}.osu')
+        os.remove('res/tmp.osu')
+
+        if not os.path.isfile(f'{map_path}/pluck.wav'):
+            shutil.copy2('res/pluck.wav', f'{map_path}/pluck.wav')
+
+        if not os.path.isfile(f'{map_path}/normal-hitnormal.wav'):
+            shutil.copy2('res/blank.wav', f'{map_path}/normal-hitnormal.wav')
+
