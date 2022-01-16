@@ -148,6 +148,8 @@ class AimGraph(QtGui.QWidget):
         if mods.has_mod(Mod.HardRock): cs *= 1.3
         if mods.has_mod(Mod.Easy):     cs *= 0.5
 
+        cs = min(cs, 10)
+
         self.set_cs(cs)
         self.plot_xy_data(offsets[:, 0], offsets[:, 1])
 
