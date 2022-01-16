@@ -76,7 +76,7 @@ class _OsuRecorder(QtCore.QObject):
         # Save data and emit to notify other components that there is a new replay
         PlayData.save_data(data)
 
-        self.new_replay_event.emit((map_data, replay_data, beatmap.difficulty.cs, beatmap.difficulty.ar, beatmap.metadata.name + ' ' + replay.get_name()))
+        self.new_replay_event.emit((map_data, replay_data, beatmap.difficulty.cs, beatmap.difficulty.ar, replay.mods.value, beatmap.metadata.name + ' ' + replay.get_name()))
 
 
 OsuRecorder = _OsuRecorder()

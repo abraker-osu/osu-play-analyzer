@@ -49,8 +49,8 @@ class MapDisplayWindow(QtGui.QMainWindow):
         self.selected_map_display.set_from_play_data(play_data)
 
 
-    def new_replay_event(self, map_data, replay_data, cs, ar, name):
-        self.selected_map_display.new_replay_event(map_data, replay_data, cs, ar, name)
+    def new_replay_event(self, map_data, replay_data, cs, ar, mods, name):
+        self.selected_map_display.new_replay_event(map_data, replay_data, cs, ar, mods, name)
 
 
     def set_from_generated(self, gen_data, cs, ar):

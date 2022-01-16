@@ -207,10 +207,23 @@ class MapDisplay(QtGui.QWidget):
         self.__draw_replay_data()
 
 
-    def new_replay_event(self, map_data, replay_data, cs, ar, name):
+    def new_replay_event(self, map_data, replay_data, cs, ar, mods, name):
         map_data = map_data.copy()
         map_data['time'] /= 1000
         map_data['y'] = -map_data['y']
+
+        mods = Mod(int(mods))
+
+        if mods.has_mod(Mod.HardRock):
+            cs *= 1.3
+            ar *= 1.4
+
+        if mods.has_mod(Mod.Easy):
+            cs *= 0.5
+            ar *= 0.5
+
+        cs = min(cs, 10)
+        ar = min(ar, 10)
 
         self.set_map_full(map_data, cs, ar)
         self.set_replay_from_replay_data(replay_data)
