@@ -1,4 +1,5 @@
 import os
+import time 
 
 from pyqtgraph.Qt import QtGui
 
