@@ -51,28 +51,29 @@ class GraphTOffsetBPM(QtGui.QWidget):
 
         unique_timestamps = np.unique(play_data[:, RecData.TIMESTAMP])
         for timestamp in unique_timestamps:
-            select_timestamp = play_data[:, RecData.TIMESTAMP] == timestamp
-            timestamp_data = play_data[select_timestamp]
+            data_select = \
+                (play_data[:, RecData.TIMESTAMP] == timestamp) & \
+                (play_data[:, RecData.ACT_TYPE] == StdScoreData.ACTION_PRESS)
+            data = play_data[data_select]
             
-            note_timings0 = timestamp_data[:-2, RecData.TIMINGS] 
-            hit_timings0 = note_timings0 + timestamp_data[:-2, RecData.T_OFFSETS]
+            # Timing t[i]
+            note_timings0 = data[:-2, RecData.TIMINGS] 
+            hit_timings0 = note_timings0 + data[:-2, RecData.T_OFFSETS]
 
-            note_timings1 = timestamp_data[2:, RecData.TIMINGS] 
-            hit_timings1 = note_timings1 + timestamp_data[2:, RecData.T_OFFSETS]
+            # Timing t[i + 2]
+            note_timings1 = data[2:, RecData.TIMINGS] 
+            hit_timings1 = note_timings1 + data[2:, RecData.T_OFFSETS]
 
             dt_notes = note_timings1 - note_timings0
             dt_hits  = (hit_timings1 - hit_timings0) - (note_timings1 - note_timings0)
 
-            data_filter = \
-                (timestamp_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP)
+            data_filter = data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP
 
-            dt_notes = dt_notes[data_filter[2:]]
-            dt_hits  = dt_hits[data_filter[2:]]
+            dt_notes = dt_notes[data_filter[2:] & data_filter[:-2]]
+            dt_hits  = dt_hits[data_filter[2:] & data_filter[:-2]]
 
             dt_notes_all = np.insert(dt_notes_all, 0, dt_notes)
             dt_hits_all  = np.insert(dt_hits_all,  0, dt_hits)
-
-            print(dt_notes_all.shape)
 
         if self.__avg_data_points:
             # Use best N points for data display
