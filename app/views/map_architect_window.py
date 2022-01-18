@@ -26,15 +26,32 @@ from app.file_managers import AppConfig
 
 class _ValueLineEdit(QtGui.QLineEdit):
 
+    broadcast_event = QtCore.pyqtSignal(int, object)
+    value_enter_event = QtCore.pyqtSignal()
+
+    APPLY_DELTA = 0
+    APPLY_VALUE = 1
+
     def __init__(self, *args, **kwargs):
         QtGui.QLineEdit.__init__(self, *args, **kwargs)
+
+        # Broadcast is a feature that allows the user to modify the value of other controls proportionally 
+        # to the one being actively modified while holding down the shift key. For example, if the user
+        # enters a value while holding down the shift key, the value will be applied to all other
+        # controls as well. If the user scrolls the mouse wheel while holding down the shift key,
+        # the respective values in other controls will be incremented/decremented as well.
         
 
     def keyPressEvent(self, event):
-        if event.key() == QtCore.Qt.Key_Enter and event.key() == QtCore.Qt.Key_Return:
+        if event.key() in [ QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]:
             event.accept()
-            self.apply_value()
-            return
+            self.apply_value(apply=self.APPLY_VALUE)
+
+            shift_is_pressed = QtGui.QGuiApplication.queryKeyboardModifiers() & QtCore.Qt.ShiftModifier
+            if shift_is_pressed:
+                self.broadcast_event.emit(self.APPLY_VALUE, self.__get_val())
+
+            self.value_enter_event.emit()
         
         QtGui.QLineEdit.keyPressEvent(self, event)
 
@@ -42,45 +59,58 @@ class _ValueLineEdit(QtGui.QLineEdit):
     def wheelEvent(self, event):
         event.accept()
 
+        # Figure out if the value is an int or float
         StrToVal = int if type(self.validator()) is QtGui.QIntValidator else float
         
         # Done through QGuiApplication instead of keyEvent to allow ctrl modifier to work when window is unfocused
         ctrl_is_pressed = QtGui.QGuiApplication.queryKeyboardModifiers() & QtCore.Qt.ControlModifier
+        shift_is_pressed = QtGui.QGuiApplication.queryKeyboardModifiers() & QtCore.Qt.ShiftModifier
 
+        # Int -> +/- 1,  Float -> +/- 0.1
         delta_mul = 10 if ctrl_is_pressed else 1
         delta_mul *= 1 if StrToVal == int else 0.1
 
         delta = 1*delta_mul if event.angleDelta().y() > 0 else -1*delta_mul
 
-        value = round(StrToVal(self.text()) + delta, 1)
-        value = self.validate(value)
+        self.apply_value(apply=self.APPLY_DELTA, value=delta)
 
-        if value == StrToVal(self.text()):
-            return
-        
-        self.setText(str(value))
-        self.returnPressed.emit()
+        # If shift key is being held down, broadcast modification to other controls
+        if shift_is_pressed:
+            self.broadcast_event.emit(self.APPLY_DELTA, delta)
+
+        self.value_enter_event.emit()
 
 
-    def apply_value(self, value=None):
+    def apply_value(self, apply, value=None):
+        if type(value) not in [ int, float, type(None) ]:
+            raise ValueError(f'Value must be a float or int, not {type(value)}')
+
         if value != None:
-            self.setText(str(value))
+            if apply == self.APPLY_VALUE:
+                self.setText(str(value))
+            elif apply == self.APPLY_DELTA:
+                self.setText(str(round(self.__get_val() + value, 1)))
+            else:
+                raise ValueError(f'Invalid apply value: {apply}')
 
-        StrToVal = int if type(self.validator()) is QtGui.QIntValidator else float
-            
-        value = StrToVal(self.text())
-        value = self.validate(value)
+        old_value = self.__get_val()
+        new_value = self.__validate(old_value)
 
-        if value == StrToVal(self.text()):
+        if old_value == new_value:
             return
         
-        self.setText(str(value))
+        self.setText(str(new_value))
         
 
-    def validate(self, value):
+    def __validate(self, value):
         validator = self.validator()
         value = min(validator.top(), max(validator.bottom(), value))
         return value
+
+
+    def __get_val(self):
+        StrToVal = int if type(self.validator()) is QtGui.QIntValidator else float
+        return StrToVal(self.text())
 
 
 
@@ -99,7 +129,6 @@ class MapArchitectWindow(QtGui.QMainWindow):
         self.OBJ_SPACING_SMALL = 5
         self.OBJ_SPACING_LARGE = 22
 
-        self.data_loaded = False
         self.controls = {}
 
         self.__init_components()
@@ -257,19 +286,13 @@ class MapArchitectWindow(QtGui.QMainWindow):
 
 
     def __connect_signals(self):
-        self.add_btn.clicked.connect(self.__add_control)
+        self.add_btn.clicked.connect(lambda: self.__add_control())
         self.gen_btn.clicked.connect(self.__generate_map)
 
-        self.num_notes_txtbx.returnPressed.connect(lambda txtbx=self.num_notes_txtbx: self.__num_notes_enter_event(txtbx))
-        self.rotation_txtbx.returnPressed.connect(lambda txtbx=self.rotation_txtbx: self.__rotation_enter_event(txtbx))
-        self.cs_txtbx.returnPressed.connect(lambda txtbx=self.cs_txtbx: self.__cs_enter_event(txtbx))
-        self.ar_txtbx.returnPressed.connect(lambda txtbx=self.ar_txtbx: self.__ar_enter_event(txtbx))
-
-
-    def notify_data_loaded(self):
-        # To keep track of whether or not data has been loaded in the map display window
-        # If data is loaded, the user will be warned; They will need to agree for it to be displayed in the map display window
-        self.data_loaded = True
+        self.num_notes_txtbx.value_enter_event.connect(self.__update_gen_map)
+        self.rotation_txtbx.value_enter_event.connect(self.__update_gen_map)
+        self.cs_txtbx.value_enter_event.connect(self.__update_gen_map)
+        self.ar_txtbx.value_enter_event.connect(self.__update_gen_map)
 
 
     def __save_config_dialog(self):
@@ -312,14 +335,14 @@ class MapArchitectWindow(QtGui.QMainWindow):
             self.__add_control()
 
         for spacing, angle, bpm, btn in zip(data['spacings'], data['angles'], data['bpms'], self.controls.keys()):
-            self.controls[btn]['spacing_txtbx'].apply_value(spacing)
-            self.controls[btn]['angles_txtbx'].apply_value(angle)
-            self.controls[btn]['bpm_txtbx'].apply_value(bpm)
+            self.controls[btn]['spacing_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=spacing)
+            self.controls[btn]['angles_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=angle)
+            self.controls[btn]['bpm_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=bpm)
 
-        self.num_notes_txtbx.apply_value(data['num_notes'])
-        self.rotation_txtbx.apply_value(data['rotation'])
-        self.cs_txtbx.apply_value(data['cs'])
-        self.ar_txtbx.apply_value(data['ar'])
+        self.num_notes_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=data['num_notes'])
+        self.rotation_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=data['rotation'])
+        self.cs_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=data['cs'])
+        self.ar_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=data['ar'])
 
 
     def __get_data(self):
@@ -346,7 +369,7 @@ class MapArchitectWindow(QtGui.QMainWindow):
         }
 
 
-    def __add_control(self):
+    def __add_control(self, spacing=None, angle=None, bpm=None):
         spacing_txtbx = _ValueLineEdit()
         angles_txtbx  = _ValueLineEdit()
         bpm_txtbx     = _ValueLineEdit()
@@ -356,9 +379,14 @@ class MapArchitectWindow(QtGui.QMainWindow):
         angles_txtbx.setValidator(QtGui.QIntValidator(-180, 180))
         bpm_txtbx.setValidator(QtGui.QIntValidator(0, 1000))
 
-        spacing_txtbx.setText('100')
-        angles_txtbx.setText('90')
-        bpm_txtbx.setText('180')
+        if spacing is not None: spacing_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=spacing)
+        else:                   spacing_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=100)
+
+        if angle is not None:   angles_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=angle)
+        else:                   angles_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=90)
+
+        if bpm is not None:     bpm_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=bpm)
+        else:                   bpm_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=60)
 
         ctrl_layout = QtGui.QVBoxLayout()
         ctrl_layout.addWidget(spacing_txtbx)
@@ -384,9 +412,14 @@ class MapArchitectWindow(QtGui.QMainWindow):
 
         remove_btn.clicked.connect(lambda _, btn=remove_btn: self.__remove_control(btn))
 
-        spacing_txtbx.returnPressed.connect(lambda txtbx=spacing_txtbx: self.__spacing_enter_event(txtbx))
-        angles_txtbx.returnPressed.connect(lambda txtbx=angles_txtbx: self.__angles_enter_event(txtbx))
-        bpm_txtbx.returnPressed.connect(lambda txtbx=bpm_txtbx: self.__bpm_enter_event(txtbx))
+        spacing_txtbx.value_enter_event.connect(self.__update_gen_map)
+        spacing_txtbx.broadcast_event.connect(lambda apply, value, txtbx=spacing_txtbx: self.__spacing_broadcast_event(apply, value, txtbx))
+
+        angles_txtbx.value_enter_event.connect(self.__update_gen_map)
+        angles_txtbx.broadcast_event.connect(lambda apply, value, txtbx=angles_txtbx: self.__angles_broadcast_event(apply, value, txtbx))
+
+        bpm_txtbx.value_enter_event.connect(self.__update_gen_map)
+        bpm_txtbx.broadcast_event.connect(lambda apply, value, txtbx=bpm_txtbx: self.__bpm_broadcast_event(apply, value, txtbx))
 
         self.controls[remove_btn] = {
             'layout' : ctrl_layout,
@@ -403,9 +436,14 @@ class MapArchitectWindow(QtGui.QMainWindow):
         if len(self.controls) == 1:
             return
 
-        self.controls[btn]['spacing_txtbx'].returnPressed.disconnect()
-        self.controls[btn]['angles_txtbx'].returnPressed.disconnect()
-        self.controls[btn]['bpm_txtbx'].returnPressed.disconnect()
+        self.controls[btn]['spacing_txtbx'].value_enter_event.disconnect()
+        self.controls[btn]['spacing_txtbx'].broadcast_event.disconnect()
+
+        self.controls[btn]['angles_txtbx'].value_enter_event.disconnect()
+        self.controls[btn]['angles_txtbx'].broadcast_event.disconnect()
+
+        self.controls[btn]['bpm_txtbx'].value_enter_event.disconnect()
+        self.controls[btn]['bpm_txtbx'].broadcast_event.disconnect()
 
         self.note_ctrl_layout.removeItem(self.controls[btn]['layout'])
         self.__del_layout(self.controls[btn]['layout'])
@@ -429,47 +467,29 @@ class MapArchitectWindow(QtGui.QMainWindow):
             elif child_widget is not None:
                 child_widget.deleteLater()
                 
-
-    def __num_notes_enter_event(self, txtbx):
-        num_notes = int(txtbx.text())
-        print(f'Num notes entered: {num_notes}')
-        self.__update_gen_map()
-
-    
-    def __rotation_enter_event(self, txtbx):
-        rotation = int(txtbx.text())
-        print(f'Rotation entered: {rotation}')
-        self.__update_gen_map()
+                
+    def __spacing_broadcast_event(self, apply, value, txtbx):
+        for btn in self.controls:
+            if self.controls[btn]['spacing_txtbx'] == txtbx:
+                continue
+            
+            self.controls[btn]['spacing_txtbx'].apply_value(apply, value)
 
 
-    def __cs_enter_event(self, txtbx):
-        cs = float(txtbx.text())
-        print(f'CS entered: {cs}')
-        self.__update_gen_map()
+    def __angles_broadcast_event(self, apply, value, txtbx):
+        for btn in self.controls:
+            if self.controls[btn]['angles_txtbx'] == txtbx:
+                continue
+            
+            self.controls[btn]['angles_txtbx'].apply_value(apply, value)
 
 
-    def __ar_enter_event(self, txtbx):
-        ar = float(txtbx.text())
-        print(f'AR entered: {ar}')
-        self.__update_gen_map()
-
-
-    def __spacing_enter_event(self, txtbx):
-        spacing = int(txtbx.text())
-        print(f'Spacing entered: {spacing}')
-        self.__update_gen_map()
-
-
-    def __angles_enter_event(self, txtbx):
-        angles = int(txtbx.text())
-        print(f'Angles entered: {angles}')
-        self.__update_gen_map()
-
-    
-    def __bpm_enter_event(self, txtbx):
-        bpm = int(txtbx.text())
-        print(f'BPM entered: {bpm}')
-        self.__update_gen_map()
+    def __bpm_broadcast_event(self, apply, value, txtbx):
+        for btn in self.controls:
+            if self.controls[btn]['bpm_txtbx'] == txtbx:
+                continue
+            
+            self.controls[btn]['bpm_txtbx'].apply_value(apply, value)
 
 
     def __update_gen_map(self):
