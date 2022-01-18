@@ -77,7 +77,18 @@ class _OsuRecorder(QtCore.QObject):
         QtWidgets.QApplication.processEvents()
 
         # Save data and emit to notify other components that there is a new replay
-        PlayData.save_data(data)
+        try: PlayData.save_data(data)
+        except ValueError as e:
+            print(
+                '\n'+
+                '============================================================\n' +
+                f'Error saving data: {e}\n' +
+                'The data format has probably changed.\n' +
+                'You will need to delete "data/osu_performance_recording_v1.npy" and reimport plays.\n' +
+                '============================================================\n' +
+                '\n'
+            )
+            return
 
         self.new_replay_event.emit((map_data, replay_data, beatmap.difficulty.cs, beatmap.difficulty.ar, replay.mods.value, beatmap.metadata.name + ' ' + replay.get_name()))
 
