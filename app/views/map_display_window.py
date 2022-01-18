@@ -27,8 +27,6 @@ from app.widgets.map_display import MapDisplay
 
 class MapDisplayWindow(QtGui.QMainWindow):
 
-    data_loaded = QtCore.pyqtSignal()
-
     def __init__(self, parent=None):
         QtGui.QMainWindow.__init__(self, parent)
         self.setWindowTitle('Map Display')

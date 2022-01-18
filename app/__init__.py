@@ -74,7 +74,6 @@ class App(QtGui.QMainWindow):
 
 
     def __connect_signals(self):
-        self.map_display_window.data_loaded.connect(self.map_architect_window.notify_data_loaded)
         OsuRecorder.new_replay_event.connect(self.new_replay_event)
         
         self.data_overview_window.show_map_event.connect(self.map_display_window.set_from_play_data)
