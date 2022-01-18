@@ -225,6 +225,9 @@ class CompositionViewer(QtGui.QWidget):
                 nan_filter = ~np.isnan(data).any(axis=1)
                 filtered_data = data[nan_filter]
 
+                if filtered_data.shape[0] == 0:
+                    continue
+
                 x0, x1 = np.min(filtered_data[:, 0]), np.max(filtered_data[:, 0])
                 y0, y1 = np.min(filtered_data[:, 1]), np.max(filtered_data[:, 1])
 
