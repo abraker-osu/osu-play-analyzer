@@ -207,7 +207,7 @@ class CompositionViewer(QtGui.QWidget):
 
     def __reset_roi_selections(self):
         '''
-        Resets ROI selections to fit the 95% of entire displayed data set from midpoint
+        Resets ROI selections to fit the entire displayed data
         '''
         if type(self.play_data) == type(None):
             return
@@ -228,9 +228,9 @@ class CompositionViewer(QtGui.QWidget):
                 x0, x1 = np.min(filtered_data[:, 0]), np.max(filtered_data[:, 0])
                 y0, y1 = np.min(filtered_data[:, 1]), np.max(filtered_data[:, 1])
 
-                # Do not allow ROIs smaller than 1 pixel
-                if x0 == x1: x0 -= 1; x1 += 1
-                if y0 == y1: y0 -= 1; y1 += 1
+                # Have some margin around the ROI
+                x0 -= 0.1*x0; x1 += 0.1*x1
+                y0 -= 0.1*y0; y1 += 0.1*y1
 
                 roi_id = self.__get_roi_id(id_x, id_y)
                 roi_plot = self.roi_selections[roi_id]['roi']
