@@ -377,7 +377,7 @@ class MapArchitectWindow(QtGui.QMainWindow):
 
         spacing_txtbx.setValidator(QtGui.QIntValidator(0, 512))
         angles_txtbx.setValidator(QtGui.QIntValidator(-180, 180))
-        bpm_txtbx.setValidator(QtGui.QIntValidator(0, 1000))
+        bpm_txtbx.setValidator(QtGui.QIntValidator(1, 1000))
 
         if spacing is not None: spacing_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=spacing)
         else:                   spacing_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=100)
