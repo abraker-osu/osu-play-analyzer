@@ -1,5 +1,3 @@
-from numpy.core.fromnumeric import std
-
 import pyqtgraph
 from pyqtgraph.Qt import QtGui
 
@@ -7,7 +5,6 @@ import numpy as np
 
 from osu_analysis import StdScoreData
 from app.data_recording.data import RecData
-
 
 
 class HitDistrGraph(QtGui.QWidget):
@@ -45,11 +42,18 @@ class HitDistrGraph(QtGui.QWidget):
             (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP)
         play_data = play_data[data_filter]
 
+        if play_data.shape[0] == 0:
+            return
+
         hit_offsets = play_data[:, RecData.T_OFFSETS]
 
-        # Get a histogram for stddevs
+        # Get a histogram for hit offsets
         step = (150 - 0)/(0.1*hit_offsets.shape[0])
         y, x = np.histogram(hit_offsets, bins=np.linspace(-150, 150, int(0.15*hit_offsets.shape[0])))
+        
+        if y.shape[0] == 0:
+            return
+
         self.__plot.setData(x, y, stepMode="center", fillLevel=0, fillOutline=True, brush=(0,0,255,150))
 
         self.__min_err_line.setValue(x[:-1][y == np.max(y)][0] + step/2)
