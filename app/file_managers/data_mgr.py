@@ -19,6 +19,17 @@ class _PlayData():
         data_file = open(SAVE_FILE, 'rb+')
         data = np.load(data_file, allow_pickle=False)
 
+        if data.shape[1] != RecData.NUM_COLS:
+            print(
+                '\n'+
+                '============================================================\n' +
+                'Warning: This version of the tool expects a different file format and may crash.' +
+                f'Data file has wrong number of columns. Expected {RecData.NUM_COLS}, got {data.shape[1]}' +
+                'You will need to delete "data/osu_performance_recording_v1.npy" and reimport plays.\n' +
+                '============================================================\n' +
+                '\n'
+            )
+
     @staticmethod
     def save_data(data):
         _PlayData.data_file.close()
