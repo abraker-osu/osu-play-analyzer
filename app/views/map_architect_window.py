@@ -348,14 +348,14 @@ class MapArchitectWindow(QtGui.QMainWindow):
     def __get_data(self):
         # Validate the data before returning the values
         for btn in self.controls.keys():
-            self.controls[btn]['spacing_txtbx'].apply_value()
-            self.controls[btn]['angles_txtbx'].apply_value()
-            self.controls[btn]['bpm_txtbx'].apply_value()
+            self.controls[btn]['spacing_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE)
+            self.controls[btn]['angles_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE)
+            self.controls[btn]['bpm_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE)
 
-        self.num_notes_txtbx.apply_value()
-        self.rotation_txtbx.apply_value()
-        self.cs_txtbx.apply_value()
-        self.ar_txtbx.apply_value()
+        self.num_notes_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE)
+        self.rotation_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE)
+        self.cs_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE)
+        self.ar_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE)
 
         return {
             'spacings'  : list([ int(self.controls[btn]['spacing_txtbx'].text()) for btn in self.controls ]),
