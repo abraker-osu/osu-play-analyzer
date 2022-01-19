@@ -1,4 +1,5 @@
 import tinydb
+import glob
 import os
 
 from app.osu_db_reader.osu_db_reader import OsuDbReader
@@ -81,6 +82,22 @@ class _MapsDB():
             map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/{maps[0]["path"]}'
             return map_file_name
 
+        # Try to find the map file by hash
+        if md5h == False:
+            # See if it's a generated map, it has its md5 hash in the name
+            map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/osu_play_analyzer/{map_md5}.osu'
+            if not os.path.isfile(map_file_name):
+                return
+
+            return map_file_name
+        else:
+            map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/osu_play_analyzer/*{map_md5}*.osu'
+            matches = glob.glob(map_file_name, recursive=False)
+
+            if len(matches) > 0:
+                return matches[0]
+
+        # Find by hash failed, reprocess the db and try if enabled
         if not reprocess_if_missing:
             print('Associated beatmap not found. If you modified or added a new map since starting osu!, close osu! and rebuild db. Then try again.')
             return ''
