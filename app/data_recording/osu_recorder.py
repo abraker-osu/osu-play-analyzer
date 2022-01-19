@@ -76,7 +76,7 @@ class _OsuRecorder(QtCore.QObject):
         try: PlayData.save_data(data)
         except ValueError as e:
             print(
-                '\n'+
+                '\n' +
                 '============================================================\n' +
                 f'Error saving data: {e}\n' +
                 'The data format has probably changed.\n' +

@@ -33,7 +33,7 @@ class DevGraphAngle(QtGui.QWidget):
         self.__graph.enableAutoRange(axis='y', enable=False)
         self.__graph.setLimits(xMin=-10, xMax=190, yMin=-10, yMax=200)
         self.__graph.setRange(xRange=[-10, 190], yRange=[-10, 20])
-        self.__graph.setLabel('left', 'deviation', units='σ', unitPrefix='')
+        self.__graph.setLabel('left', 'deviation (averaged)', units='σ', unitPrefix='')
         self.__graph.setLabel('bottom', 'angle', units='deg', unitPrefix='')
         self.__graph.addLegend()
 
