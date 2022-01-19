@@ -72,7 +72,7 @@ class _OsuRecorder(QtCore.QObject):
         DataProcessing.process_mods(map_data, replay_data, replay)
 
         # Get data
-        score_data = StdScoreData.get_score_data(replay_data, map_data)
+        score_data = DataProcessing.get_score_data(map_data, replay_data, beatmap.difficulty.cs, beatmap.difficulty.ar)
         data = DataProcessing.get_data(score_data, replay.timestamp.timestamp(), beatmap.metadata.beatmap_md5, replay.mods.value, beatmap.difficulty.cs, beatmap.difficulty.ar)
 
         QtWidgets.QApplication.processEvents()

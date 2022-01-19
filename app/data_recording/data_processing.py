@@ -70,7 +70,7 @@ class DataProcessing():
             
     
     @staticmethod
-    def get_score_data(map_data, replay_data, ar, cs):
+    def get_score_data(map_data, replay_data, cs, ar):
         # Process score data
         settings = StdScoreData.Settings()
         settings.ar_ms = OsuUtils.ar_to_ms(ar)
@@ -82,7 +82,7 @@ class DataProcessing():
 
         score_data = StdScoreData.get_score_data(replay_data, map_data, settings)
         
-        return map_data, replay_data, score_data
+        return score_data
 
 
     @staticmethod
