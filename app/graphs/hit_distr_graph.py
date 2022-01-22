@@ -19,6 +19,8 @@ class HitDistrGraph(QtGui.QWidget):
         self.__graph.setLabel('left', 'Freq', units='#', unitPrefix='')
         self.__graph.setLabel('bottom', 'Hit offset', units='ms', unitPrefix='')
         self.__graph.setLimits(xMin=-200, yMin=-1, xMax=200)
+        self.__graph.enableAutoRange(axis='x', enable=False)
+        self.__graph.enableAutoRange(axis='y', enable=False)
 
         self.__min_err_line = pyqtgraph.InfiniteLine(angle=90, pen=pyqtgraph.mkPen((255, 100, 0, 150), width=1))
         self.__graph.addItem(self.__min_err_line)
