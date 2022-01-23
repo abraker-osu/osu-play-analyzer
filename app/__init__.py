@@ -1,4 +1,6 @@
 import os
+import sys
+import traceback
 import time 
 
 from pyqtgraph.Qt import QtGui
@@ -8,8 +10,25 @@ from app.views.data_overview_window import DataOverviewWindow
 from app.views.map_architect_window import MapArchitectWindow
 from app.views.map_display_window import MapDisplayWindow
 
-from app.file_managers import AppConfig
+from app.file_managers import AppConfig, PlayData
 from app.data_recording.osu_recorder import OsuRecorder
+
+
+sys._excepthook = sys.excepthook
+def exception_hook(exctype, value, tb):
+    sys.__excepthook = (exctype, value, tb)
+
+    trace = ''.join(traceback.format_exception(exctype, value, tb))
+    print(trace)
+
+    # Log assertion errors, but don't exit because of them
+    if exctype == AssertionError:
+        return
+
+    PlayData.save_data_and_close()
+    sys.exit(1)
+sys.excepthook = exception_hook
+
 
 
 class App(QtGui.QMainWindow):
@@ -133,6 +152,7 @@ class App(QtGui.QMainWindow):
         # Gracefully stop monitoring
         #if self.engaged:
         #    self.__action_event()
+        PlayData.save_data_and_close()
 
         # Hide any widgets to allow the app to close
         self.data_graphs_window.hide() 
