@@ -15,6 +15,7 @@ Design note: Maybe have a scatter plot instead. Really depends on how much data 
 """
 import pyqtgraph
 import tinydb
+import time
 import numpy as np
 from pyqtgraph.Qt import QtGui, QtCore
 
