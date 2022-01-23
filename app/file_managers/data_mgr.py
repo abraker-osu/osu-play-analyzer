@@ -31,15 +31,25 @@ class _PlayData():
             )
 
     @staticmethod
-    def save_data(data):
-        _PlayData.data_file.close()
-
+    def add_to_data(data):
         _PlayData.data = np.insert(_PlayData.data, 0, data, axis=0)
+
+
+    @staticmethod
+    def save_data():
+        _PlayData.data_file.close()
         np.save(_PlayData.SAVE_FILE, _PlayData.data, allow_pickle=False)
 
         # Now reopen it so it can be used
         _PlayData.data_file = open(_PlayData.SAVE_FILE, 'rb+')
         _PlayData.data = np.load(_PlayData.data_file, allow_pickle=False)
+
+
+
+    @staticmethod
+    def save_data_and_close():
+        _PlayData.data_file.close()
+        np.save(_PlayData.SAVE_FILE, _PlayData.data, allow_pickle=False)
 
 
 PlayData = _PlayData()

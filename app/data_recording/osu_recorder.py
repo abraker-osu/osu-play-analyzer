@@ -76,7 +76,7 @@ class _OsuRecorder(QtCore.QObject):
         QtWidgets.QApplication.processEvents()
 
         # Save data and emit to notify other components that there is a new replay
-        try: PlayData.save_data(data)
+        try: PlayData.add_to_data(data)
         except ValueError as e:
             print(
                 '\n' +
