@@ -334,6 +334,9 @@ class CompositionViewer(QtGui.QWidget):
             _i = iters[i]
             _j = iters[i - 1]
 
+            print(data[:, 1])
+            print(handles[_i].y())
+            print(handles[_j].y())
             test1 = ((handles[_i].y() > data[:, 1]) != (handles[_j].y() > data[:, 1]))
 
             if handles[_j].y() == handles[_i].y():
