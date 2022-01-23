@@ -57,6 +57,9 @@ class _OsuRecorder(QtCore.QObject):
 
         print('Determining beatmap...')
         map_file_name = MapsDB.get_map_file_name(replay.beatmap_hash, md5h=False, reprocess_if_missing=False)
+        if map_file_name == None:
+            print(f'Warning: file_name is None. Unable to open map for replay with beatmap hash {replay.beatmap_hash}')
+            return
 
         print('Processing beatmap:', map_file_name)
         beatmap = BeatmapIO.open_beatmap(map_file_name)
