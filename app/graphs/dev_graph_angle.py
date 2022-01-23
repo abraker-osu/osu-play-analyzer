@@ -137,13 +137,7 @@ class DevGraphAngle(QtGui.QWidget):
 
 
     def plot_data(self, play_data):
-        # Go through each play and fill in deviation data
-        dev_data = np.zeros(shape=(0, 3), dtype=float)
-
-        unique_timestamps = np.unique(play_data[:, RecData.TIMESTAMP])
-        for timestamp in unique_timestamps:
-            data = play_data[play_data[:, RecData.TIMESTAMP] == timestamp]
-            dev_data = np.insert(dev_data, 0, self.__get_deviation_data(data), axis=0)
+        dev_data = self.__get_deviation_data(play_data)
 
         # Clear plots for redraw
         self.__graph.clearPlots()
