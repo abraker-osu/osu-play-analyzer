@@ -1,6 +1,7 @@
-import tinydb
+import sqlite3
 import glob
 import os
+import time
 
 from app.osu_db_reader.osu_db_reader import OsuDbReader
 from app.file_managers.config_mgr import AppConfig
@@ -9,77 +10,111 @@ from app.file_managers.config_mgr import AppConfig
 class _MapsDB():
 
     # For resolving replays to maps
-    db = tinydb.TinyDB('data/maps.json')
-    maps_table = db.table('maps')
-    meta_table = db.table('meta')
+    db = sqlite3.connect("data/maps.db")
+    osu_path = AppConfig.cfg['osu_dir']
 
     @staticmethod
-    def check_maps_db():
-        osu_path = AppConfig.cfg['osu_dir']
+    def __check_maps_table():
+        reply = _MapsDB.db.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='maps'").fetchone()[0]
+        if reply == 0:
+            _MapsDB.db.execute("CREATE TABLE maps(md5 TEXT, md5h TEXT, path TEXT)")
 
-        if len(_MapsDB.maps_table) == 0:
-            data = OsuDbReader.get_beatmap_md5_paths(f'{osu_path}/osu!.db')
-            _MapsDB.maps_table.insert_multiple(data)
-            
-            num_beatmaps_read = OsuDbReader.get_num_beatmaps(f'{osu_path}/osu!.db')
-            _MapsDB.meta_table.upsert({ 'num_maps' : num_beatmaps_read }, tinydb.where('num_maps').exists())
+            columns = ', '.join([ 'md5', 'md5h', 'path' ])
+            placeholders = ':' + ', :'.join([ 'md5', 'md5h', 'path' ])
 
-            last_modified_read = os.stat(f'{osu_path}/osu!.db').st_mtime
-            _MapsDB.meta_table.upsert({ 'last_modified' : last_modified_read }, tinydb.where('last_modified').exists())
+            data = OsuDbReader.get_beatmap_md5_paths(f'{_MapsDB.osu_path}/osu!.db')
+            for entry in data:
+                _MapsDB.db.execute(f'INSERT INTO maps ({columns}) VALUES ({placeholders});', tuple(entry[k] for k in entry.keys()))
 
             print('Map table did not exist - created it')
+            _MapsDB.db.commit()
+            return True
+
+        return False
+
+
+    @staticmethod
+    def __check_meta_table():
+        reply = _MapsDB.db.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='meta'").fetchone()[0]
+        if reply == 0:
+            _MapsDB.db.execute("CREATE TABLE meta(num_maps INT, last_modified REAL)")
+
+            num_beatmaps_read = OsuDbReader.get_num_beatmaps(f'{_MapsDB.osu_path}/osu!.db')
+            last_modified_read = os.stat(f'{_MapsDB.osu_path}/osu!.db').st_mtime
+
+            columns = ', '.join([ 'num_maps', 'last_modified' ])
+            placeholders = ':' + ', :'.join([ 'num_maps', 'last_modified' ])
+
+            _MapsDB.db.execute(f'INSERT INTO meta ({columns}) VALUES ({placeholders});', (num_beatmaps_read, last_modified_read))
+
+            print('Meta table did not exist - created it')
+            _MapsDB.db.commit()
+            return True
+
+        return False
+
+
+    def check_db(self):
+        maps_table_built = _MapsDB.__check_maps_table()
+        meta_table_built = _MapsDB.__check_meta_table()
+
+        if maps_table_built and meta_table_built:
+            print('Map db did not exist - created it')
             return
-
-        num_beatmaps_read = OsuDbReader.get_num_beatmaps(f'{osu_path}/osu!.db')
-        num_beatmaps_save = _MapsDB.meta_table.get(tinydb.where('num_maps').exists())
+        
+        num_beatmaps_read = OsuDbReader.get_num_beatmaps(f'{_MapsDB.osu_path}/osu!.db')
+        num_beatmaps_save = _MapsDB.db.execute('SELECT num_maps FROM meta').fetchone()
         if num_beatmaps_save != None:
-            num_beatmaps_save = num_beatmaps_save['num_maps']
+            num_beatmaps_save = num_beatmaps_save[0]
 
-        last_modified_read = os.stat(f'{osu_path}/osu!.db').st_mtime
-        last_modified_save = _MapsDB.meta_table.get(tinydb.where('last_modified').exists())
+        last_modified_read = os.stat(f'{_MapsDB.osu_path}/osu!.db').st_mtime
+        last_modified_save = _MapsDB.db.execute('SELECT last_modified FROM meta').fetchone()
         if last_modified_save != None:
-            last_modified_save = last_modified_save['last_modified']
+            last_modified_save = last_modified_save[0]
 
         num_maps_changed = num_beatmaps_read != num_beatmaps_save
         osu_db_modified = last_modified_read != last_modified_save
 
         if num_maps_changed or osu_db_modified:
             if osu_db_modified:
-                user_input = input('osu!.db was modified. If you modified a map for testing, it will not be found until you rebuild db. Rebuild db? (y/n)')
+                user_input = input('osu!.db was modified. If you modified a map for testing, it will not be found until you update db. Update db? (y/n)')
                 if not 'y' in user_input.lower(): return
 
-            data = OsuDbReader.get_beatmap_md5_paths(f'{osu_path}/osu!.db')
-            _MapsDB.db.drop_table('maps')
-            _MapsDB.maps_table = _MapsDB.db.table('maps')
-            _MapsDB.maps_table.insert_multiple(data)
+            MapsDB.update_maps_db()
 
-            _MapsDB.meta_table.upsert({ 'num_maps' : num_beatmaps_read }, tinydb.where('num_maps').exists())
-            _MapsDB.meta_table.upsert({ 'last_modified' : last_modified_read }, tinydb.where('last_modified').exists())
-
-        print(num_beatmaps_read, num_beatmaps_save)
-        print(last_modified_read, last_modified_save)
+            if num_beatmaps_save != None:
+                print(f'Added {num_beatmaps_read - num_beatmaps_save} new maps')
+            else:
+                print(f'Added {num_beatmaps_read} new maps')
 
 
-    def rebuild_maps_db(self):
+    def update_maps_db(self):
         osu_path = AppConfig.cfg["osu_dir"]
 
         num_beatmaps_read = OsuDbReader.get_num_beatmaps(f'{osu_path}/osu!.db')
         last_modified_read = os.stat(f'{osu_path}/osu!.db').st_mtime
 
-        data = OsuDbReader.get_beatmap_md5_paths(f'{osu_path}/osu!.db')
-        self.db.drop_table('maps')
-        self.maps_table = self.db.table('maps')
-        self.maps_table.insert_multiple(data)
+        data = OsuDbReader.get_beatmap_md5_paths(f'{_MapsDB.osu_path}/osu!.db')
 
-        self.meta_table.upsert({ 'num_maps' : num_beatmaps_read }, tinydb.where('num_maps').exists())
-        self.meta_table.upsert({ 'last_modified' : last_modified_read }, tinydb.where('last_modified').exists())
+        # Insert missing entries
+        columns = ', '.join([ 'md5', 'md5h', 'path' ])
+        placeholders = ':' + ', :'.join([ 'md5', 'md5h', 'path' ])
+        
+        for entry in data:
+            reply = _MapsDB.db.execute(f'SELECT md5 FROM maps WHERE md5="{entry["md5"]}"').fetchone()
+            if reply == None:
+                _MapsDB.db.execute(f'INSERT INTO maps ({columns}) VALUES ({placeholders});', tuple(entry[k] for k in entry.keys()))
+
+        _MapsDB.db.execute(f'UPDATE maps SET num_maps = {num_beatmaps_read};')
+        _MapsDB.db.execute(f'UPDATE maps SET last_modified = {last_modified_read};')
 
 
     def get_map_file_name(self, map_md5, md5h=False, reprocess_if_missing=False):
-        maps = MapsDB.maps_table.search(tinydb.where('md5h' if md5h else 'md5') == map_md5)
-
-        if len(maps) != 0:
-            map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/{maps[0]["path"]}'
+        field = "md5h" if md5h else "md5"
+        reply = _MapsDB.db.execute(f'SELECT path FROM maps WHERE {field}="{map_md5}"').fetchone()
+        
+        if reply != None:
+            map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/{reply[0]}'
             return map_file_name
 
         # Try to find the map file by hash
@@ -102,18 +137,17 @@ class _MapsDB():
             print('Associated beatmap not found. If you modified or added a new map since starting osu!, close osu! and rebuild db. Then try again.')
             return ''
 
-        print('Associated beatmap not found, rebuilding maps database...')
-        MapsDB.rebuild_maps_db()
-        maps = MapsDB.maps_table.search(tinydb.where('md5') == map_md5)
+        print('Associated beatmap not found, updating maps database...')
+        MapsDB.update_maps_db()
+        reply = _MapsDB.db.execute(f'SELECT path FROM maps WHERE {field}="{map_md5}"').fetchone()
 
-        if len(maps) != 0:
-            map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/{maps[0]["path"]}'
+        if reply != None:
+            map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/{reply[0]}'
             return map_file_name
 
         print('Associated beatmap not found. Do you have it?')
         return ''
 
 
-
 MapsDB = _MapsDB()
-MapsDB.check_maps_db()
+MapsDB.check_db()

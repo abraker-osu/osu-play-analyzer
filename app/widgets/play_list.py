@@ -160,11 +160,13 @@ class PlayList(pyqtgraph.TableWidget):
 
     @staticmethod
     def __md5h_str_to_name_func(md5_str):
-        results = MapsDB.maps_table.search(tinydb.where('md5h') == md5_str)
-        if len(results) == 0:
+        #start_time = time.time()
+        result = MapsDB.get_map_file_name(md5_str, md5h=True)
+        #print('Searching for map name took', time.time() - start_time, 'seconds')
+        if result == None:
             return md5_str
 
-        return results[0]['path'].split('/')[-1]
+        return result.replace('\\', '/').split('/')[-1]
 
 
     @staticmethod
