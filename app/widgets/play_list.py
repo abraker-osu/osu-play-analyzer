@@ -69,14 +69,18 @@ class PlayList(pyqtgraph.TableWidget):
         map_md5h_str = self.__md5_to_md5h_str_func(map_md5)
         map_name_str = self.__md5h_str_to_name_func(map_md5h_str)
         map_mods_str = self.__mods_to_name_func(map_mod)
+        map_time_str = self.__md5_to_timestamp_str(map_md5, map_mod)
+        map_num_points = self.__md5_to_num_data(map_md5, map_mod)
 
         data = np.empty(
             shape=(1, ),
             dtype=[
-                ('md5',  np.uint64),  # Map hash (int, not shown)
-                ('IMod', np.uint64),  # Mods used on the map (int, not shown)
-                ('Name', object),     # Name of the map 
-                ('Mods', object),     # Mods used on the map (string)
+                ('md5',  np.uint64),   # Map hash (int, not shown)
+                ('IMod', np.uint64),   # Mods used on the map (int, not shown)
+                ('Name', object),      # Name of the map 
+                ('Mods', object),      # Mods used on the map (string)
+                ('Time', object),      # Time of the play
+                ('Data', np.uint64)    # Number of points in the play
             ]
         )
 
@@ -84,6 +88,8 @@ class PlayList(pyqtgraph.TableWidget):
         data['IMod'] = map_mod
         data['Name'] = map_name_str
         data['Mods'] = map_mods_str
+        data['Time'] = map_time_str
+        data['Data'] = map_num_points
         
         self.appendData(data)
 
@@ -97,6 +103,8 @@ class PlayList(pyqtgraph.TableWidget):
         md5_to_md5h_str  = np.vectorize(lambda md5: self.__md5_to_md5h_str_func(md5))
         md5h_str_to_name = np.vectorize(lambda md5h_str: self.__md5h_str_to_name_func(md5h_str))
         mod_to_name      = np.vectorize(lambda mod: self.__mods_to_name_func(mod))
+        md5_to_time_str  = np.vectorize(lambda md5, mods: self.__md5_to_timestamp_str(md5, mods))
+        map_num_points   = np.vectorize(lambda md5, mods: self.__md5_to_num_data(md5, mods))
 
         map_hash_mods = PlayData.data[:, [ RecData.MAP_HASH, RecData.MODS ]].astype(np.uint64)
         unique_map_hash_mods = np.unique(map_hash_mods, axis=0)
@@ -108,13 +116,19 @@ class PlayList(pyqtgraph.TableWidget):
                 ('IMod', np.uint64),  # Mods used on the map (int, not shown)
                 ('Name', object),     # Name of the map 
                 ('Mods', object),     # Mods used on the map (string)
+                ('Time', object),     # Time of the play
+                ('Data', np.uint64)   # Number of points in the play
             ]
         )
+
+        print('Num of plays to load:', unique_map_hash_mods.shape[0])
 
         data['md5']  = unique_map_hash_mods[:, 0]
         data['IMod'] = unique_map_hash_mods[:, 1]
         data['Name'] = md5h_str_to_name(md5_to_md5h_str(data['md5']))
         data['Mods'] = mod_to_name(data['IMod'])
+        data['Time'] = md5_to_time_str(data['md5'], data['IMod'])
+        data['Data'] = map_num_points(data['md5'], data['IMod'])
 
         self.setData(data)
 
@@ -167,6 +181,25 @@ class PlayList(pyqtgraph.TableWidget):
             return md5_str
 
         return result.replace('\\', '/').split('/')[-1]
+
+
+    @staticmethod
+    def __md5_to_timestamp_str(md5, mods):
+        play_select = (PlayData.data[:, [ RecData.MAP_HASH, RecData.MODS ]] == (md5, mods)).all(axis=1)
+        unique_timestamps = np.unique(PlayData.data[play_select, RecData.TIMESTAMP])
+        
+        play_start = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(unique_timestamps[0]))
+        play_end   = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(unique_timestamps[-1]))
+
+        return f'{play_start} - {play_end}'
+
+
+    @staticmethod
+    def __md5_to_num_data(md5, mods):
+        play = (PlayData.data[:, [ RecData.MAP_HASH, RecData.MODS ]] == (md5, mods)).all(axis=1)
+        unique_timestamp = np.unique(PlayData.data[play, RecData.TIMESTAMP])[0]
+
+        return play[PlayData.data[:, RecData.TIMESTAMP] == unique_timestamp].shape[0]
 
 
     @staticmethod
