@@ -87,7 +87,7 @@ class DevGraphAngle(QtGui.QWidget):
             data_y = play_data[:, RecData.T_OFFSETS]
 
         #            MIN    MAX   MIN DELTA
-        chunks_c = [   0,   400,   50  ]      # BPM,    8 bins max
+        chunks_c = [   0,   400,   20  ]      # BPM,    20 bins max
         chunks_x = [   0,   180,   3   ]      # Angle,  60 bins max
 
         # Filter out data outside the range
