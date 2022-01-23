@@ -232,8 +232,8 @@ class CompositionViewer(QtGui.QWidget):
                 y0, y1 = np.min(filtered_data[:, 1]), np.max(filtered_data[:, 1])
 
                 # Have some margin around the ROI
-                x0 -= 0.1*x0; x1 += 0.1*x1
-                y0 -= 0.1*y0; y1 += 0.1*y1
+                x0 -= 1; x1 += 1
+                y0 -= 1; y1 += 1
 
                 roi_id = self.__get_roi_id(id_x, id_y)
                 roi_plot = self.roi_selections[roi_id]['roi']
