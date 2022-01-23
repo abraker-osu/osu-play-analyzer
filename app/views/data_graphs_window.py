@@ -60,6 +60,8 @@ class DataGraphsWindow(QtGui.QMainWindow):
 
     def new_replay_event(self):
         play_data = PlayData.data
+        data_filter = (play_data[:, RecData.TIMESTAMP] == max(play_data[:, RecData.TIMESTAMP]))
+        play_data = play_data[data_filter]
 
         self.hit_offset_graph.plot_data(play_data)
         self.hit_distr_graph.plot_data(play_data)
