@@ -68,7 +68,7 @@ class MapDisplay(QtGui.QWidget):
         self.visual = pyqtgraph.PlotWidget(title='Pattern visualization')
         self.plot_notes = HitobjectPlot()
         self.visual.addItem(self.plot_notes)
-        self.plot_cursor = self.visual.plot(pen=None, symbol='o', symbolPen=(0, 166, 31, 255), symbolBrush=None, symbolSize=2, pxMode=True)
+        self.plot_cursor = self.visual.plot(pen=None, symbol='+', symbolPen=(0, 166, 31, 255), symbolBrush=None, symbolSize=6, pxMode=True)
         self.plot_approach = self.visual.plot(pen=None, symbol='o', symbolPen=(100, 100, 255, 200), symbolBrush=None, symbolSize=100, pxMode=False)
         
         # Timing visualization
