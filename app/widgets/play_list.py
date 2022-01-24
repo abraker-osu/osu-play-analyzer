@@ -67,7 +67,7 @@ class PlayList(pyqtgraph.TableWidget):
         if (map_md5 in md5s) and (map_mod in mods):
             return
             
-        map_md5h_str = self.__md5_to_md5h_str_func(map_md5)
+        map_md5h_str = MapsDB.md5h_to_md5h_str_func(map_md5)
         map_name_str = self.__md5h_str_to_name_func(map_md5h_str)
         map_mods_str = self.__mods_to_name_func(map_mod)
         map_time_str = self.__md5_to_timestamp_str(map_md5, map_mod)
