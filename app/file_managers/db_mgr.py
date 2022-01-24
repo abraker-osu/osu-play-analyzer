@@ -149,5 +149,19 @@ class _MapsDB():
         return ''
 
 
+    def md5h_to_md5h_str_func(self, md5h):
+        # Since map_md5h is the integer representation of a portion of the lower 
+        # half of the md5 hash, there might be zeros in most significant digits of
+        # the resultant uin64 encoded value. It's possible to detect that by 
+        # checking size of the resulting hash string in hex form 
+        # (it must be 12 characters). From there, fill the front with zeros to 
+        # make it complete
+        map_md5h_str = hex(md5h)[2:-4]
+        if len(map_md5h_str) < 12:
+            map_md5h_str = '0'*(12 - len(map_md5h_str)) + map_md5h_str
+
+        return map_md5h_str
+
+
 MapsDB = _MapsDB()
 MapsDB.check_db()

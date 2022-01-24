@@ -101,7 +101,7 @@ class PlayList(pyqtgraph.TableWidget):
         if PlayData.data.shape[0] == 0:
             return
 
-        md5_to_md5h_str  = np.vectorize(lambda md5: self.__md5_to_md5h_str_func(md5))
+        md5h_to_md5h_str = np.vectorize(lambda md5h: MapsDB.md5h_to_md5h_str_func(md5h))
         md5h_str_to_name = np.vectorize(lambda md5h_str: self.__md5h_str_to_name_func(md5h_str))
         mod_to_name      = np.vectorize(lambda mod: self.__mods_to_name_func(mod))
         md5_to_time_str  = np.vectorize(lambda md5, mods: self.__md5_to_timestamp_str(md5, mods))
@@ -126,7 +126,7 @@ class PlayList(pyqtgraph.TableWidget):
 
         data['md5']  = unique_map_hash_mods[:, 0]
         data['IMod'] = unique_map_hash_mods[:, 1]
-        data['Name'] = md5h_str_to_name(md5_to_md5h_str(data['md5']))
+        data['Name'] = md5h_str_to_name(md5h_to_md5h_str(data['md5']))
         data['Mods'] = mod_to_name(data['IMod'])
         data['Time'] = md5_to_time_str(data['md5'], data['IMod'])
         data['Data'] = map_num_points(data['md5'], data['IMod'])
@@ -157,29 +157,12 @@ class PlayList(pyqtgraph.TableWidget):
 
         self.map_selected.emit(PlayData.data[select])
 
-    
-    @staticmethod
-    def __md5_to_md5h_str_func(md5):
-        # Since map_md5h is the integer representation of a portion of the lower 
-        # half of the md5 hash, there might be zeros in most significant digits of
-        # the resultant uin64 encoded value. It's possible to detect that by 
-        # checking size of the resulting hash string in hex form 
-        # (it must be 12 characters). From there, fill the front with zeros to 
-        # make it complete
-        map_md5h_str = hex(md5)[2:-4]
-        if len(map_md5h_str) < 12:
-            map_md5h_str = '0'*(12 - len(map_md5h_str)) + map_md5h_str
-
-        return map_md5h_str
-
 
     @staticmethod
-    def __md5h_str_to_name_func(md5_str):
-        #start_time = time.time()
-        result = MapsDB.get_map_file_name(md5_str, md5h=True)
-        #print('Searching for map name took', time.time() - start_time, 'seconds')
+    def __md5h_str_to_name_func(md5h_str):
+        result = MapsDB.get_map_file_name(md5h_str, md5h=True)
         if result == None:
-            return md5_str
+            return md5h_str
 
         return result.replace('\\', '/').split('/')[-1]
 

@@ -234,8 +234,10 @@ class MapDisplay(QtGui.QWidget):
     def set_from_play_data(self, play_data):
         map_hash = play_data[:, RecData.MAP_HASH].astype(np.uint64)[0]
 
-        map_file_name = MapsDB.get_map_file_name(hex(map_hash)[2:-4], md5h=True, reprocess_if_missing=False)
-        if len(map_file_name) == 0:
+        md5h_str = MapsDB.md5h_to_md5h_str_func(map_hash)
+        map_file_name = MapsDB.get_map_file_name(md5h_str, md5h=True, reprocess_if_missing=False)
+        if map_file_name is None:
+            print('Map display: map file not found')
             return
         
         self.set_replay_from_play_data(play_data)
