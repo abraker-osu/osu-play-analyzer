@@ -76,11 +76,8 @@ class GraphTOffsetBPM(QtGui.QWidget):
             dt_hits_all  = np.insert(dt_hits_all,  0, dt_hits)
 
         if self.__avg_data_points:
-            # Use best N points for data display
-            num_points = 10 # min(len(data_y), self.MAX_NUM_DATA_POINTS)
-
-            # Average overlapping data points (those that fall on same velocity)
-            dt_hits_all = np.asarray([ np.sort(dt_hits_all[np.abs(dt_notes_all - dt_note) < 3])[:num_points].mean() for dt_note in np.unique(dt_notes_all) ])
+            # Average overlapping data points (those that have same x-axis within +/- 3)
+            dt_hits_all = np.asarray([ np.sort(dt_hits_all[np.abs(dt_notes_all - dt_note) < 3]).mean() for dt_note in np.unique(dt_notes_all) ])
             dt_notes_all = np.unique(dt_notes_all)
 
             data_x = dt_notes_all
