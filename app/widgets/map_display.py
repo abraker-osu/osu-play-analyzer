@@ -256,9 +256,12 @@ class MapDisplay(QtGui.QWidget):
         # Draw approach circles
         presses = StdMapData.get_presses(self.map_data)
         ar_select = (self.t <= presses['time']) & (presses['time'] <= (self.t + self.ar_ms))
-        approach_x, approach_y = presses['x'][ar_select].values, presses['y'][ar_select].values
-        sizes = OsuUtils.approach_circle_to_radius(self.cs_px, self.ar_ms, presses['time'][ar_select] - self.t)
+        
+        approach_x =  presses['x'][ar_select].values
+        approach_y =  presses['y'][ar_select].values 
+        press_times = presses['time'][ar_select].values
 
+        sizes = OsuUtils.approach_circle_to_radius(self.cs_px, self.ar_ms, press_times - self.t)
         self.plot_approach.setData(approach_x, approach_y, symbolSize=sizes)
 
         # Draw notes
