@@ -167,7 +167,8 @@ class CompositionViewer(QtGui.QWidget):
                 roi_id = self.__get_roi_id(id_x, id_y)
                 self.__update_roi_selection(roi_id, data)
 
-        self.__process_master_selection(emit_data=True)
+        if self.play_data.shape[0] < 10000:
+            self.__process_master_selection(emit_data=True)
 
 
     def get_selected(self):
