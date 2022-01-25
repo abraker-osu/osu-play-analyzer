@@ -15,6 +15,16 @@ from app.data_recording.osu_recorder import OsuRecorder
 
 
 """
+Fix pyqtgraph's csv exporting
+"""
+from pyqtgraph.exporters.CSVExporter import CSVExporter
+from app.misc.pyqtgraph_fixes import plot_csv_export
+
+CSVExporter.export = plot_csv_export
+
+
+
+"""
 Override default exception hook
 """
 sys._excepthook = sys.excepthook
