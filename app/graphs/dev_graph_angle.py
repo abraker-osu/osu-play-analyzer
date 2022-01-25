@@ -171,11 +171,8 @@ class DevGraphAngle(QtGui.QWidget):
             data_x = dev_data[data_select, 1]
 
             if self.__avg_data_points:
-                # Use best N points for data display
-                num_points = 10 # min(len(stdevs), self.MAX_NUM_DATA_POINTS)
-
                 # Average overlapping data points (those that fall on same angle)
-                data_y = np.asarray([ np.sort(data_y[data_x == x])[:num_points].mean() for x in np.unique(data_x) ])
+                data_y = np.asarray([ np.sort(data_y[data_x == x]).mean() for x in np.unique(data_x) ])
                 unique_data_x = np.unique(data_x)
 
                 # Get sort mapping to make points on line graph connect in proper order
