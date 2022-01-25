@@ -117,7 +117,7 @@ class DataOverviewWindow(QtGui.QWidget):
         num_files = len(file_names)
 
         for file_name, i in zip(file_names, range(num_files)):
-            OsuRecorder.handle_new_replay(file_name, wait=False)
+            OsuRecorder.handle_new_replay.emit(file_name, wait=False)
 
             self.progress_bar.setValue(100 * i / num_files)
             QtGui.QApplication.processEvents()
