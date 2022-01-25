@@ -18,6 +18,7 @@ from app.graphs.dev_graph_angle import DevGraphAngle
 from app.graphs.dev_graph_vel import DevGraphVel
 
 from app.graphs.graph_toffset_bpm import GraphTOffsetBPM
+from app.graphs.graph_toffset_bpm_inc import GraphTOffsetBPMInc
 
 from app.data_recording.data import RecData
 from app.file_managers import PlayData
@@ -34,6 +35,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.aim_display = AimGraph()
 
         self.toffset_bpm = GraphTOffsetBPM()
+        self.toffset_bpm_inc = GraphTOffsetBPMInc()
 
         self.dev_graph_angle = DevGraphAngle()
         self.dev_graph_vel = DevGraphVel()
@@ -45,7 +47,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
 
         self.map_tabs = QtGui.QTabWidget()
         self.map_tabs.addTab(self.toffset_bpm, 'T-offset vs BPM')
-        self.map_tabs.addTab(QtGui.QLabel('TODO'), 'Map Graph2')
+        self.map_tabs.addTab(self.toffset_bpm_inc, 'T-offset vs BPM Inc')
 
         self.play_data_tabs = QtGui.QTabWidget()
         self.play_data_tabs.addTab(self.dev_graph_angle, 'Dev vs Angle')
@@ -68,6 +70,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.aim_display.plot_data(play_data)
 
         self.toffset_bpm.plot_data(play_data)
+        self.toffset_bpm_inc.plot_data(play_data)
 
 
     def overview_single_map_selection_event(self, play_data):
@@ -87,6 +90,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
             return
 
         self.toffset_bpm.plot_data(play_data)
+        self.toffset_bpm_inc.plot_data(play_data)
 
         self.dev_graph_angle.plot_data(play_data)
         self.dev_graph_vel.plot_data(play_data)
