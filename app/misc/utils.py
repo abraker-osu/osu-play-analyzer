@@ -17,7 +17,6 @@ class Utils():
         return traceback_str
 
 
-
 class MathUtils():
 
     @staticmethod

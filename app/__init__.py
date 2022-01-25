@@ -1,7 +1,7 @@
 import os
 import sys
 import traceback
-import time 
+import time
 
 from pyqtgraph.Qt import QtGui
 
@@ -14,6 +14,9 @@ from app.file_managers import AppConfig, PlayData
 from app.data_recording.osu_recorder import OsuRecorder
 
 
+"""
+Override default exception hook
+"""
 sys._excepthook = sys.excepthook
 def exception_hook(exctype, value, tb):
     sys.__excepthook = (exctype, value, tb)
@@ -31,6 +34,9 @@ sys.excepthook = exception_hook
 
 
 
+"""
+Main app class
+"""
 class App(QtGui.QMainWindow):
 
     def __init__(self):
