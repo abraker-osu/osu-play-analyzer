@@ -86,4 +86,4 @@ class HitobjectPlot(pyqtgraph.GraphItem):
         size[press_select] = cs_px
 
         self.pen.setWidth(cs_px)
-        self.setData(pos=pos, adj=adj, size=size, symbol='o', pxMode=True)
+        self.setData(pos=pos, adj=adj, size=size, symbol='o', pxMode=False)
