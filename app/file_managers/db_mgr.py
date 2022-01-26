@@ -105,8 +105,8 @@ class _MapsDB():
             if reply == None:
                 _MapsDB.db.execute(f'INSERT INTO maps ({columns}) VALUES ({placeholders});', tuple(entry[k] for k in entry.keys()))
 
-        _MapsDB.db.execute(f'UPDATE maps SET num_maps = {num_beatmaps_read};')
-        _MapsDB.db.execute(f'UPDATE maps SET last_modified = {last_modified_read};')
+        _MapsDB.db.execute(f'UPDATE meta SET num_maps = {num_beatmaps_read};')
+        _MapsDB.db.execute(f'UPDATE meta SET last_modified = {last_modified_read};')
 
 
     def get_map_file_name(self, map_md5, md5h=False, reprocess_if_missing=False):
