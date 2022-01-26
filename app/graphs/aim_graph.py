@@ -48,7 +48,7 @@ class AimGraph(QtGui.QWidget):
         
         self.win_hits = pyqtgraph.PlotWidget(show=False, title='Hit visualization')
         self.win_hits.setWindowTitle('osu! Aim Tool Hit Visualization')
-        self.win_hits.setFixedSize(AimGraph.SIZE, AimGraph.SIZE + 32)
+        self.win_hits.setFixedSize(int(AimGraph.SIZE), int(AimGraph.SIZE + 32))
 
         # Scatter plot for aim data
         self.plot_hits = self.win_hits.plot(title='Hit scatter')
@@ -71,7 +71,7 @@ class AimGraph(QtGui.QWidget):
         self.dev_x.enableAutoRange(axis='y', enable=True)
         self.dev_x.hideAxis('left')
         self.dev_x.showAxis('bottom')
-        self.dev_x.setFixedHeight(64 + 4*AimGraph.SCALE)
+        self.dev_x.setFixedHeight(int(64 + 4*AimGraph.SCALE))
         self.dev_x.setXRange(-AimGraph.SIZE/2, AimGraph.SIZE/2)
 
         # Y-axis deviation histogram
@@ -82,7 +82,7 @@ class AimGraph(QtGui.QWidget):
         self.dev_y.hideAxis('bottom')
         self.dev_y.hideAxis('left')
         self.dev_y.showAxis('right')
-        self.dev_y.setFixedWidth(64 + 4*AimGraph.SCALE)
+        self.dev_y.setFixedWidth(int(64 + 4*AimGraph.SCALE))
         self.dev_y.setYRange(-AimGraph.SIZE/2, AimGraph.SIZE/2)
 
         '''
@@ -103,7 +103,7 @@ class AimGraph(QtGui.QWidget):
 
         # Cov area metrics
         self.cov_area_metrics = pyqtgraph.TextItem('', anchor=(0, 0), )
-        self.cov_area_metrics.setPos(-AimGraph.SIZE/2, AimGraph.SIZE/2)
+        self.cov_area_metrics.setPos(int(-AimGraph.SIZE/2), int(AimGraph.SIZE/2))
         self.win_hits.addItem(self.cov_area_metrics)
 
         self.main_layout.addWidget(self.win_hits, 0, 0)
