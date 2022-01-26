@@ -40,7 +40,7 @@ class AimGraph(QtGui.QWidget):
         
         self.setWindowTitle('Aim visualization')
         #self.setSizePolicy(QtGui.QSizePolicy.Policy.Minimum, QtGui.QSizePolicy.Policy.Minimum)
-        self.setMaximumSize(QtCore.QSize(AimGraph.SIZE + AimGraph.DEV_WIDTH + 1, AimGraph.SIZE + AimGraph.DEV_WIDTH + 32 + 1))
+        self.setMaximumSize(QtCore.QSize(int(AimGraph.SIZE + AimGraph.DEV_WIDTH + 1), int(AimGraph.SIZE + AimGraph.DEV_WIDTH + 32 + 1)))
 
         self.main_layout = QtGui.QGridLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
