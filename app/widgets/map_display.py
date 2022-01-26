@@ -167,6 +167,10 @@ class MapDisplay(QtGui.QWidget):
 
         self.__draw_map_data()
         
+        # Draw note in timeline
+        self.hitobject_plot.set_map_timeline(self.map_data)
+        self.timeline.update()
+        
 
     def set_replay_from_replay_data(self, replay_data):
         if type(replay_data) == type(None): 
