@@ -24,7 +24,7 @@ class Monitor(watchdog.observers.Observer):
 
 
     def create_replay_monitor(self, name, callback):
-        replay_path = f'{self.osu_path}/data/r'
+        replay_path = f'{self.osu_path}/Data/r'
         if not os.path.exists(replay_path):
             raise Exception(f'"{replay_path}" does not exist!')
 
@@ -37,7 +37,7 @@ class Monitor(watchdog.observers.Observer):
                 except Exception as e:
                     print(Utils.get_traceback(e, 'Error processing replay'))
 
-        print(f'Created file creation monitor for {self.osu_path}/data/r')
+        print(f'Created file creation monitor for {self.osu_path}/Data/r')
         self.monitors[name] = self.schedule(EventHandler(), replay_path, recursive=False)
 
 
