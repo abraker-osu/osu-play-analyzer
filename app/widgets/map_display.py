@@ -272,14 +272,14 @@ class MapDisplay(QtGui.QWidget):
         
         if ar_select.sum() == 0:
             # Nothing to draw
-            return
+            self.plot_approach.setData([], [], symbolSize=[])
+        else:
+            approach_x =  presses['x'][ar_select].values
+            approach_y =  presses['y'][ar_select].values 
+            press_times = presses['time'][ar_select].values
 
-        approach_x =  presses['x'][ar_select].values
-        approach_y =  presses['y'][ar_select].values 
-        press_times = presses['time'][ar_select].values
-
-        sizes = OsuUtils.approach_circle_to_radius(self.cs_px, self.ar_ms, press_times - self.t)
-        self.plot_approach.setData(approach_x, approach_y, symbolSize=sizes)
+            sizes = OsuUtils.approach_circle_to_radius(self.cs_px, self.ar_ms, press_times - self.t)
+            self.plot_approach.setData(approach_x, approach_y, symbolSize=sizes)
 
         # Draw notes
         self.plot_notes.set_map_display(self.t, self.map_data, self.ar_ms, self.cs_px)
