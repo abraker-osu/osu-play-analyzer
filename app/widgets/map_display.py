@@ -148,6 +148,11 @@ class MapDisplay(QtGui.QWidget):
         self.map_md5 = md5
 
         self.__draw_map_data()
+        
+        # Draw note in timeline
+        self.hitobject_plot.set_map_timeline(self.map_data)
+        self.timeline.update()
+        
 
 
     def set_map_full(self, map_data, cs, ar, md5=None):
@@ -227,6 +232,10 @@ class MapDisplay(QtGui.QWidget):
 
         self.set_map_full(map_data, cs, ar)
         self.set_replay_from_replay_data(replay_data)
+        
+        # Draw note in timeline
+        self.hitobject_plot.set_map_timeline(self.map_data)
+        self.timeline.update()
 
         self.status_label.setText(f'Viewing: {name}')
 
@@ -242,6 +251,10 @@ class MapDisplay(QtGui.QWidget):
         
         self.set_replay_from_play_data(play_data)
         self.__open_map_from_file_name(map_file_name, play_data[0, RecData.MODS])
+
+        # Draw note in timeline
+        self.hitobject_plot.set_map_timeline(self.map_data)
+        self.timeline.update()
 
         self.status_label.setText('Warning: viewing play data, which contains only the basic scoring information.')
         
@@ -271,10 +284,6 @@ class MapDisplay(QtGui.QWidget):
         # Draw notes
         self.plot_notes.set_map_display(self.t, self.map_data, self.ar_ms, self.cs_px)
 
-        # Draw note in timeline
-        self.hitobject_plot.set_map_timeline(self.map_data)
-        self.timeline.update()
-        
 
     def __draw_replay_data(self):
         if type(self.replay_data) == type(None):
