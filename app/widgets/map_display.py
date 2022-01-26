@@ -257,6 +257,10 @@ class MapDisplay(QtGui.QWidget):
         presses = StdMapData.get_presses(self.map_data)
         ar_select = (self.t <= presses['time']) & (presses['time'] <= (self.t + self.ar_ms))
         
+        if ar_select.sum() == 0:
+            # Nothing to draw
+            return
+
         approach_x =  presses['x'][ar_select].values
         approach_y =  presses['y'][ar_select].values 
         press_times = presses['time'][ar_select].values
