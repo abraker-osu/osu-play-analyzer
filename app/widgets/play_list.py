@@ -72,6 +72,7 @@ class PlayList(pyqtgraph.TableWidget):
         map_mods_str = self.__mods_to_name_func(map_mod)
         map_time_str = self.__md5_to_timestamp_str(map_md5, map_mod)
         map_num_points = self.__md5_to_num_data(map_md5, map_mod)
+        map_avg_bpm  = self.__md5_to_avg_bpm(map_md5, map_mod)
 
         data = np.empty(
             shape=(1, ),
@@ -81,7 +82,8 @@ class PlayList(pyqtgraph.TableWidget):
                 ('Name', object),      # Name of the map 
                 ('Mods', object),      # Mods used on the map (string)
                 ('Time', object),      # Time of the play
-                ('Data', np.uint64)    # Number of points in the play
+                ('Data', np.uint64),   # Number of points in the play
+                ('Avg BPM', object)    # Average BPM of the map
             ]
         )
 
@@ -91,6 +93,7 @@ class PlayList(pyqtgraph.TableWidget):
         data['Mods'] = map_mods_str
         data['Time'] = map_time_str
         data['Data'] = map_num_points
+        data['Avg BPM'] = map_avg_bpm
         
         self.appendData(data)
 
@@ -106,6 +109,7 @@ class PlayList(pyqtgraph.TableWidget):
         mod_to_name      = np.vectorize(lambda mod: self.__mods_to_name_func(mod))
         md5_to_time_str  = np.vectorize(lambda md5, mods: self.__md5_to_timestamp_str(md5, mods))
         map_num_points   = np.vectorize(lambda md5, mods: self.__md5_to_num_data(md5, mods))
+        md5_to_avg_bpm   = np.vectorize(lambda md5, mods: self.__md5_to_avg_bpm(md5, mods))
 
         map_hash_mods = PlayData.data[:, [ RecData.MAP_HASH, RecData.MODS ]].astype(np.uint64)
         unique_map_hash_mods = np.unique(map_hash_mods, axis=0)
@@ -118,7 +122,8 @@ class PlayList(pyqtgraph.TableWidget):
                 ('Name', object),     # Name of the map 
                 ('Mods', object),     # Mods used on the map (string)
                 ('Time', object),     # Time of the play
-                ('Data', np.uint64)   # Number of points in the play
+                ('Data', np.uint64),  # Number of points in the play
+                ('Avg BPM', object)   # Average BPM of the map
             ]
         )
 
@@ -130,6 +135,7 @@ class PlayList(pyqtgraph.TableWidget):
         data['Mods'] = mod_to_name(data['IMod'])
         data['Time'] = md5_to_time_str(data['md5'], data['IMod'])
         data['Data'] = map_num_points(data['md5'], data['IMod'])
+        data['Avg BPM'] = md5_to_avg_bpm(data['md5'], data['IMod'])
 
         self.setData(data)
 
@@ -184,6 +190,18 @@ class PlayList(pyqtgraph.TableWidget):
         unique_timestamp = np.unique(PlayData.data[play, RecData.TIMESTAMP])[0]
 
         return play[PlayData.data[:, RecData.TIMESTAMP] == unique_timestamp].shape[0]
+
+
+    @staticmethod
+    def __md5_to_avg_bpm(md5, mods):
+        play = (PlayData.data[:, [ RecData.MAP_HASH, RecData.MODS ]] == (md5, mods)).all(axis=1)
+        unique_timestamp = np.unique(PlayData.data[play, RecData.TIMESTAMP])[0]
+
+        one_play = PlayData.data[PlayData.data[:, RecData.TIMESTAMP] == unique_timestamp]
+        bpm_data = 15000/one_play[:, RecData.DT]
+        bpm_data = bpm_data[~(np.isnan(bpm_data) | np.isinf(bpm_data))]
+
+        return f'{np.mean(bpm_data):.2f}'
 
 
     @staticmethod
