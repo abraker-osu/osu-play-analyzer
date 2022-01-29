@@ -59,13 +59,17 @@ class _OsuRecorder(QtCore.QObject):
             return
 
         print('Determining beatmap...')
-        map_file_name = MapsDB.get_map_file_name(replay.beatmap_hash, md5h=False, reprocess_if_missing=False)
+        map_file_name, is_gen = MapsDB.get_map_file_name(replay.beatmap_hash, md5h=False, reprocess_if_missing=False)
         if map_file_name == None:
             print(f'Warning: file_name is None. Unable to open map for replay with beatmap hash {replay.beatmap_hash}')
             return
 
         print('Processing beatmap:', map_file_name)
         beatmap = BeatmapIO.open_beatmap(map_file_name)
+        if is_gen and (AppConfig.cfg['delete_gen'] == True):
+            os.remove(map_file_name)
+        print('Beatmap load time: ', time.time() - time_start)
+
         QtWidgets.QApplication.processEvents()
 
         map_data = DataProcessing.get_map_data_from_object(beatmap)

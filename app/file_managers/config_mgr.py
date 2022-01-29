@@ -4,7 +4,11 @@ import random
 
 class _AppConfig():
 
-    cfg = {}
+    cfg = { 
+        'id'         : random.randint(100, 1000000),
+        'osu_dir'    : '',
+        'delete_gen' : False,
+    }
 
     @staticmethod
     def load_config_file():
@@ -12,16 +16,18 @@ class _AppConfig():
             with open('config.json') as f:
                 _AppConfig.cfg = json.load(f)
         except FileNotFoundError:
-            _AppConfig.cfg = { 
-                'id'      : random.randint(100, 1000000),
-                'osu_dir' : '' 
-            }
-
+            # Write default
             with open('config.json', 'w') as f:
                 json.dump(_AppConfig.cfg, f, indent=4)
 
             with open('config.json') as f:
                 _AppConfig.cfg = json.load(f)
+
+
+    @staticmethod
+    def check_config_file():
+        if not 'delete_gen' in _AppConfig.cfg:
+            _AppConfig.update_value('delete_gen', False)
 
 
     @staticmethod
@@ -34,3 +40,4 @@ class _AppConfig():
 
 AppConfig = _AppConfig()
 AppConfig.load_config_file()
+AppConfig.check_config_file()

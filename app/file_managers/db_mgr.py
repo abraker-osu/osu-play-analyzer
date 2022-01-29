@@ -115,27 +115,27 @@ class _MapsDB():
         
         if reply != None:
             map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/{reply[0]}'
-            return map_file_name
+            return map_file_name, False
 
         # Try to find the map file by hash
         if md5h == False:
             # See if it's a generated map, it has its md5 hash in the name
             map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/osu_play_analyzer/{map_md5}.osu'
             if not os.path.isfile(map_file_name):
-                return
+                return None, False
 
-            return map_file_name
+            return map_file_name, True
         else:
             map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/osu_play_analyzer/*{map_md5}*.osu'
             matches = glob.glob(map_file_name, recursive=False)
 
             if len(matches) > 0:
-                return matches[0]
+                return matches[0], True
 
         # Find by hash failed, reprocess the db and try if enabled
         if not reprocess_if_missing:
             print('Associated beatmap not found. If you modified or added a new map since starting osu!, close osu! and rebuild db. Then try again.')
-            return ''
+            return None, False
 
         print('Associated beatmap not found, updating maps database...')
         MapsDB.update_maps_db()
@@ -143,10 +143,10 @@ class _MapsDB():
 
         if reply != None:
             map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/{reply[0]}'
-            return map_file_name
+            return map_file_name, False
 
         print('Associated beatmap not found. Do you have it?')
-        return ''
+        return None, False
 
 
     def md5h_to_md5h_str_func(self, md5h):

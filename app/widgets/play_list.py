@@ -166,7 +166,7 @@ class PlayList(pyqtgraph.TableWidget):
 
     @staticmethod
     def __md5h_str_to_name_func(md5h_str):
-        result = MapsDB.get_map_file_name(md5h_str, md5h=True)
+        result, _ = MapsDB.get_map_file_name(md5h_str, md5h=True)
         if result == None:
             return md5h_str
 

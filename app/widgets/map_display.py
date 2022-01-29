@@ -166,7 +166,7 @@ class MapDisplay(QtGui.QWidget):
         self.map_md5 = md5
 
         self.__draw_map_data()
-        
+
         # Draw note in timeline
         self.hitobject_plot.set_map_timeline(self.map_data)
         self.timeline.update()
@@ -248,7 +248,7 @@ class MapDisplay(QtGui.QWidget):
         map_hash = play_data[:, RecData.MAP_HASH].astype(np.uint64)[0]
 
         md5h_str = MapsDB.md5h_to_md5h_str_func(map_hash)
-        map_file_name = MapsDB.get_map_file_name(md5h_str, md5h=True, reprocess_if_missing=False)
+        map_file_name, _ = MapsDB.get_map_file_name(md5h_str, md5h=True, reprocess_if_missing=False)
         if map_file_name is None:
             print('Map display: map file not found')
             return
