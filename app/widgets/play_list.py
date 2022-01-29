@@ -198,7 +198,7 @@ class PlayList(pyqtgraph.TableWidget):
         unique_timestamp = np.unique(PlayData.data[play, RecData.TIMESTAMP])[0]
 
         one_play = PlayData.data[PlayData.data[:, RecData.TIMESTAMP] == unique_timestamp]
-        bpm_data = 15000/one_play[:, RecData.DT]
+        bpm_data = 30000/one_play[:, RecData.DT_NOTES]
         bpm_data = bpm_data[~(np.isnan(bpm_data) | np.isinf(bpm_data))]
 
         return f'{np.mean(bpm_data):.2f}'
