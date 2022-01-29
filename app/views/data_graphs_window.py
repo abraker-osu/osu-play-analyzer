@@ -16,6 +16,7 @@ from app.graphs.aim_graph import AimGraph
 
 from app.graphs.dev_graph_angle import DevGraphAngle
 from app.graphs.dev_graph_vel import DevGraphVel
+from app.graphs.dev_graph_rhythm import DevGraphRhythm
 
 from app.graphs.graph_toffset_bpm import GraphTOffsetBPM
 from app.graphs.graph_toffset_bpm_inc import GraphTOffsetBPMInc
@@ -39,6 +40,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
 
         self.dev_graph_angle = DevGraphAngle()
         self.dev_graph_vel = DevGraphVel()
+        self.dev_graph_rhythm = DevGraphRhythm()
 
         self.replay_tabs = QtGui.QTabWidget()
         self.replay_tabs.addTab(self.hit_offset_graph, 'Hit offsets')
@@ -52,6 +54,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.play_data_tabs = QtGui.QTabWidget()
         self.play_data_tabs.addTab(self.dev_graph_angle, 'Dev vs Angle')
         self.play_data_tabs.addTab(self.dev_graph_vel, 'Dev vs Velocity')
+        self.play_data_tabs.addTab(self.dev_graph_rhythm, 'Dev vs Rhythm')
         
         self.main_widget = QtGui.QTabWidget()
         self.main_widget.addTab(self.replay_tabs, 'Replay graphs')
@@ -94,3 +97,4 @@ class DataGraphsWindow(QtGui.QMainWindow):
 
         self.dev_graph_angle.plot_data(play_data)
         self.dev_graph_vel.plot_data(play_data)
+        self.dev_graph_rhythm.plot_data(play_data)

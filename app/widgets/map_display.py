@@ -203,14 +203,14 @@ class MapDisplay(QtGui.QWidget):
 
         # Press timings
         self.replay_data[::2, self.REPLAY_T]   = press_times
-        #self.replay_data[::2, self.REPLAY_X]   = play_data[:, RecData.X_OFFSETS]
-        #self.replay_data[::2, self.REPLAY_Y]   = -play_data[:, RecData.Y_OFFSETS]
+        self.replay_data[::2, self.REPLAY_X]   = play_data[:, RecData.X_OFFSETS] + play_data[:, RecData.X_POS]
+        self.replay_data[::2, self.REPLAY_Y]   = -(play_data[:, RecData.Y_OFFSETS] + play_data[:, RecData.Y_POS])
         self.replay_data[::2, self.REPLAY_K1]  = StdReplayData.PRESS
 
         # Release timings
         self.replay_data[1::2, self.REPLAY_T]  = press_times + 0.05
-        #self.replay_data[1::2, self.REPLAY_X]  = play_data[:, RecData.X_OFFSETS]
-        #self.replay_data[1::2, self.REPLAY_Y]  = -play_data[:, RecData.Y_OFFSETS]
+        self.replay_data[1::2, self.REPLAY_X]  = play_data[:, RecData.X_OFFSETS] + play_data[:, RecData.X_POS]
+        self.replay_data[1::2, self.REPLAY_Y]  = -(play_data[:, RecData.Y_OFFSETS] + play_data[:, RecData.Y_POS])
         self.replay_data[1::2, self.REPLAY_K1] = StdReplayData.RELEASE
 
         self.__draw_replay_data()

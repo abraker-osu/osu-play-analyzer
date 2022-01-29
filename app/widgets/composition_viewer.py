@@ -56,19 +56,23 @@ class CompositionViewer(QtGui.QWidget):
 
         # MUST BE CONTIGUOUS
         self.__ID_BPM          = 0
-        self.__ID_ANGLE        = 1
-        self.__ID_DISTANCE     = 2
-        self.__ID_VELOCITY     = 3
-        self.__ID_BPM_INC_TIME = 4
-        self.__ID_BPM_DEC_TIME = 5
-        self.__CS              = 6
-        self.__AR              = 7
+        self.__ID_DT_NOTE      = 1
+        self.__ID_DT_RHYTM     = 2
+        self.__ID_ANGLE        = 3
+        self.__ID_DISTANCE     = 4
+        self.__ID_VELOCITY     = 5
+        self.__ID_BPM_INC_TIME = 6
+        self.__ID_BPM_DEC_TIME = 7
+        self.__CS              = 8
+        self.__AR              = 9
 
         self.__id_x = None
         self.__id_y = None
 
         selections = {
              'BPM'          : self.__ID_BPM, 
+             'DT_NOTE'      : self.__ID_DT_NOTE,
+             'DT_RHYTM'     : self.__ID_DT_RHYTM,
              'ANGLE'        : self.__ID_ANGLE, 
              'DISTANCE'     : self.__ID_DISTANCE, 
              'VELOCITY'     : self.__ID_VELOCITY, 
@@ -422,6 +426,12 @@ class CompositionViewer(QtGui.QWidget):
             # Convert 1/ms -> BPM then put it in terms of 1/4 snap
             return 15000/play_data[:, RecData.DT]
 
+        if id_ == self.__ID_DT_NOTE:
+            return play_data[:, RecData.DT_NOTES]
+
+        if id_ == self.__ID_DT_RHYTM:
+            return play_data[:, RecData.DT_RHYM]
+
         if id_ == self.__ID_ANGLE:
             return play_data[:, RecData.ANGLE]
 
@@ -449,6 +459,12 @@ class CompositionViewer(QtGui.QWidget):
     def __get_selection_string(self, id_):
         if id_ == self.__ID_BPM:
             return 'BPM @ 1/4 meter (60/s)'
+
+        if id_ == self.__ID_DT_NOTE:
+            return 'Time interval across 3 notes (ms)'
+
+        if id_ == self.__ID_DT_RHYTM:
+            return '% the note is from previous note to next note (% of tn[2] - tn[0])'
 
         if id_ == self.__ID_ANGLE:
             return 'Angle (deg)'

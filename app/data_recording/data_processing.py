@@ -106,10 +106,14 @@ class DataProcessing():
         scr_type = score_data['type'].values    # What the resultant score action was (hit press, hit release, miss, empty, etc)
         
         press_select = (act_type == StdScoreData.ACTION_PRESS)
+        release_select = (act_type == StdScoreData.ACTION_RELEASE)
         empty_filter = (scr_type != StdScoreData.TYPE_EMPTY)
         
-        note_start_select = press_select & empty_filter
-        note_start_idx_ref = np.arange(note_start_select.shape[0])[note_start_select]
+        note_single_select = press_select
+        note_slider_select = (press_select | release_select)
+
+        note_single_idx_ref = np.arange(note_single_select.shape[0])[note_single_select]
+        note_slider_idx_ref = np.arange(note_slider_select.shape[0])[note_slider_select]
         not_empty_idx_ref = np.arange(empty_filter.shape[0])[empty_filter]
 
         if not_empty_idx_ref.shape[0] <= 3:
@@ -124,15 +128,15 @@ class DataProcessing():
             An entry is valid if:
                 - The entry is a press for any note but the first one
             """
-            note_start_map_t = map_t[note_start_select]
+            note_start_map_t = map_t[note_single_select]
 
             dt = np.empty(map_t.shape[0]) * np.nan
 
             # Not enough note presses
-            if note_start_idx_ref.shape[0] <= 2:
+            if note_single_idx_ref.shape[0] <= 2:
                 return dt
 
-            dt[note_start_idx_ref[1:]] = note_start_map_t[1:] - note_start_map_t[:-1]
+            dt[note_single_idx_ref[1:]] = note_start_map_t[1:] - note_start_map_t[:-1]
 
             return dt
 
@@ -145,7 +149,7 @@ class DataProcessing():
             An entry is valid if:
                 - The entry is a press for any note
             """
-            note_start_map_t = map_t[note_start_select]
+            note_start_map_t = map_t[note_single_select]
 
             dt0 = note_start_map_t[1:-1] - note_start_map_t[:-2]   # t1 - t0
             dt1 = note_start_map_t[2:] - note_start_map_t[1:-1]    # t2 - t1
@@ -153,14 +157,14 @@ class DataProcessing():
             dt_dec = np.empty(map_t.shape[0]) * np.nan
 
             # Not enough note presses
-            if note_start_idx_ref.shape[0] <= 3:
+            if note_single_idx_ref.shape[0] <= 3:
                 return dt_dec
 
             # The first inverval decrease comes from lack of notes before the start of the map. 
             # The time since last decrease for first note is ALWAYS 0
             # The time since last decrease for the second note is ALWAYS the time between the first and second notes
-            dt_dec[note_start_idx_ref[0]] = 0
-            dt_dec[note_start_idx_ref[1]] = dt0[0]
+            dt_dec[note_single_idx_ref[0]] = 0
+            dt_dec[note_single_idx_ref[1]] = dt0[0]
 
             ms = dt0[0]
 
@@ -181,7 +185,7 @@ class DataProcessing():
                     # so the time interval to add is t2 - t1
                     ms += dt1[i]
 
-                dt_dec[note_start_idx_ref[i + 2]] = ms
+                dt_dec[note_single_idx_ref[i + 2]] = ms
 
             return dt_dec
 
@@ -194,7 +198,7 @@ class DataProcessing():
             An entry is valid if:
                 - The entry is a press for any note
             """
-            note_start_map_t = map_t[note_start_select]
+            note_start_map_t = map_t[note_single_select]
 
             dt0 = note_start_map_t[1:-1] - note_start_map_t[:-2]   # t1 - t0
             dt1 = note_start_map_t[2:] - note_start_map_t[1:-1]    # t2 - t1
@@ -202,12 +206,12 @@ class DataProcessing():
             dt_inc = np.empty(map_t.shape[0]) * np.nan
 
             # Not enough note presses
-            if note_start_idx_ref.shape[0] <= 3:
+            if note_single_idx_ref.shape[0] <= 3:
                 return dt_inc
 
             # The first inverval increase comes as soon as note t2 is further than expected
             # This makes the time since last increase for first and second notes ALWAYS 0
-            dt_inc[note_start_idx_ref[0:2]] = 0
+            dt_inc[note_single_idx_ref[0:2]] = 0
 
             ms = 0
 
@@ -230,13 +234,13 @@ class DataProcessing():
                     # so the time interval to add is t2 - t1
                     ms += dt1[i]
 
-                dt_inc[note_start_idx_ref[i + 2]] = ms
+                dt_inc[note_single_idx_ref[i + 2]] = ms
 
             return dt_inc
             
         def __get_ds():
             """
-            Gets the spacing between each note
+            Gets the spacing between each aimpoint
             Data that does not pertain to a valid entries is marked as np.nan
             
             Entries consist of score points related to press, release, etc. 
@@ -273,15 +277,20 @@ class DataProcessing():
                 - It is not an empty hit
                 - It is not the first or last entry 
                     (requires a point present before and after to calc angle of current point)
+                - It is a single note
+                - It is either the start or end of a slider
+                    (in-between slider aimpoints are not considered)
+
+            TODO: Ignore overlaps because https://i.imgur.com/Iwuajar.gif
             """
-            not_empty_map_x = map_x[empty_filter]
-            not_empty_map_y = map_y[empty_filter]
+            slider_map_x = map_x[note_slider_select]
+            slider_map_y = map_y[note_slider_select]
 
-            dx0 = not_empty_map_x[1:-1] - not_empty_map_x[:-2]   # x1 - x0
-            dx1 = not_empty_map_x[2:] - not_empty_map_x[1:-1]    # x2 - x1
+            dx0 = slider_map_x[1:-1] - slider_map_x[:-2]   # x1 - x0
+            dx1 = slider_map_x[2:] - slider_map_x[1:-1]    # x2 - x1
 
-            dy0 = not_empty_map_y[1:-1] - not_empty_map_y[:-2]   # y1 - y0
-            dy1 = not_empty_map_y[2:] - not_empty_map_y[1:-1]    # y2 - y1
+            dy0 = slider_map_y[1:-1] - slider_map_y[:-2]   # y1 - y0
+            dy1 = slider_map_y[2:] - slider_map_y[1:-1]    # y2 - y1
             
             theta_d0 = np.arctan2(dy0, dx0)*(180/math.pi)
             theta_d1 = np.arctan2(dy1, dx1)*(180/math.pi)
@@ -293,14 +302,48 @@ class DataProcessing():
             angles = np.empty(map_x.shape[0]) * np.nan
 
             # Not enough notes
-            if not_empty_idx_ref.shape[0] <= 3:
+            if note_slider_idx_ref.shape[0] <= 3:
                 return angles
             
             # angles[0] = np.nan (implicit)
-            angles[not_empty_idx_ref[1:-1]] = thetas
+            angles[note_slider_idx_ref[1:-1]] = thetas
             # angles[-1] = np.nan (implicit)
 
             return angles
+
+
+        def __get_rhythm_percent():
+            # TODO: See https://discord.com/channels/546120878908506119/886986744090734682/935701345451786290
+            # https://cdn.discordapp.com/attachments/886986744090734682/935701344721961010/unknown.png
+            #
+            # somewhere between 0.25 and 0.5, 0.5 and 0.75 would be considered irregular snaps, therefore higher rhythmic complexity 
+            # for slightly off from 50%, I expect offsets equal to (t2 - t0)/2 - (t2 - t0)*percent 
+            """
+            Gets % the note is spaced from previous note to next note
+            Data that does not pertain to a valid entries is marked as np.nan
+            
+            Entries consist of score points related to press, release, etc. 
+            An entry is valid if:
+                - The entry is a press
+                - First 2 notes are excluded
+            """
+            note_start_map_t = map_t[note_single_select]
+
+            n_percent = np.empty(map_t.shape[0]) * np.nan
+
+            # Not enough note presses
+            if note_single_idx_ref.shape[0] <= 2:
+                return n_percent
+
+            # tn[2] - tn[0]
+            total_interval = note_start_map_t[2:] - note_start_map_t[:-2]
+
+            # tn[1] - tn[0]
+            interval = note_start_map_t[1:] - note_start_map_t[:-1]
+
+            n_percent[note_single_idx_ref[2:]] = interval[:-1]/total_interval
+            return n_percent
+
 
         def __get_notes_visible():
             """
@@ -329,58 +372,126 @@ class DataProcessing():
 
             return notes_visible
 
-        dt     = __get_note_dt()
-        dt_dec = __get_dt_dec()
-        dt_inc = __get_dt_inc()
-        ds     = __get_ds()
-        angles = __get_angles()
+        dt      = __get_note_dt()
+        dt_dec  = __get_dt_dec()
+        dt_inc  = __get_dt_inc()
+        ds      = __get_ds()
+        angles  = __get_angles()
+        dt_rhym = __get_rhythm_percent()
 
-        return dt, dt_dec, dt_inc, ds, angles
+        return dt, dt_dec, dt_inc, ds, angles, dt_rhym
 
 
     @staticmethod
     def get_performance_data(score_data):
-        #hit_types_miss = score_data['type'] == StdScoreData.TYPE_MISS
-        #num_total = score_data['type'].values.shape[0]
-        #num_misses = score_data['type'].values[hit_types_miss].shape[0]
+        map_x = score_data['map_x'].values
+        map_y = score_data['map_y'].values
+        map_t = score_data['map_t'].values
 
-        ### Too many misses tends to falsely lower the deviation. Disallow plays with >10% misses
-        #print(f'num total hits: {num_total}   num: misses {num_misses} ({100 * num_misses/num_total:.2f}%)')
-        #if num_misses/num_total > 0.1:
-        #    raise Exception('Invalid Play. Too many misses')
+        act_type = score_data['action'].values  # What action was performed (press, release, hold)
+        scr_type = score_data['type'].values    # What the resultant score action was (hit press, hit release, miss, empty, etc)
+
+        hit_t = score_data['replay_t'].values
         
-        x_offsets = score_data['replay_x'].values - score_data['map_x'].values
-        y_offsets = score_data['replay_y'].values - score_data['map_y'].values
-        t_offsets = score_data['replay_t'].values - score_data['map_t'].values
+        press_select = (act_type == StdScoreData.ACTION_PRESS)
+        valid_select = (scr_type == StdScoreData.TYPE_HITP)
 
-        # Correct for incoming direction
-        dx = score_data['map_x'].values[1:] - score_data['map_x'].values[:-1]
-        dy = score_data['map_y'].values[1:] - score_data['map_y'].values[:-1]
+        def __get_hit_interval_offset():
+            """
+            Gets the difference between tap timing and note timing across 3 notes
+            Data that does not pertain to a valid entries is marked as np.nan
+            
+            Entries consist of score points related to press 
+            An entry is valid if:
+                - The entry is a press for any note 
+                - First 2 notes are invalid
+            """
+            dt_notes = np.empty(map_t.shape[0]) * np.nan
+            dt_hits  = np.empty(map_t.shape[0]) * np.nan
 
-        map_thetas = np.arctan2(dy, dx)
-        hit_thetas = np.arctan2(y_offsets, x_offsets)
-        mags = (x_offsets**2 + y_offsets**2)**0.5
+            # Not enough note presses
+            if np.sum(press_select) <= 3:
+                return dt_notes, dt_hits
 
-        x_offsets[1:] = mags[1:]*np.cos(map_thetas - hit_thetas[1:])
-        y_offsets[1:] = mags[1:]*np.sin(map_thetas - hit_thetas[1:])
+            dt_notes_idx_ref = np.arange(map_t.shape[0])
+            dt_hits_idx_ref  = np.arange(map_t.shape[0])
 
-        # Filter out nans that happen due to misc reasons (usually due to empty slices or div by zero)
-        #nan_filter = ~np.isnan(x_offsets) & ~np.isnan(y_offsets)
+            note_start_map_t = map_t[press_select]
+            hit_press_replay_t = hit_t[press_select]
 
-        #x_offsets = x_offsets[nan_filter]
-        #y_offsets = y_offsets[nan_filter]
-        #t_offsets = t_offsets[nan_filter]
+            # size = orig[note_press_select]
+            dt_notes_idx_ref = dt_notes_idx_ref[press_select]
+            dt_hits_idx_ref = dt_hits_idx_ref[press_select]
 
-        return x_offsets, y_offsets, t_offsets
+            #print('note_start_map_t: ', note_start_map_t.shape[0])
+            #print('dt_notes_mask: ', np.sum(dt_notes_mask))
+            #print('dt_hits_mask: ', dt_hits_mask[:10])
+
+            # Timing t[i]
+            note_timings0 = note_start_map_t[:-2]
+            hit_timings0 = hit_press_replay_t[:-2]
+
+            # Timing t[i + 2]
+            note_timings1 = note_start_map_t[2:]
+            hit_timings1 = hit_press_replay_t[2:]
+
+            # d_tn = tn[i + 2] - tn[i]
+            # d_th = (th[i + 2] - tn[i + 2]) - (th[i] - tn[i])
+            _dt_notes = note_timings1 - note_timings0
+            _dt_hits  = (hit_timings1 - hit_timings0) - (note_timings1 - note_timings0)
+
+            # size = orig[note_press_select] - 2
+            dt_notes_idx_ref = dt_notes_idx_ref[2:]
+            
+            # All 3 notes in question must be valid hit presses
+            # size = (orig[note_press_select] - 2)[valid_select]
+            valid_press_select = valid_select[dt_hits_idx_ref]
+            valid_press_select = (valid_press_select[2:] & valid_press_select[1:-1] & valid_press_select[:-2])
+            dt_hits_idx_ref = dt_hits_idx_ref[2:][valid_press_select]
+
+            # Record interval across 3 notes for all presses, but for hits record only valid presses
+            dt_notes[dt_notes_idx_ref] = _dt_notes
+            dt_hits[dt_hits_idx_ref] = _dt_hits[valid_press_select]
+
+            return dt_notes, dt_hits
+
+        def __get_position_offsets():
+            """
+            Gets rotation compensated offset between notes. Rotation compensated means, 
+            all triplets of notes are rotated to be orthogonal to a common direction
+            """
+            x_offsets = score_data['replay_x'].values - score_data['map_x'].values
+            y_offsets = score_data['replay_y'].values - score_data['map_y'].values
+
+            # Correct for incoming direction
+            dx = map_x[1:] - map_x[:-1]
+            dy = map_y[1:] - map_y[:-1]
+
+            map_thetas = np.arctan2(dy, dx)
+            hit_thetas = np.arctan2(y_offsets, x_offsets)
+            mags = (x_offsets**2 + y_offsets**2)**0.5
+
+            x_offsets[1:] = mags[1:]*np.cos(map_thetas - hit_thetas[1:])
+            y_offsets[1:] = mags[1:]*np.sin(map_thetas - hit_thetas[1:])
+
+            return x_offsets, y_offsets
+
+        dt_notes, dt_hits = __get_hit_interval_offset()
+        x_offsets, y_offsets = __get_position_offsets()
+
+        return dt_notes, dt_hits, x_offsets, y_offsets, (hit_t - map_t)
 
 
     @staticmethod
     def get_data(score_data, timestamp, map_md5, mods, cs, ar):
-        dt, dt_dec, dt_inc, ds, angles = DataProcessing.get_difficulty_data(score_data, ar)
-        x_offsets, y_offsets, t_offsets = DataProcessing.get_performance_data(score_data)
+        dt, dt_dec, dt_inc, ds, angles, dt_rhym = DataProcessing.get_difficulty_data(score_data, ar)
+        dt_notes, dt_hits, x_offsets, y_offsets, t_offsets = DataProcessing.get_performance_data(score_data)
         hash_mask = 0xFFFFFFFFFFFF0000
 
-        if not (dt.shape[0] == dt_dec.shape[0] == dt_inc.shape[0] == ds.shape[0] == angles.shape[0] == x_offsets.shape[0] == y_offsets.shape[0] == t_offsets.shape[0]):
+        if not (
+            dt.shape[0] == dt_dec.shape[0] == dt_inc.shape[0] == ds.shape[0] == angles.shape[0] == dt_rhym.shape[0] ==
+            dt_notes.shape[0] == dt_hits.shape[0] == x_offsets.shape[0] == y_offsets.shape[0] == t_offsets.shape[0]
+        ):
             print(
                 'Data shapes do not match:',
                 f'   DT: {dt.shape[0]} '
@@ -388,21 +499,28 @@ class DataProcessing():
                 f'   DT_INC: {dt_inc.shape[0]} '
                 f'   DS: {ds.shape[0]} '
                 f'   ANGLES: {angles.shape[0]} '
+                f'   DT_RHYM: {dt_rhym.shape[0]} '
                 f'   X_OFFSETS: {x_offsets.shape[0]} '
                 f'   Y_OFFSETS: {y_offsets.shape[0]} '
                 f'   T_OFFSETS: {t_offsets.shape[0]} '
+                f'   DT_NOTES: {dt_notes.shape[0]} '
+                f'   DT_HITS: {dt_hits.shape[0]} '
             )
             raise Exception('Data shapes do not match')
 
         timings = score_data['map_t'].values
+        x_pos = score_data['map_x'].values
+        y_pos = score_data['map_y'].values
         htypes = score_data['type'].values
         otypes = score_data['action'].values
 
-        if not (dt.shape[0] == timings.shape[0] == htypes.shape[0] == otypes.shape[0]):
+        if not (dt.shape[0] == timings.shape[0] == htypes.shape[0] == otypes.shape[0] == x_pos.shape[0] == y_pos.shape[0]):
             print(
                 'Data shapes do not match:',
                 f'   DT: {dt.shape[0]} '
                 f'   TIMINGS: {timings.shape[0]} '
+                f'   X_POS: {x_pos.shape[0]} '
+                f'   Y_POS: {y_pos.shape[0]} '
                 f'   HTYPES: {htypes.shape[0]} '
                 f'   OTYPES: {otypes.shape[0]} '
             )
@@ -421,14 +539,19 @@ class DataProcessing():
             ar,         # AR        
             htypes,     # HIT_TYPE
             otypes,     # OBJECT_TYPE
-            timings,    # TIMINGS   
+            timings,    # TIMINGS
+            x_pos,      # X_POS
+            y_pos,      # Y_POS
             dt,         # DT        
-            dt_dec,     # DT_INC    
-            dt_inc,     # DT_DEC    
+            dt_dec,     # DT_DEC     
+            dt_inc,     # DT_INC   
             ds,         # DS
-            angles,     # ANGLE     
+            angles,     # ANGLE
+            dt_rhym,    # DT_RHYM
             x_offsets,  # X_OFFSETS 
             y_offsets,  # Y_OFFSETS 
             t_offsets,  # T_OFFSETS
+            dt_notes,   # DT_NOTES
+            dt_hits     # DT_HITS
         ]
  

@@ -8,6 +8,11 @@ from app.data_recording.data import RecData
 
 
 class GraphTOffsetBPM(QtGui.QWidget):
+    """
+    NOTE: Filtering distances and bpms in the overivew window probably breaks this
+    since that would remove notes that would other be operated on. This will need to
+    be a metric in the scoring data in the future.
+    """
 
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
@@ -46,35 +51,10 @@ class GraphTOffsetBPM(QtGui.QWidget):
         self.__graph.clearPlots()
         self.__text.setText(f'')
 
-        dt_notes_all = np.asarray([])
-        dt_hits_all  = np.asarray([])
-
-        unique_timestamps = np.unique(play_data[:, RecData.TIMESTAMP])
-        for timestamp in unique_timestamps:
-            data_select = \
-                (play_data[:, RecData.TIMESTAMP] == timestamp) & \
-                (play_data[:, RecData.ACT_TYPE] == StdScoreData.ACTION_PRESS)
-            data = play_data[data_select]
-            
-            # Timing t[i]
-            note_timings0 = data[:-2, RecData.TIMINGS] 
-            hit_timings0 = note_timings0 + data[:-2, RecData.T_OFFSETS]
-
-            # Timing t[i + 2]
-            note_timings1 = data[2:, RecData.TIMINGS] 
-            hit_timings1 = note_timings1 + data[2:, RecData.T_OFFSETS]
-
-            dt_notes = note_timings1 - note_timings0
-            dt_hits  = (hit_timings1 - hit_timings0) - (note_timings1 - note_timings0)
-
-            data_filter = data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP
-
-            dt_notes = dt_notes[data_filter[2:] & data_filter[:-2]]
-            dt_hits  = dt_hits[data_filter[2:] & data_filter[:-2]]
-
-            dt_notes_all = np.insert(dt_notes_all, 0, dt_notes)
-            dt_hits_all  = np.insert(dt_hits_all,  0, dt_hits)
-
+        nan_filter = ~np.isnan(play_data[:, RecData.DT_HITS])
+        dt_notes_all = play_data[nan_filter, RecData.DT_NOTES]
+        dt_hits_all  = play_data[nan_filter, RecData.DT_HITS]
+        
         if self.__avg_data_points:
             # Average overlapping data points (those that have same x-axis within +/- 3)
             dt_hits_all = np.asarray([ np.sort(dt_hits_all[np.abs(dt_notes_all - dt_note) < 3]).mean() for dt_note in np.unique(dt_notes_all) ])
