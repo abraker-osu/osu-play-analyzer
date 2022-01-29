@@ -40,12 +40,14 @@ class _OsuRecorder(QtCore.QObject):
             time.sleep(2)
 
         print('Processing replay:', replay_file_name)
+        #time_start = time.time()
 
         try: replay = ReplayIO.open_replay(replay_file_name)
         except Exception as e:
             print(f'Error opening replay: {e}')
             return
 
+        #print('Replay load time: ', time.time() - time_start)
         QtWidgets.QApplication.processEvents()
 
         # Check if replay already exists in data
@@ -58,30 +60,38 @@ class _OsuRecorder(QtCore.QObject):
             print(f'{replay.game_mode} gamemode is not supported')
             return
 
+        #time_start = time.time()
+
         print('Determining beatmap...')
         map_file_name, is_gen = MapsDB.get_map_file_name(replay.beatmap_hash, md5h=False, reprocess_if_missing=False)
         if map_file_name == None:
             print(f'Warning: file_name is None. Unable to open map for replay with beatmap hash {replay.beatmap_hash}')
             return
 
-        print('Processing beatmap:', map_file_name)
+        #print('Processing beatmap:', map_file_name)
         beatmap = BeatmapIO.open_beatmap(map_file_name)
         if is_gen and (AppConfig.cfg['delete_gen'] == True):
             os.remove(map_file_name)
-        print('Beatmap load time: ', time.time() - time_start)
+        #print('Beatmap load time: ', time.time() - time_start)
 
+        #time_start = time.time()
         QtWidgets.QApplication.processEvents()
 
         map_data = DataProcessing.get_map_data_from_object(beatmap)
         replay_data = DataProcessing.get_replay_data_from_object(replay)
         DataProcessing.process_mods(map_data, replay_data, replay)
 
+        #print('Data processing time: ', time.time() - time_start)
+
+        #time_start = time.time()
         # Get data
         score_data = DataProcessing.get_score_data(map_data, replay_data, beatmap.difficulty.cs, beatmap.difficulty.ar)
         data = DataProcessing.get_data(score_data, replay.timestamp.timestamp(), beatmap.metadata.beatmap_md5, replay.mods.value, beatmap.difficulty.cs, beatmap.difficulty.ar)
 
+        #print('Score data processing time: ', time.time() - time_start)
         QtWidgets.QApplication.processEvents()
 
+        #time_start = time.time()
         # Save data and emit to notify other components that there is a new replay
         try: PlayData.add_to_data(data)
         except ValueError as e:
@@ -95,6 +105,8 @@ class _OsuRecorder(QtCore.QObject):
                 '\n'
             )
             return
+
+        #print('Play data saving time: ', time.time() - time_start)
 
         self.new_replay_event.emit((map_data, replay_data, beatmap.difficulty.cs, beatmap.difficulty.ar, replay.mods.value, beatmap.metadata.name + ' ' + replay.get_name()))
 
