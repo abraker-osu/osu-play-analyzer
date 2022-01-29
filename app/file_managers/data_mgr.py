@@ -5,7 +5,7 @@ from app.data_recording.data import RecData
 
 class _PlayData():
 
-    SAVE_FILE = 'data/osu_performance_recording_v1.npy'
+    SAVE_FILE = 'data/osu_performance_recording_v2.npy'
 
     try: 
         data_file = open(SAVE_FILE, 'rb+')
