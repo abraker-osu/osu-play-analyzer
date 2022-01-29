@@ -76,7 +76,7 @@ class DevGraphRhythm(QtGui.QWidget):
         play_data = play_data[data_filter]
 
         # Gather relevant data
-        data_c = 15000/play_data[:, RecData.DT]
+        data_c = 30000/play_data[:, RecData.DT_NOTES]
         data_x = 100*play_data[:, RecData.DT_RHYM]
 
         if self.__dev_data_select == self.DEV_DATA_X:
