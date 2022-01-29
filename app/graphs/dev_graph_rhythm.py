@@ -28,7 +28,7 @@ class DevGraphRhythm(QtGui.QWidget):
         self.__avg_data_points = True
 
         # Main graph
-        self.__graph = pyqtgraph.PlotWidget(title='Aim dev-t (vel)')
+        self.__graph = pyqtgraph.PlotWidget(title='Aim dev-t (rhythm)')
         self.__graph.getPlotItem().getAxis('left').enableAutoSIPrefix(False)
         self.__graph.getPlotItem().getAxis('bottom').enableAutoSIPrefix(False)
         self.__graph.enableAutoRange(axis='x', enable=False)
