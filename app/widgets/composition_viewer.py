@@ -204,12 +204,15 @@ class CompositionViewer(QtGui.QWidget):
         '''
         Updates the cached selection mask
         '''
-        if type(self.play_data) == type(None):
+        if type(data) == type(None):
             return
 
         roi_plot = self.roi_selections[roi_id]['roi']
-        self.roi_selections[roi_id]['select'] = self.__select_data_in_roi(roi_plot, data)
-        self.roi_selections[roi_id]['select'] |= np.isnan(data).any(axis=1)
+        inv_filter = ~(np.isnan(data).any(axis=1) | np.isinf(data).any(axis=1))
+        
+        self.roi_selections[roi_id]['select'] = np.zeros((data.shape[0]), dtype=np.bool)
+        self.roi_selections[roi_id]['select'][~inv_filter] = True
+        self.roi_selections[roi_id]['select'][ inv_filter] = self.__select_data_in_roi(roi_plot, data[inv_filter])
 
 
     def __reset_roi_selections(self):
@@ -229,8 +232,8 @@ class CompositionViewer(QtGui.QWidget):
                 data[:, 0] = self.__id_to_data(id_x, self.play_data)
                 data[:, 1] = self.__id_to_data(id_y, self.play_data)
                 
-                nan_filter = ~np.isnan(data).any(axis=1)
-                filtered_data = data[nan_filter]
+                inv_filter = ~(np.isnan(data).any(axis=1) | np.isinf(data).any(axis=1))
+                filtered_data = data[inv_filter]
 
                 if filtered_data.shape[0] == 0:
                     continue
@@ -329,6 +332,8 @@ class CompositionViewer(QtGui.QWidget):
         '''
         Returns a mask array selecting displayed data points that are 
         located within the given ROI.
+
+        Invalid values (NaN and Inf) must not be passed to this function.
 
         # Thanks https://stackoverflow.com/a/2922778
         '''
