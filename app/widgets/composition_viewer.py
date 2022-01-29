@@ -423,7 +423,9 @@ class CompositionViewer(QtGui.QWidget):
 
         if update_x or update_y:
             i_data = np.apply_along_axis(lambda data: score_data_to_str(data), 1, self.play_data)
-            self.data_plot.setData(self.data[:, 0], self.data[:, 1], data=i_data)
+
+            inv_filter = ~(np.isnan(self.data).any(axis=1) | np.isinf(self.data).any(axis=1))
+            self.data_plot.setData(self.data[inv_filter, 0], self.data[inv_filter, 1], data=i_data[inv_filter])
 
 
     def __id_to_data(self, id_, play_data):
