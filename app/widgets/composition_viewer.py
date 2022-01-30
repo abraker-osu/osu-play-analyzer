@@ -313,16 +313,9 @@ class CompositionViewer(QtGui.QWidget):
         '''
         Composes the selections in all planes together, and emits the resulting selected play data.
         '''
-        if type(self.play_data) == type(None):
+        play_data_out = self.get_selected()
+        if type(play_data_out) == type(None):
             return
-
-        # Calculate master selection across all multidimensional planes
-        select = np.ones((self.play_data.shape[0]), dtype=np.bool)
-        for roi_selection in self.roi_selections.values():
-            select &= roi_selection['select']
-
-        play_data_out = self.play_data[select]
-        self.num_data_points_label.setText(f'Num data points selected: {play_data_out.shape[0]}')
 
         if emit_data:
             self.region_changed.emit(play_data_out)
@@ -424,6 +417,8 @@ class CompositionViewer(QtGui.QWidget):
         if update_x or update_y:
             i_data = np.apply_along_axis(lambda data: score_data_to_str(data), 1, self.play_data)
 
+            # Make sure no invalid values are passed to display or it will won't 
+            # display points due to innability to compute bounds
             inv_filter = ~(np.isnan(self.data).any(axis=1) | np.isinf(self.data).any(axis=1))
             self.data_plot.setData(self.data[inv_filter, 0], self.data[inv_filter, 1], data=i_data[inv_filter])
 
