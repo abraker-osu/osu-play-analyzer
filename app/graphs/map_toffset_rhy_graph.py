@@ -48,14 +48,14 @@ class MapToffsetRhyGraph(QtGui.QWidget):
 
         nan_filter = ~(np.isnan(play_data[:, RecData.DT_RHYM]) | np.isnan(play_data[:, RecData.T_OFFSETS]))
         t_offsets = play_data[nan_filter, RecData.T_OFFSETS]
-        rhytm  = play_data[nan_filter, RecData.DT_RHYM]
+        rhytms  = play_data[nan_filter, RecData.DT_RHYM]
         
         if self.__avg_data_points:
-            # Average overlapping data points (those that have same x-axis within +/- 3)
-            rhytm = np.asarray([ np.sort(rhytm[np.abs(t_offsets - dt_note) < 3]).mean() for dt_note in np.unique(t_offsets) ])
-            t_offsets = np.unique(t_offsets)
+            # Average overlapping data points (those that have same x-axis within +/- 0.01)
+            t_offsets = np.asarray([ np.mean(t_offsets[np.abs(rhytms - rhytm) < 0.01]) for rhytm in np.unique(rhytms) ])
+            rhytms = np.unique(rhytms)
 
-        data_x = rhytm
+        data_x = rhytms
         data_y = t_offsets
 
         colors = pyqtgraph.mkBrush(color=[ 255, 0, 0, 150 ])
