@@ -94,7 +94,8 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
         data = play_data[data_filter]
 
         if data.shape[0] == 0:
-            self.__miss_plot.setData(x=[], y=[], top=[], bottom=[], pen=mkPen((200, 0, 0, 50), width=5))
+            blank_data = np.asarray([])
+            self.__miss_plot.setData(x=blank_data, y=blank_data, top=blank_data, bottom=blank_data, pen=mkPen((200, 0, 0, 50), width=5))
             return
 
         # Extract data and plot
