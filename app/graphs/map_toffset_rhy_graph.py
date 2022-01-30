@@ -7,7 +7,7 @@ from osu_analysis import StdScoreData
 from app.data_recording.data import RecData
 
 
-class GraphTOffsetBPM(QtGui.QWidget):
+class MapToffsetRhyGraph(QtGui.QWidget):
 
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
@@ -15,7 +15,7 @@ class GraphTOffsetBPM(QtGui.QWidget):
         self.__avg_data_points = True
 
         # Main graph
-        self.__graph = pyqtgraph.PlotWidget(title='Avg T-Offset vs Note interval')
+        self.__graph = pyqtgraph.PlotWidget(title='Avg T-Offset vs Note Rhythm')
         self.__graph.getPlotItem().getAxis('left').enableAutoSIPrefix(False)
         self.__graph.getPlotItem().getAxis('bottom').enableAutoSIPrefix(False)
         self.__graph.enableAutoRange(axis='x', enable=False)
@@ -23,7 +23,7 @@ class GraphTOffsetBPM(QtGui.QWidget):
         #self.__graph.setLimits(xMin=-10, xMax=5000, yMin=-200, yMax=200)
         self.__graph.setRange(xRange=[-10, 300], yRange=[-200, 200])
         self.__graph.setLabel('left', 'T-Offset', units='ms', unitPrefix='')
-        self.__graph.setLabel('bottom', 'Note interval', units='ms', unitPrefix='')
+        self.__graph.setLabel('bottom', 'Note Rhythm', units='%', unitPrefix='')
         self.__graph.addLegend()
 
         # Used to set text in legend item
@@ -46,17 +46,17 @@ class GraphTOffsetBPM(QtGui.QWidget):
         self.__graph.clearPlots()
         self.__text.setText(f'')
 
-        nan_filter = ~np.isnan(play_data[:, RecData.DT_HITS])
-        dt_notes_all = play_data[nan_filter, RecData.DT_NOTES]
-        dt_hits_all  = play_data[nan_filter, RecData.DT_HITS]
+        nan_filter = ~(np.isnan(play_data[:, RecData.DT_RHYM]) | np.isnan(play_data[:, RecData.T_OFFSETS]))
+        t_offsets = play_data[nan_filter, RecData.T_OFFSETS]
+        rhytm  = play_data[nan_filter, RecData.DT_RHYM]
         
         if self.__avg_data_points:
             # Average overlapping data points (those that have same x-axis within +/- 3)
-            dt_hits_all = np.asarray([ np.sort(dt_hits_all[np.abs(dt_notes_all - dt_note) < 3]).mean() for dt_note in np.unique(dt_notes_all) ])
-            dt_notes_all = np.unique(dt_notes_all)
+            rhytm = np.asarray([ np.sort(rhytm[np.abs(t_offsets - dt_note) < 3]).mean() for dt_note in np.unique(t_offsets) ])
+            t_offsets = np.unique(t_offsets)
 
-        data_x = dt_notes_all
-        data_y = dt_hits_all
+        data_x = rhytm
+        data_y = t_offsets
 
         colors = pyqtgraph.mkBrush(color=[ 255, 0, 0, 150 ])
         self.__graph.plot(x=data_x, y=data_y, pen=None, symbol='o', symbolPen=None, symbolSize=5, symbolBrush=colors)

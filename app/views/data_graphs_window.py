@@ -19,8 +19,9 @@ from app.graphs.dev_graph_angle import DevGraphAngle
 from app.graphs.dev_graph_vel import DevGraphVel
 from app.graphs.dev_graph_rhythm import DevGraphRhythm
 
-from app.graphs.graph_toffset_bpm import GraphTOffsetBPM
 from app.graphs.graph_toffset_bpm_inc import GraphTOffsetBPMInc
+from app.graphs.graph_toffset_bpm import GraphTOffsetBPM
+from app.graphs.map_toffset_rhy_graph import MapToffsetRhyGraph
 
 from app.data_recording.data import RecData
 from app.file_managers import PlayData
@@ -37,9 +38,10 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.hit_distr_graph = HitDistrGraph()
         self.aim_display = AimGraph()
 
-        self.toffset_bpm = GraphTOffsetBPM()
         self.toffset_bpm_inc = GraphTOffsetBPMInc()
-
+        self.toffset_bpm = GraphTOffsetBPM()
+        self.toffset_rhy_graph = MapToffsetRhyGraph()
+        
         self.dev_graph_angle = DevGraphAngle()
         self.dev_graph_vel = DevGraphVel()
         self.dev_graph_rhythm = DevGraphRhythm()
@@ -51,8 +53,9 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.replay_tabs.addTab(self.aim_display, 'Aim display')
 
         self.map_tabs = QtGui.QTabWidget()
-        self.map_tabs.addTab(self.toffset_bpm, 'T-offset vs BPM')
         self.map_tabs.addTab(self.toffset_bpm_inc, 'T-offset vs BPM Inc')
+        self.map_tabs.addTab(self.toffset_bpm, 'T-offset vs BPM')
+        self.map_tabs.addTab(self.toffset_rhy_graph, 'T-offset vs Rhythm')
 
         self.play_data_tabs = QtGui.QTabWidget()
         self.play_data_tabs.addTab(self.dev_graph_angle, 'Dev vs Angle')
@@ -76,8 +79,8 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.hit_distr_graph.plot_data(play_data)
         self.aim_display.plot_data(play_data)
 
-        self.toffset_bpm.plot_data(play_data)
         self.toffset_bpm_inc.plot_data(play_data)
+        self.toffset_bpm.plot_data(play_data)
 
 
     def overview_single_map_selection_event(self, play_data):
@@ -97,8 +100,9 @@ class DataGraphsWindow(QtGui.QMainWindow):
             # TODO: Clear plots
             return
 
-        self.toffset_bpm.plot_data(play_data)
         self.toffset_bpm_inc.plot_data(play_data)
+        self.toffset_bpm.plot_data(play_data)
+        self.toffset_rhy_graph.plot_data(play_data)
 
         self.dev_graph_angle.plot_data(play_data)
         self.dev_graph_vel.plot_data(play_data)
