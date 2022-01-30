@@ -45,9 +45,9 @@ class PlayList(pyqtgraph.TableWidget):
         # TODO: Select all maps in the list
 
 
+
     def load_latest_play(self):
         play_data = PlayData.data.astype(np.uint64)
-
         if PlayData.data.shape[0] == 0:
             return
 
@@ -65,6 +65,7 @@ class PlayList(pyqtgraph.TableWidget):
         map_mod = play_data[0, RecData.MODS]
 
         if (map_md5 in md5s) and (map_mod in mods):
+            self.__list_select_event(None)
             return
             
         map_md5h_str = MapsDB.md5h_to_md5h_str_func(map_md5)
@@ -96,6 +97,7 @@ class PlayList(pyqtgraph.TableWidget):
         data['Avg BPM'] = map_avg_bpm
         
         self.appendData(data)
+        self.__list_select_event(None)
 
 
     def reload_map_list(self):
