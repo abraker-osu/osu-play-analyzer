@@ -56,6 +56,15 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
         if play_data.shape[0] == 0:
             return
 
+        unique_map_hashes = np.unique(play_data[:, RecData.MAP_HASH])
+        if unique_map_hashes.shape[0] > 1:
+            return
+
+        unique_map_hash_select = (play_data[:, RecData.MAP_HASH] == unique_map_hashes[0])
+        unique_map_mods = np.unique(play_data[unique_map_hash_select, RecData.MODS])
+        if unique_map_mods[0] > 1:
+            return
+
         self.__plot_misses(play_data)
         self.__plot_hit_offsets(play_data)
 

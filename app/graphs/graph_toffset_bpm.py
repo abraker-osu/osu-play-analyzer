@@ -1,13 +1,16 @@
 import pyqtgraph
-from pyqtgraph.Qt import QtGui
+from pyqtgraph.Qt import QtCore, QtGui
 
 import numpy as np
+import threading
 
 from osu_analysis import StdScoreData
 from app.data_recording.data import RecData
 
 
 class GraphTOffsetBPM(QtGui.QWidget):
+
+    __calc_data_event = QtCore.pyqtSignal(object, object)
 
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
@@ -36,16 +39,24 @@ class GraphTOffsetBPM(QtGui.QWidget):
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(2)
         self.__layout.addWidget(self.__graph)
+                       
+        # Connect signals
+        self.__calc_data_event.connect(self.__display_data)
         
 
     def plot_data(self, play_data):
-        if play_data.shape[0] == 0:
-            return
-
         # Clear plots for redraw
         self.__graph.clearPlots()
         self.__text.setText(f'')
 
+        if play_data.shape[0] == 0:
+            return
+
+        thread = threading.Thread(target=self.__proc_data, args=(play_data, ))
+        thread.start()
+
+
+    def __proc_data(self, play_data):
         nan_filter = ~np.isnan(play_data[:, RecData.DT_HITS])
         dt_notes_all = play_data[nan_filter, RecData.DT_NOTES]
         dt_hits_all  = play_data[nan_filter, RecData.DT_HITS]
@@ -58,5 +69,9 @@ class GraphTOffsetBPM(QtGui.QWidget):
         data_x = dt_notes_all
         data_y = dt_hits_all
 
+        self.__calc_data_event.emit(data_x, data_y)
+
+
+    def __display_data(self, data_x, data_y):
         colors = pyqtgraph.mkBrush(color=[ 255, 0, 0, 150 ])
         self.__graph.plot(x=data_x, y=data_y, pen=None, symbol='o', symbolPen=None, symbolSize=5, symbolBrush=colors)
