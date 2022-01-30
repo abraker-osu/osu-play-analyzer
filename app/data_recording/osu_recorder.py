@@ -69,9 +69,14 @@ class _OsuRecorder(QtCore.QObject):
             return
 
         #print('Processing beatmap:', map_file_name)
-        beatmap = BeatmapIO.open_beatmap(map_file_name)
-        if is_gen and (AppConfig.cfg['delete_gen'] == True):
-            os.remove(map_file_name)
+        try:
+            beatmap = BeatmapIO.open_beatmap(map_file_name)
+            if is_gen and (AppConfig.cfg['delete_gen'] == True):
+                os.remove(map_file_name)
+        except FileNotFoundError:
+            print(f'Warning: Map {map_file_name} not longer exists!')
+            return
+            
         #print('Beatmap load time: ', time.time() - time_start)
 
         #time_start = time.time()
