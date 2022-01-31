@@ -133,7 +133,7 @@ class CompositionViewer(QtGui.QWidget):
         self.main_layout.addWidget(self.plot_widget)
         self.main_layout.addLayout(self.right_side_layout)
 
-        self.reset_roi_selections_button.clicked.connect(self.__reset_roi_selections)
+        self.reset_roi_selections_button.clicked.connect(self.reset_roi_selections)
 
         self.x_axis_selection.idPressed.connect(self.__x_axis_selection_event)
         self.y_axis_selection.idPressed.connect(self.__y_axis_selection_event)
@@ -215,7 +215,7 @@ class CompositionViewer(QtGui.QWidget):
         self.roi_selections[roi_id]['select'][ inv_filter] = self.__select_data_in_roi(roi_plot, data[inv_filter])
 
 
-    def __reset_roi_selections(self):
+    def reset_roi_selections(self):
         '''
         Resets ROI selections to fit the entire displayed data
         '''

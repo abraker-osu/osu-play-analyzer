@@ -43,6 +43,7 @@ class DataOverviewWindow(QtGui.QWidget):
 
         self.composition_viewer = CompositionViewer()
         self.play_graph = PlaysGraph()
+
         self.show_map_btn = QtGui.QPushButton('Show map')
         self.status_label = QtGui.QLabel('')
         self.progress_bar = QtGui.QProgressBar()
@@ -64,7 +65,7 @@ class DataOverviewWindow(QtGui.QWidget):
         self.open_replay_action = QtGui.QAction("&Open *.osr", triggered=lambda: self.__open_replay_dialog())
         self.file_menu.addAction(self.open_replay_action)
 
-        self.menu_bar  = QtGui.QMenuBar()
+        self.menu_bar = QtGui.QMenuBar()
         self.menu_bar.addMenu(self.file_menu)
 
         self.main_layout = QtGui.QHBoxLayout(self)
@@ -74,7 +75,10 @@ class DataOverviewWindow(QtGui.QWidget):
 
         self.progress_bar.hide()
 
+        # Connect signals
         self.map_list.map_selected.connect(self.__map_select_event)
+        self.map_list.new_map_loaded.connect(self.composition_viewer.reset_roi_selections)
+
         self.play_graph.region_changed.connect(self.composition_viewer.set_composition_from_play_data)
         self.composition_viewer.region_changed.connect(self.region_changed)
         self.show_map_btn.clicked.connect(self.__show_map_event)

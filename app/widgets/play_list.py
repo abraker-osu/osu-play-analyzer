@@ -28,6 +28,7 @@ from osu_analysis import Mod
 class PlayList(pyqtgraph.TableWidget):
 
     map_selected = QtCore.pyqtSignal(object)
+    new_map_loaded = QtCore.pyqtSignal()
 
     def __init__(self):
         pyqtgraph.TableWidget.__init__(self)
@@ -42,8 +43,9 @@ class PlayList(pyqtgraph.TableWidget):
             self.selectRow(0)
             
         self.selectionModel().selectionChanged.connect(self.__list_select_event)
-        # TODO: Select all maps in the list
 
+        self.setColumnHidden(0, True)
+        self.setColumnHidden(1, True)
 
 
     def load_latest_play(self):
@@ -68,13 +70,15 @@ class PlayList(pyqtgraph.TableWidget):
             self.__list_select_event(None)
             return
             
+        # Process data to get stuff that will be shown
         map_md5h_str = MapsDB.md5h_to_md5h_str_func(map_md5)
         map_name_str = self.__md5h_str_to_name_func(map_md5h_str)
         map_mods_str = self.__mods_to_name_func(map_mod)
         map_time_str = self.__md5_to_timestamp_str(map_md5, map_mod)
         map_num_points = self.__md5_to_num_data(map_md5, map_mod)
-        map_avg_bpm  = self.__md5_to_avg_bpm(map_md5, map_mod)
+        map_avg_bpm = self.__md5_to_avg_bpm(map_md5, map_mod)
 
+        # Build data structure and add to table
         data = np.empty(
             shape=(1, ),
             dtype=[
@@ -97,6 +101,18 @@ class PlayList(pyqtgraph.TableWidget):
         data['Avg BPM'] = map_avg_bpm
         
         self.appendData(data)
+        
+        # Check if only one map is selected
+        if len(self.selectionModel().selectedRows()) <= 1:
+            # Select to new map
+            matching_items = self.findItems(map_time_str, QtCore.Qt.MatchContains)
+            if matching_items:
+                self.setCurrentItem(matching_items[0])
+
+            # Fire off the new map loaded event so the roi selection in composition viewer is reset
+            self.new_map_loaded.emit()
+
+        # Fire off the list select event so the timeline in overview window is updated
         self.__list_select_event(None)
 
 
@@ -139,14 +155,7 @@ class PlayList(pyqtgraph.TableWidget):
         data['Data'] = map_num_points(data['md5'], data['IMod'])
         data['Avg BPM'] = md5_to_avg_bpm(data['md5'], data['IMod'])
 
-        self.setData(data)
-
-        self.setColumnHidden(0, True)
-        self.setColumnHidden(1, True)
-    
-
-    def new_replay_event(self):
-        pass
+        self.setData(data)    
 
     
     def __list_select_event(self, _):
