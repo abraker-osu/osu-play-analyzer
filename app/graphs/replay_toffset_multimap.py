@@ -75,6 +75,12 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
             (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP)
         data = play_data[data_filter]
 
+        if data.shape[0] == 0:
+            blank_data = np.asarray([])
+            self.__plot.setData(blank_data, blank_data)
+            self.__std_plot.setData(x=blank_data, y=blank_data, top=blank_data, bottom=blank_data, pen=mkPen((200, 0, 0, 50), width=5))
+            return
+
         # Extract timings and hit_offsets
         hit_timings = data[:, RecData.TIMINGS]
         hit_offsets = data[:, RecData.T_OFFSETS]
