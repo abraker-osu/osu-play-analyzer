@@ -67,6 +67,9 @@ class PlaysGraph(pyqtgraph.PlotWidget):
 
             self.__region_plot.setBounds([left_center, right_center])
             self.__region_plot.setRegion([left_center, right_center])
+        else:
+            # Otherwise, still need to notify other components of the data change
+            self.__region_changed_event(self.__region_plot)
 
 
     def __region_changed_event(self, region):
