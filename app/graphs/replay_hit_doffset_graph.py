@@ -22,7 +22,7 @@ class ReplayHitDOffsetGraph(QtGui.QWidget):
         self.__graph.getPlotItem().getAxis('bottom').enableAutoSIPrefix(False)
         self.__graph.enableAutoRange(axis='x', enable=False)
         self.__graph.enableAutoRange(axis='y', enable=False)
-        #self.__graph.setLimits(yMin=-200, yMax=200)
+        self.__graph.setLimits(yMin=-250, yMax=250)
         self.__graph.setRange(xRange=[-10, 10000], yRange=[-250, 250])
         self.__graph.setLabel('left', 't-offset', units='ms', unitPrefix='')
         self.__graph.setLabel('bottom', 'time', units='ms', unitPrefix='')
