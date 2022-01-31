@@ -202,7 +202,7 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
         needed_num_300s_95 = math.ceil(.97*num_presses - (300*num_sliders + 100*num_50s_97 + 50*num_100s_97)/300)
 
         # Need at least 2 plays for probability calc
-        if self.cache_num_plays <= 2:
+        if self.cache_num_plays < 2:
             self.hit_metrics.setText(
             f'''
             worst acc: {100*worst_acc:.2f}%
@@ -217,7 +217,7 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
             return
 
         # For each score point, calculate probability it would be within OD window for one of the plays
-        dev_uncertainty = 0  # devs/math.sqrt(2*self.cache_num_plays - 2)
+        dev_uncertainty = devs/math.sqrt(2*self.cache_num_plays - 2)
 
         devs = np.copy(devs)
         devs[devs == 0] = acc_window/2
