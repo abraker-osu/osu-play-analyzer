@@ -42,28 +42,31 @@ class PlaysGraph(pyqtgraph.PlotWidget):
         xMin = min(hit_timestamps) - 86400  # -1 day
         xMax = max(hit_timestamps) + 86400  # +1 day
 
+        view_center = 0.5*(xMin + xMax)    # Center of view (50% of max)
+        half_range  = xMax - view_center   # Space between center of view and max
+
         # Set plot data
         self.plot.setData(hit_timestamps, np.zeros(hit_timestamps.shape[0]), pen=None, symbol='o', symbolPen=None, symbolSize=4, symbolBrush='y')
-        
-        # Set interaction boundaries
-        self.setLimits(xMin=xMin, xMax=xMax)
-        self.setRange(xRange=(xMin, xMax))
-        self.__region_plot.setBounds([xMin, xMax])
+    
+        # Get current range
+        xRange = self.graph.getViewBox().viewRange()[0]
+        xRegion = self.__region_plot.getRegion()
 
-        # Set selected region if it's not in view; not within (25% of max <= center of view <= 75% of max)
-        selected_region = self.__region_plot.getRegion()
-        region_center = 0.5*(selected_region[0] + selected_region[1])
-        
-        view_center  = 0.5*(xMin + xMax)         # Center of view (50% of max)
-        left_center  = 0.5*(xMin + view_center)  # 25% of max
-        right_center = 0.5*(xMax + view_center)  # 75% of max
+        # If current view is not in range, set it
+        if xMin < xRange[0] or xRange[1] < xMax:
+            left_center  = view_center - 1.5*half_range
+            right_center = view_center + 1.5*half_range
 
-        if not (left_center <= region_center <= right_center):
-            # Center region on view center +/- 1 second
-            self.__region_plot.setRegion([view_center - 1000, view_center + 1000])
-        else:
-            # Otherwise, still need to notify other components of the data change
-            self.__region_changed_event(self.__region_plot)
+            self.setLimits(xMin=left_center, xMax=right_center)
+            self.setRange(xRange=(left_center, right_center))
+
+        # If current region is not in range, set it
+        if xMin < xRegion[0] or xRegion[1] < xMax:
+            left_center  = view_center - 1.1*half_range
+            right_center = view_center + 1.1*half_range
+
+            self.__region_plot.setBounds([left_center, right_center])
+            self.__region_plot.setRegion([left_center, right_center])
 
 
     def __region_changed_event(self, region):
