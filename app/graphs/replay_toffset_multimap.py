@@ -98,7 +98,10 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
 
         # Process overlapping data points along x-axis
         hit_offsets_avg = np.asarray([ np.mean(hit_offsets[hit_timings == hit_timing]) for hit_timing in np.unique(hit_timings) ])
-        hit_offsets_std = np.asarray([ np.std(hit_offsets[hit_timings == hit_timing], ddof=1) for hit_timing in np.unique(hit_timings) ])
+        hit_offsets_std = np.asarray([ 
+            np.std(hit_offsets[hit_timings == hit_timing], ddof=1) if hit_offsets[hit_timings == hit_timing].shape[0] > 1 else 200
+            for hit_timing in np.unique(hit_timings) 
+        ])
         hit_timings = np.unique(hit_timings)
 
         # Calculate view
@@ -220,7 +223,7 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
         dev_uncertainty = devs/math.sqrt(2*self.cache_num_plays - 2)
 
         devs = np.copy(devs)
-        devs[devs == 0] = acc_window/2
+        devs[devs == 0] = acc_window
 
         prob_greater_than_neg = scipy.stats.norm.cdf(-offset_OD4, loc=avgs, scale=(devs + dev_uncertainty))
         prob_less_than_pos    = scipy.stats.norm.cdf(offset_OD4, loc=avgs, scale=(devs + dev_uncertainty))
