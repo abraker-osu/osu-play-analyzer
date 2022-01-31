@@ -2,12 +2,7 @@
 Window displaying various graphs pertaining to the data selected in the data_overview_window.
 A menubar on the top allows the user to select which graph to display.
 """
-from os import PathLike
-import numpy as np
-np.set_printoptions(suppress=True)
 
-from PyQt5.QtCore import Qt
-from numpy.core.fromnumeric import transpose
 from pyqtgraph.Qt import QtGui
 
 from app.graphs.hit_offset_graph import HitOffsetGraph
@@ -73,12 +68,14 @@ class DataGraphsWindow(QtGui.QMainWindow):
 
 
     def new_replay_event(self):
+        '''
+        Called when a single new replay is loaded
+        '''
         play_data = PlayData.data
         data_filter = (play_data[:, RecData.TIMESTAMP] == max(play_data[:, RecData.TIMESTAMP]))
         play_data = play_data[data_filter]
 
         self.hit_offset_graph.plot_data(play_data)
-        self.replay_offset_multimap_graph.plot_data(play_data)
         self.replay_hit_doffset_graph.plot_data(play_data)
         self.hit_distr_graph.plot_data(play_data)
         self.aim_display.plot_data(play_data)
@@ -102,6 +99,9 @@ class DataGraphsWindow(QtGui.QMainWindow):
 
 
     def set_from_play_data(self, play_data):
+        '''
+        Called whenever the selection in the overview window changes
+        '''
         if play_data.shape[0] == 0:
             # TODO: Clear plots
             return

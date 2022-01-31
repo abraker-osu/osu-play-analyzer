@@ -2,6 +2,7 @@ import os
 import sys
 import traceback
 import time
+import numpy as np
 
 from pyqtgraph.Qt import QtGui
 
@@ -12,6 +13,14 @@ from app.views.map_display_window import MapDisplayWindow
 
 from app.file_managers import AppConfig, PlayData
 from app.data_recording.osu_recorder import OsuRecorder
+
+
+
+"""
+Set numpy settings
+"""
+np.set_printoptions(suppress=True)
+
 
 
 """
@@ -120,7 +129,7 @@ class App(QtGui.QMainWindow):
 
     def generate_map_button_clicked(self):
         self.data_graphs_window.hide() 
-        self.data_overview_window.hide()
+        self.data_overview_window.show()
         self.map_display_window.show()
         self.map_architect_window.show()
 
