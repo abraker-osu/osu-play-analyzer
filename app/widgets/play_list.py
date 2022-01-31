@@ -67,6 +67,17 @@ class PlayList(pyqtgraph.TableWidget):
         map_mod = play_data[0, RecData.MODS]
 
         if (map_md5 in md5s) and (map_mod in mods):
+            # Check if only one map is selected
+            if len(self.selectionModel().selectedRows()) <= 1:
+                # Select to new map
+                matching_items = self.findItems(str(map_md5), QtCore.Qt.MatchContains)
+                if matching_items:
+                    self.setCurrentItem(matching_items[0])
+
+            # Fire off the new map loaded event so the roi selection in composition viewer is reset
+            self.new_map_loaded.emit()
+
+            # Fire off the list select event so the timeline in overview window is updated
             self.__list_select_event(None)
             return
             
@@ -105,7 +116,7 @@ class PlayList(pyqtgraph.TableWidget):
         # Check if only one map is selected
         if len(self.selectionModel().selectedRows()) <= 1:
             # Select to new map
-            matching_items = self.findItems(map_time_str, QtCore.Qt.MatchContains)
+            matching_items = self.findItems(str(map_md5), QtCore.Qt.MatchContains)
             if matching_items:
                 self.setCurrentItem(matching_items[0])
 
