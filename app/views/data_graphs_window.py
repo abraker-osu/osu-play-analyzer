@@ -5,19 +5,22 @@ A menubar on the top allows the user to select which graph to display.
 
 from pyqtgraph.Qt import QtGui
 
-from app.graphs.hit_offset_graph import HitOffsetGraph
-from app.graphs.replay_hit_doffset_graph import ReplayHitDOffsetGraph
-from app.graphs.replay_toffset_multimap import ReplayTOffsetMultimap
-from app.graphs.hit_distr_graph import HitDistrGraph
-from app.graphs.aim_graph import AimGraph
+from app.graphs.replay.hit_offset_graph import HitOffsetGraph
+from app.graphs.replay.replay_hit_doffset_graph import ReplayHitDOffsetGraph
+from app.graphs.replay.replay_toffset_multimap import ReplayTOffsetMultimap
+from app.graphs.replay.hit_distr_graph import HitDistrGraph
+from app.graphs.replay.aim_graph import AimGraph
 
-from app.graphs.dev_graph_angle import DevGraphAngle
-from app.graphs.dev_graph_vel import DevGraphVel
-from app.graphs.dev_graph_rhythm import DevGraphRhythm
+from app.graphs.map.graph_timing_bpm_dec import GraphTimingBPMDec
+from app.graphs.map.graph_timing_bpm_inc import GraphTimingBPMInc
+from app.graphs.map.graph_toffset_bpm_inc import GraphTOffsetBPMInc
+from app.graphs.map.graph_toffset_bpm import GraphTOffsetBPM
+from app.graphs.map.map_toffset_rhy_graph import MapToffsetRhyGraph
+from app.graphs.map.map_toffset_rhyd_graph import MapToffsetRhydGraph
 
-from app.graphs.graph_toffset_bpm_inc import GraphTOffsetBPMInc
-from app.graphs.graph_toffset_bpm import GraphTOffsetBPM
-from app.graphs.map_toffset_rhy_graph import MapToffsetRhyGraph
+from app.graphs.deviation.dev_graph_angle import DevGraphAngle
+from app.graphs.deviation.dev_graph_vel import DevGraphVel
+from app.graphs.deviation.dev_graph_rhythm import DevGraphRhythm
 
 from app.data_recording.data import RecData
 from app.file_managers import PlayData

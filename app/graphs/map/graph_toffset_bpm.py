@@ -10,7 +10,7 @@ from app.data_recording.data import RecData
 
 class GraphTOffsetBPM(QtGui.QWidget):
 
-    __calc_data_event = QtCore.pyqtSignal(object, object)
+    __calc_data_event = QtCore.pyqtSignal(object, object, object)
 
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
@@ -28,6 +28,9 @@ class GraphTOffsetBPM(QtGui.QWidget):
         self.__graph.setLabel('left', 'T-Offset', units='ms', unitPrefix='')
         self.__graph.setLabel('bottom', 'Note interval', units='ms', unitPrefix='')
         self.__graph.addLegend()
+
+        self.__std_plot = pyqtgraph.ErrorBarItem()
+        self.__graph.addItem(self.__std_plot)
 
         # Used to set text in legend item
         self.__label_style = pyqtgraph.PlotDataItem(pen=(0,0,0))
@@ -60,18 +63,25 @@ class GraphTOffsetBPM(QtGui.QWidget):
         nan_filter = ~np.isnan(play_data[:, RecData.DT_HITS])
         dt_notes_all = play_data[nan_filter, RecData.DT_NOTES]
         dt_hits_all  = play_data[nan_filter, RecData.DT_HITS]
-        
+        dt_hits_dev  = np.zeros((dt_hits_all.shape[0], ))
+
         if self.__avg_data_points:
-            # Average overlapping data points (those that have same x-axis within +/- 3)
-            dt_hits_all = np.asarray([ np.sort(dt_hits_all[np.abs(dt_notes_all - dt_note) < 3]).mean() for dt_note in np.unique(dt_notes_all) ])
-            dt_notes_all = np.unique(dt_notes_all)
+            # Average overlapping data points
+            dt_notes_unique = np.unique(dt_notes_all)
+
+            dt_hits_dev = np.asarray([ np.std(dt_hits_all[dt_notes_all == dt_note]) for dt_note in dt_notes_unique ])
+            dt_hits_all = np.asarray([ np.mean(dt_hits_all[dt_notes_all == dt_note]) for dt_note in dt_notes_unique ])
+            dt_notes_all = dt_notes_unique
 
         data_x = dt_notes_all
         data_y = dt_hits_all
 
-        self.__calc_data_event.emit(data_x, data_y)
+        self.__calc_data_event.emit(data_x, data_y, dt_hits_dev)
 
 
-    def __display_data(self, data_x, data_y):
+    def __display_data(self, data_x, data_y, data_dev):
         colors = pyqtgraph.mkBrush(color=[ 255, 0, 0, 150 ])
         self.__graph.plot(x=data_x, y=data_y, pen=None, symbol='o', symbolPen=None, symbolSize=5, symbolBrush=colors)
+
+        # Automatically applies 2*data_dev to the error bars
+        self.__std_plot.setData(x=data_x, y=data_y, top=data_dev, bottom=data_dev)

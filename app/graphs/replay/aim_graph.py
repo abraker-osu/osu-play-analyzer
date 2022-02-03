@@ -1,3 +1,4 @@
+import scipy.special
 import numpy as np
 import math
 
@@ -202,6 +203,9 @@ class AimGraph(QtGui.QWidget):
         angle_lambda1, angle_lambda2, x_dev, y_dev = self.calc_cov_area(aim_x_offsets, aim_y_offsets)
         '''
 
+        #fc_conf_lvl = 1 - 1/aim_x_offsets.shape[0]
+        #conf_interval = math.sqrt(2)*scipy.special.erfinv(fc_conf_lvl)
+
         self.cov_area_metrics.setText(
             #f'θx-dev span: {2*x_dev:.2f} o!px @ 95% conf\n'
             #f'θy-dev span: {2*y_dev:.2f} o!px @ 95% conf\n'
@@ -209,5 +213,7 @@ class AimGraph(QtGui.QWidget):
             #f'\n'
             f'x-dev span: {2*2*np.std(aim_x_offsets):.2f} o!px @ 95% conf\n'
             f'y-dev span: {2*2*np.std(aim_y_offsets):.2f} o!px @ 95% conf\n'
+            #f'x-dev span: {2*conf_interval*np.std(aim_x_offsets):.2f} o!px @ FC conf\n'
+            #f'y-dev span: {2*conf_interval*np.std(aim_y_offsets):.2f} o!px @ FC conf\n'
             f'cs_px: {2*self.circle_item.radius/AimGraph.SCALE:.2f} o!px'
         )
