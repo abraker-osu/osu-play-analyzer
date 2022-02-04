@@ -108,7 +108,14 @@ class GraphTapDifficulty(QtGui.QWidget):
         stamina[stamina_select] = 0.1*(np.log(bpm_inc[2:][stamina_select]/1000 + 1) + 1)
         
         data_x = np.linspace(0, 1, rates.shape[0])
-        data_y = np.sort(rates*stamina)
+        data_y = rates*stamina
+
+        sort_idx = np.argsort(data_y)
+        data_y = data_y[sort_idx]
+        score_mask[:, 0] = score_mask[sort_idx, 0]
+        score_mask[:, 1] = score_mask[sort_idx, 1]
+        score_mask[:, 2] = score_mask[sort_idx, 2]
+        score_mask[:, 3] = score_mask[sort_idx, 3]
 
         self.__calc_data_event.emit(data_x, data_y, score_mask)
 
