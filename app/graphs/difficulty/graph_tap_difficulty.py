@@ -30,17 +30,11 @@ class GraphTapDifficulty(QtGui.QWidget):
         self.__graph.setLabel('bottom', 'Factors', units='%', unitPrefix='')
         self.__graph.addLegend()
 
-        self.__diff_plot_hit = pyqtgraph.ErrorBarItem()
-        self.__graph.addItem(self.__diff_plot_hit)
-
         self.__diff_plot_miss = pyqtgraph.ErrorBarItem()
         self.__graph.addItem(self.__diff_plot_miss)
 
         self.__diff_plot_perf = pyqtgraph.ErrorBarItem()
         self.__graph.addItem(self.__diff_plot_perf)
-
-        self.__diff_plot_good = pyqtgraph.ErrorBarItem()
-        self.__graph.addItem(self.__diff_plot_good)
 
         self.__diff_plot_bad = pyqtgraph.ErrorBarItem()
         self.__graph.addItem(self.__diff_plot_bad)
@@ -95,11 +89,10 @@ class GraphTapDifficulty(QtGui.QWidget):
         bpm_inc = play_data[:, RecData.DT_DEC]
         bpm_dec = play_data[:, RecData.DT_INC]
 
-        score_mask = np.zeros((timings.shape[0] - 2, 4), dtype=np.bool)
+        score_mask = np.zeros((timings.shape[0] - 2, 3), dtype=np.bool)
         score_mask[:, 0] = is_miss[2:]
-        score_mask[:, 1] = np.abs(toffsets[2:] <= 16)
-        score_mask[:, 2] = np.abs(toffsets[2:] <= 32) & np.abs(toffsets[2:] > 16)
-        score_mask[:, 3] = np.abs(toffsets[2:] > 32) & ~is_miss[2:]
+        score_mask[:, 1] = np.abs(toffsets[2:] <= 32)
+        score_mask[:, 2] = np.abs(toffsets[2:] > 32) & ~is_miss[2:]
 
         rates = 1000/(timings[2:] - timings[:-2])
 
@@ -115,7 +108,6 @@ class GraphTapDifficulty(QtGui.QWidget):
         score_mask[:, 0] = score_mask[sort_idx, 0]
         score_mask[:, 1] = score_mask[sort_idx, 1]
         score_mask[:, 2] = score_mask[sort_idx, 2]
-        score_mask[:, 3] = score_mask[sort_idx, 3]
 
         self.__calc_data_event.emit(data_x, data_y, score_mask)
 
@@ -130,16 +122,12 @@ class GraphTapDifficulty(QtGui.QWidget):
         data_x_perf = data_x[score_mask[:, 1]]
         data_y_perf = data_y[score_mask[:, 1]]
 
-        data_x_good = data_x[score_mask[:, 2]]
-        data_y_good = data_y[score_mask[:, 2]]
-
-        data_x_bad = data_x[score_mask[:, 3]]
-        data_y_bad = data_y[score_mask[:, 3]]
+        data_x_bad = data_x[score_mask[:, 2]]
+        data_y_bad = data_y[score_mask[:, 2]]
 
         # Set plot data
         self.__diff_plot_miss.setData(x=data_x_miss, y=data_y_miss/2, top=data_y_miss/2, bottom=data_y_miss/2, pen=mkPen((200, 0, 0, 200), width=2))
         self.__diff_plot_perf.setData(x=data_x_perf, y=data_y_perf/2, top=data_y_perf/2, bottom=data_y_perf/2, pen=mkPen((0, 72, 255, 150), width=2))
-        self.__diff_plot_good.setData(x=data_x_good, y=data_y_good/2, top=data_y_good/2, bottom=data_y_good/2, pen=mkPen((9, 138, 0, 100), width=2))
         self.__diff_plot_bad.setData(x=data_x_bad, y=data_y_bad/2, top=data_y_bad/2, bottom=data_y_bad/2, pen=mkPen((224, 224, 0, 100), width=2))
 
         self.__graph.setLimits(xMin=xMin, xMax=xMax)
