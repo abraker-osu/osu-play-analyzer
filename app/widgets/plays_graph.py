@@ -39,8 +39,8 @@ class PlaysGraph(pyqtgraph.PlotWidget):
         hit_timestamps = np.unique(play_data[:, RecData.TIMESTAMP]).astype(np.uint64)
 
         # Calculate view
-        xMin = min(hit_timestamps) - 86400  # -1 day
-        xMax = max(hit_timestamps) + 86400  # +1 day
+        xMin = min(hit_timestamps) - 1  # -1 minute
+        xMax = max(hit_timestamps) + 1  # +1 minute
 
         view_center = 0.5*(xMin + xMax)    # Center of view (50% of max)
         half_range  = xMax - view_center   # Space between center of view and max
