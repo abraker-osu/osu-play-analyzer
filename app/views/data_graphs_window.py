@@ -11,6 +11,9 @@ from app.graphs.replay.replay_toffset_multimap import ReplayTOffsetMultimap
 from app.graphs.replay.hit_distr_graph import HitDistrGraph
 from app.graphs.replay.aim_graph import AimGraph
 
+from app.graphs.difficulty.graph_aim_difficulty import GraphAimDifficulty
+from app.graphs.difficulty.graph_tap_difficulty import GraphTapDifficulty
+
 from app.graphs.map.graph_timing_bpm_dec import GraphTimingBPMDec
 from app.graphs.map.graph_timing_bpm_inc import GraphTimingBPMInc
 from app.graphs.map.graph_toffset_bpm_inc import GraphTOffsetBPMInc
@@ -38,6 +41,9 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.hit_distr_graph = HitDistrGraph()
         self.aim_display = AimGraph()
 
+        self.aim_difficulty = GraphAimDifficulty()
+        self.tap_difficulty = GraphTapDifficulty()
+
         self.toffset_bpm_inc = GraphTOffsetBPMInc()
         self.toffset_bpm = GraphTOffsetBPM()
         self.toffset_rhy_graph = MapToffsetRhyGraph()
@@ -53,6 +59,10 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.replay_tabs.addTab(self.hit_distr_graph, 'Hit distribution')
         self.replay_tabs.addTab(self.aim_display, 'Aim display')
 
+        self.difficulty_tabs = QtGui.QTabWidget()
+        self.difficulty_tabs.addTab(self.aim_difficulty, 'Aim difficulty')
+        self.difficulty_tabs.addTab(self.tap_difficulty, 'Tap difficulty')
+
         self.map_tabs = QtGui.QTabWidget()
         self.map_tabs.addTab(self.toffset_bpm_inc, 'T-offset vs BPM Inc')
         self.map_tabs.addTab(self.toffset_bpm, 'T-offset vs BPM')
@@ -65,6 +75,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
         
         self.main_widget = QtGui.QTabWidget()
         self.main_widget.addTab(self.replay_tabs, 'Replay graphs')
+        self.main_widget.addTab(self.difficulty_tabs, 'Diff graphs')
         self.main_widget.addTab(self.map_tabs, 'Map graphs')
         self.main_widget.addTab(self.play_data_tabs, 'Deviation data graphs')
         self.setCentralWidget(self.main_widget)
@@ -83,6 +94,9 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.hit_distr_graph.plot_data(play_data)
         self.aim_display.plot_data(play_data)
 
+        self.aim_difficulty.plot_data(play_data)
+        self.tap_difficulty.plot_data(play_data)
+
         self.toffset_bpm_inc.plot_data(play_data)
         self.toffset_bpm.plot_data(play_data)
         self.toffset_rhy_graph.plot_data(play_data)
@@ -97,6 +111,9 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.replay_hit_doffset_graph.plot_data(play_data)
         self.hit_distr_graph.plot_data(play_data)
         self.aim_display.plot_data(play_data)
+
+        self.aim_difficulty.plot_data(play_data)
+        self.tap_difficulty.plot_data(play_data)
 
         self.toffset_bpm.plot_data(play_data)
 
