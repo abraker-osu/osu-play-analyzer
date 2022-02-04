@@ -74,7 +74,7 @@ class DataProcessing():
         # Process score data
         settings = StdScoreData.Settings()
         settings.ar_ms = OsuUtils.ar_to_ms(ar)
-        settings.hitobject_radius = OsuUtils.cs_to_px(cs)
+        settings.hitobject_radius = OsuUtils.cs_to_px(cs)/2
         settings.pos_hit_range = 100        # ms point of late hit window
         settings.neg_hit_range = 100        # ms point of early hit window
         settings.pos_hit_miss_range = 100   # ms point of late miss window
