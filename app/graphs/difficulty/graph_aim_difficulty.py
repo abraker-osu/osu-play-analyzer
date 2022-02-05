@@ -8,6 +8,7 @@ from pyqtgraph.Qt import QtGui, QtCore
 
 from osu_analysis import StdScoreData
 
+from app.misc.utils import MathUtils
 from app.data_recording.data import RecData
 
 
@@ -24,7 +25,7 @@ class GraphAimDifficulty(QtGui.QWidget):
         self.__graph.getPlotItem().getAxis('bottom').enableAutoSIPrefix(False)
         self.__graph.enableAutoRange(axis='x', enable=False)
         self.__graph.enableAutoRange(axis='y', enable=False)
-        self.__graph.setLimits(yMin=-1, yMax=5)
+        self.__graph.setLimits(yMin=-1, yMax=12)
         self.__graph.setRange(xRange=[-0.1, 1.1], yRange=[-1, 5])
         self.__graph.setLabel('left', 'Aim factor', units='', unitPrefix='')
         self.__graph.setLabel('bottom', 'Factors', units='%', unitPrefix='')
@@ -37,8 +38,8 @@ class GraphAimDifficulty(QtGui.QWidget):
         self.__graph.addItem(self.__diff_plot_miss)
 
         # Stats
-        self.hit_metrics = pyqtgraph.TextItem('', anchor=(0, 0), )
-        self.__graph.addItem(self.hit_metrics)
+        self.__graph_text = pyqtgraph.TextItem('', anchor=(0, 0), )
+        self.__graph.addItem(self.__graph_text)
 
         # Put it all together
         self.__layout = QtGui.QHBoxLayout(self)
@@ -101,8 +102,11 @@ class GraphAimDifficulty(QtGui.QWidget):
         velocities = distances / (timing[2:] - timing[1:-1])
         angle_factor = np.exp(-(180 - angles)/90)
 
-        data_x = np.linspace(0, 1, velocities.shape[0])
-        data_y = velocities*angle_factor
+        data_y = velocities*angle_factor*3
+        #data_y = MathUtils.max_rolling(data_y, 3)
+        #is_miss = MathUtils.max_rolling(is_miss, 3)
+
+        data_x = np.linspace(0, 1, data_y.shape[0])
 
         sort_idx = np.argsort(data_y)
         data_y  = data_y[sort_idx]
@@ -128,6 +132,19 @@ class GraphAimDifficulty(QtGui.QWidget):
         self.__graph.setLimits(xMin=xMin, xMax=xMax)
         self.__graph.setRange(xRange=[ xMin, xMax ])
 
+        play_percent = 1 - data_y_miss.shape[0]/data_y.shape[0]
+
+        self.__graph_text.setText(
+            f"""
+            Peak difficulty:     {data_y[-1]:.2f}
+            Majority difficulty: {data_y[int(data_y.shape[0]*0.95)]:.2f}
+            Average difficulty:  {data_y.mean():.2f}
+
+            Play percentage:     {play_percent:.2f}
+            Play diff estimate:  {data_y[int(play_percent*data_y.shape[0])]:.2f}
+            """
+        )
+
 
     def __on_view_range_changed(self, _=None):
         view = self.__graph.viewRect()
@@ -137,4 +154,4 @@ class GraphAimDifficulty(QtGui.QWidget):
         margin_x = 0.001*(view.right() - view.left())
         margin_y = 0.001*(view.top() - view.bottom())
 
-        self.hit_metrics.setPos(pos_x + margin_x, pos_y + margin_y)
+        self.__graph_text.setPos(pos_x + margin_x, pos_y + margin_y)
