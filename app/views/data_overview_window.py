@@ -93,6 +93,7 @@ class DataOverviewWindow(QtGui.QWidget):
 
 
     def __show_map_event(self):
+        self.composition_viewer.reset_roi_selections()
         play_data = self.composition_viewer.get_selected()
         unique_timestamps = np.unique(play_data[:, RecData.TIMESTAMP])
 
