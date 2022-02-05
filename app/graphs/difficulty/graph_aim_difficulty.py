@@ -141,7 +141,7 @@ class GraphAimDifficulty(QtGui.QWidget):
             Average difficulty:  {data_y.mean():.2f}
 
             Play percentage:     {play_percent:.2f}
-            Play diff estimate:  {data_y[int(play_percent*data_y.shape[0])]:.2f}
+            Play diff estimate:  {data_y[int(play_percent*(data_y.shape[0] - 1))]:.2f}
             """
         )
 
