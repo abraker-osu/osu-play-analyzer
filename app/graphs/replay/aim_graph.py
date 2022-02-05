@@ -53,6 +53,7 @@ class AimGraph(QtGui.QWidget):
 
         # Scatter plot for aim data
         self.plot_hits = self.win_hits.plot(title='Hit scatter')
+        self.plot_misses = self.win_hits.plot(title='Miss scatter')
         self.win_hits.hideAxis('left')
         self.win_hits.hideAxis('bottom')
         self.win_hits.setXRange(-AimGraph.SIZE/2, AimGraph.SIZE/2)
@@ -137,29 +138,39 @@ class AimGraph(QtGui.QWidget):
 
     def plot_data(self, play_data):
         # Determine what was the latest play
-        data_filter = \
-            (play_data[:, RecData.TIMESTAMP] == max(play_data[:, RecData.TIMESTAMP])) & \
-            (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP)
-        data = play_data[data_filter]
+        data_filter = (play_data[:, RecData.TIMESTAMP] == max(play_data[:, RecData.TIMESTAMP]))
+        play_data = play_data[data_filter]
 
-        offsets = data[:, [ RecData.X_OFFSETS, RecData.Y_OFFSETS ]]
-        cs = data[0, RecData.CS]
-
-        mods = Mod(int(data[0, RecData.MODS]))
+        cs = play_data[0, RecData.CS]
+        
+        mods = Mod(int(play_data[0, RecData.MODS]))
         if mods.has_mod(Mod.HardRock): cs *= 1.3
         if mods.has_mod(Mod.Easy):     cs *= 0.5
 
         cs = min(cs, 10)
-
         self.set_cs(cs)
-        self.plot_xy_data(offsets[:, 0], offsets[:, 1])
+
+        data_filter = (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP)
+        data_hits = play_data[data_filter]
+
+        data_filter = \
+            (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_MISS) & \
+            (play_data[:, RecData.ACT_TYPE] == StdScoreData.ACTION_PRESS)
+        data_misses = play_data[data_filter]
+
+        offsets_hits  = data_hits[:, [ RecData.X_OFFSETS, RecData.Y_OFFSETS ]]
+        offsets_misses = data_misses[:, [ RecData.X_OFFSETS, RecData.Y_OFFSETS ]]
+
+        self.plot_xy_data(offsets_hits, offsets_misses)
 
 
-    def plot_xy_data(self, aim_x_offsets, aim_y_offsets):
-        scaled_aim_x_offsets = aim_x_offsets*AimGraph.SCALE
-        scaled_aim_y_offsets = aim_y_offsets*AimGraph.SCALE
+    def plot_xy_data(self, offsets_hits, offsets_misses):
+        scaled_aim_x_offsets = offsets_misses[:, 0]*AimGraph.SCALE
+        scaled_aim_y_offsets = offsets_misses[:, 1]*AimGraph.SCALE
+        self.plot_misses.setData(scaled_aim_x_offsets, scaled_aim_y_offsets, pen=None, symbol='o', symbolPen=None, symbolSize=5, symbolBrush=(200, 50, 50, 200))
 
-        # Plot aim data scatter plot
+        scaled_aim_x_offsets = offsets_hits[:, 0]*AimGraph.SCALE
+        scaled_aim_y_offsets = offsets_hits[:, 1]*AimGraph.SCALE
         self.plot_hits.setData(scaled_aim_x_offsets, scaled_aim_y_offsets, pen=None, symbol='o', symbolPen=None, symbolSize=5, symbolBrush=(100, 100, 255, 200))
 
         '''
@@ -200,10 +211,10 @@ class AimGraph(QtGui.QWidget):
 
         '''
         # Update metrics
-        angle_lambda1, angle_lambda2, x_dev, y_dev = self.calc_cov_area(aim_x_offsets, aim_y_offsets)
+        angle_lambda1, angle_lambda2, x_dev, y_dev = self.calc_cov_area(offsets_hits[:, 0], offsets_hits[:, 1])
         '''
 
-        #fc_conf_lvl = 1 - 1/aim_x_offsets.shape[0]
+        #fc_conf_lvl = 1 - 1/offsets_hits[:, 0].shape[0]
         #conf_interval = math.sqrt(2)*scipy.special.erfinv(fc_conf_lvl)
 
         self.cov_area_metrics.setText(
@@ -211,9 +222,9 @@ class AimGraph(QtGui.QWidget):
             #f'θy-dev span: {2*y_dev:.2f} o!px @ 95% conf\n'
             #f'θ-dev: {angle_lambda1:.2f}°\n'
             #f'\n'
-            f'x-dev span: {2*2*np.std(aim_x_offsets):.2f} o!px @ 95% conf\n'
-            f'y-dev span: {2*2*np.std(aim_y_offsets):.2f} o!px @ 95% conf\n'
-            #f'x-dev span: {2*conf_interval*np.std(aim_x_offsets):.2f} o!px @ FC conf\n'
-            #f'y-dev span: {2*conf_interval*np.std(aim_y_offsets):.2f} o!px @ FC conf\n'
+            f'x-dev span: {2*2*np.std(offsets_hits[:, 0]):.2f} o!px @ 95% conf\n'
+            f'y-dev span: {2*2*np.std(offsets_hits[:, 1]):.2f} o!px @ 95% conf\n'
+            #f'x-dev span: {2*conf_interval*np.std(offsets_hits[:, 0]):.2f} o!px @ FC conf\n'
+            #f'y-dev span: {2*conf_interval*np.std(offsets_hits[:, 1]):.2f} o!px @ FC conf\n'
             f'cs_px: {2*self.circle_item.radius/AimGraph.SCALE:.2f} o!px'
         )
