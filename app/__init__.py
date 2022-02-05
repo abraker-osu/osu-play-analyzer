@@ -162,15 +162,17 @@ class App(QtGui.QMainWindow):
         self.map_architect_window.hide()
 
 
-    def new_replay_event(self, data):
+    def new_replay_event(self, data, is_import):
         map_data, replay_data, cs, ar, mods, name = data
 
         # Broadcast the new replay event to the other windows
         time_start = time.time()
-        self.data_graphs_window.new_replay_event()
-        self.data_overview_window.new_replay_event()
-        self.map_display_window.new_replay_event(map_data, replay_data, cs, ar, mods, name)
-        print('Data load time:', time.time() - time_start)
+        self.data_overview_window.new_replay_event(is_import)
+
+        if not is_import:
+            self.data_graphs_window.new_replay_event()
+
+            self.map_display_window.new_replay_event(map_data, replay_data, cs, ar, mods, name)
 
 
     def closeEvent(self, event):

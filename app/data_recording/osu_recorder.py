@@ -16,8 +16,8 @@ from app.file_managers import AppConfig, MapsDB, PlayData
 
 class _OsuRecorder(QtCore.QObject):
 
-    new_replay_event = QtCore.pyqtSignal(tuple)
-    handle_new_replay = QtCore.pyqtSignal(str, bool)
+    new_replay_event = QtCore.pyqtSignal(tuple, bool)
+    handle_new_replay = QtCore.pyqtSignal(str, bool, bool)
 
     SAVE_FILE = 'data/osu_performance_recording_v1.npy'
 
@@ -34,7 +34,7 @@ class _OsuRecorder(QtCore.QObject):
         PlayData.data_file.close()
 
 
-    def __handle_new_replay(self, replay_file_name, wait=True):
+    def __handle_new_replay(self, replay_file_name, wait=True, is_import=False):
         if wait:
             # Needed sleep to wait for osu! to finish writing the replay file
             time.sleep(2)
@@ -113,7 +113,7 @@ class _OsuRecorder(QtCore.QObject):
 
         #print('Play data saving time: ', time.time() - time_start)
 
-        self.new_replay_event.emit((map_data, replay_data, beatmap.difficulty.cs, beatmap.difficulty.ar, replay.mods.value, beatmap.metadata.name + ' ' + replay.get_name()))
+        self.new_replay_event.emit((map_data, replay_data, beatmap.difficulty.cs, beatmap.difficulty.ar, replay.mods.value, beatmap.metadata.name + ' ' + replay.get_name()), is_import)
 
 
 OsuRecorder = _OsuRecorder()

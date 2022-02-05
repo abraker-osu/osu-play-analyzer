@@ -14,7 +14,6 @@ The is a selection menu on the side that allows the user to select which player'
 Design note: Maybe have a scatter plot instead. Really depends on how much data there is and how laggy it will get.
 """
 import pyqtgraph
-import tinydb
 import time
 import numpy as np
 from pyqtgraph.Qt import QtGui, QtCore
@@ -48,7 +47,7 @@ class PlayList(pyqtgraph.TableWidget):
         self.setColumnHidden(1, True)
 
 
-    def load_latest_play(self):
+    def load_latest_play(self, is_import):
         play_data = PlayData.data.astype(np.uint64)
         if PlayData.data.shape[0] == 0:
             return
@@ -74,13 +73,17 @@ class PlayList(pyqtgraph.TableWidget):
                 if matching_items:
                     self.setCurrentItem(matching_items[0])
 
-            # Fire off the new map loaded event so the roi selection in composition viewer is reset
-            self.new_map_loaded.emit()
+            if not is_import:
+                # Fire off the new map loaded event so the roi selection in composition viewer is reset
+                start_time = time.time()
+                self.new_map_loaded.emit()
+                print(f'play_list - new_map_loaded.emit(): {(time.time() - start_time):.2f}s')
 
             # Fire off the list select event so the timeline in overview window is updated
-            self.__list_select_event(None)
+            if not is_import:
+                self.__list_select_event(None)
             return
-            
+        
         # Process data to get stuff that will be shown
         map_md5h_str = MapsDB.md5h_to_md5h_str_func(map_md5)
         map_name_str = self.__md5h_str_to_name_func(map_md5h_str)
@@ -120,11 +123,15 @@ class PlayList(pyqtgraph.TableWidget):
             if matching_items:
                 self.setCurrentItem(matching_items[0])
 
-            # Fire off the new map loaded event so the roi selection in composition viewer is reset
-            self.new_map_loaded.emit()
+            if not is_import:
+                # Fire off the new map loaded event so the roi selection in composition viewer is reset
+                start_time = time.time()
+                self.new_map_loaded.emit()
+                print(f'play_list - new_map_loaded.emit(): {(time.time() - start_time):.2f}s')
 
-        # Fire off the list select event so the timeline in overview window is updated
-        self.__list_select_event(None)
+        if not is_import:
+            # Fire off the list select event so the timeline in overview window is updated
+            self.__list_select_event(None)
 
 
     def reload_map_list(self):

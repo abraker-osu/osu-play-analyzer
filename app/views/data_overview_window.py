@@ -84,8 +84,8 @@ class DataOverviewWindow(QtGui.QWidget):
         self.show_map_btn.clicked.connect(self.__show_map_event)
         
 
-    def new_replay_event(self):
-        self.map_list.load_latest_play()
+    def new_replay_event(self, is_import):
+        self.map_list.load_latest_play(is_import)
 
     
     def __map_select_event(self, play_data):
@@ -121,7 +121,7 @@ class DataOverviewWindow(QtGui.QWidget):
         num_files = len(file_names)
 
         for file_name, i in zip(file_names, range(num_files)):
-            OsuRecorder.handle_new_replay.emit(file_name, False)
+            OsuRecorder.handle_new_replay.emit(file_name, False, True)
 
             self.progress_bar.setValue(100 * i / num_files)
             QtGui.QApplication.processEvents()
