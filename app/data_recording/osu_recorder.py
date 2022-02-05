@@ -25,7 +25,7 @@ class _OsuRecorder(QtCore.QObject):
         QtCore.QObject.__init__(self)
 
         self.monitor = Monitor(AppConfig.cfg['osu_dir'])
-        self.monitor.create_replay_monitor('Replay Grapher', lambda replay_file_name: self.handle_new_replay.emit(replay_file_name, True))
+        self.monitor.create_replay_monitor('Replay Grapher', lambda replay_file_name: self.handle_new_replay.emit(replay_file_name, True, False))
 
         self.handle_new_replay.connect(self.__handle_new_replay)
 
