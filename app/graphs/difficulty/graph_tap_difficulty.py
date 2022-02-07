@@ -59,11 +59,11 @@ class GraphTapDifficulty(QtGui.QWidget):
         if play_data.shape[0] == 0:
             return
 
-        thread = threading.Thread(target=self.__plot_aim_factors, args=(play_data, ))
+        thread = threading.Thread(target=self.__plot_tap_factors, args=(play_data, ))
         thread.start()
 
 
-    def __plot_aim_factors(self, play_data):
+    def __plot_tap_factors(self, play_data):
         # Determine what was the latest play
         data_filter = \
             (play_data[:, RecData.TIMESTAMP] == max(play_data[:, RecData.TIMESTAMP]))
@@ -98,7 +98,8 @@ class GraphTapDifficulty(QtGui.QWidget):
 
         stamina = np.zeros(rates.shape[0])
         stamina_select = (bpm_dec[2:] > bpm_inc[2:])
-        stamina[stamina_select] = 0.1*(np.log(bpm_inc[2:][stamina_select]/1000 + 1) + 1)
+        stamina[stamina_select]  = 0.1*(np.log(bpm_inc[2:][stamina_select]/1000 + 1) + 1)
+        stamina[~stamina_select] = 0.1
         
         data_x = np.linspace(0, 1, rates.shape[0])
         data_y = rates*stamina*3
