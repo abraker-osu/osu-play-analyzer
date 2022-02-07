@@ -100,9 +100,9 @@ class GraphAimDifficulty(QtGui.QWidget):
         is_miss = is_miss[2:]
         distances = np.sqrt(np.square(pos_x[2:] - pos_x[1:-1]) + np.square(pos_y[2:] - pos_y[1:-1]))
         velocities = distances / (timing[2:] - timing[1:-1])
-        angle_factor = (1 + 2.5*np.exp(-0.026*(180 - angles)))/(1 + 2.5)
+        angle_factor = (1 + 2.5*np.exp(-0.026*angles))/(1 + 2.5)
 
-        data_y = velocities*angle_factor*3
+        data_y = velocities*angle_factor*4
         data_x = np.linspace(0, 1, data_y.shape[0])
 
         sort_idx = np.argsort(data_y)
