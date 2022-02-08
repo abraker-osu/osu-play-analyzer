@@ -102,6 +102,12 @@ class App(QtGui.QMainWindow):
                 'Make sure to use double backslashes for osu! path (ex: "C:\\\\Games\\\\osu!")\n'
             )
 
+            self.generate_map_button.setEnabled(False)
+            self.analyze_data_button.setEnabled(False)
+            self.record_data_button.setEnabled(False)
+            self.browse_plays_button.setEnabled(False)
+            self.train_skills_button.setEnabled(False)
+
         self.main_widget = QtGui.QWidget()
         self.setCentralWidget(self.main_widget)
 

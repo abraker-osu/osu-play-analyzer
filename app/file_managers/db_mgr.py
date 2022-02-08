@@ -55,6 +55,9 @@ class _MapsDB():
 
 
     def check_db(self):
+        if not os.path.isdir(AppConfig.cfg['osu_dir']):
+            return
+
         maps_table_built = _MapsDB.__check_maps_table()
         meta_table_built = _MapsDB.__check_meta_table()
 
