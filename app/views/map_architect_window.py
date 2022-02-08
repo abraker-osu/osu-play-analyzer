@@ -363,6 +363,11 @@ class MapArchitectWindow(QtGui.QMainWindow):
             bpm = int(self.__controls[btn]['bpm_txtbx'].text())
             self.__controls[btn]['bpm_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=int(15000/bpm))
 
+            if self.__bpm_display == True:
+                self.__controls[btn]['bpm_txtbx'].setValidator(QtGui.QIntValidator(1, 100000))
+            else:
+                self.__controls[btn]['bpm_txtbx'].setValidator(QtGui.QIntValidator(1, 1000))
+
         self.__bpm_display = not self.__bpm_display
 
 
@@ -459,7 +464,11 @@ class MapArchitectWindow(QtGui.QMainWindow):
 
         spacing_txtbx.setValidator(QtGui.QIntValidator(0, 512))
         angles_txtbx.setValidator(QtGui.QIntValidator(-180, 180))
-        bpm_txtbx.setValidator(QtGui.QIntValidator(1, 1000))
+
+        if self.__bpm_display:
+            bpm_txtbx.setValidator(QtGui.QIntValidator(1, 1000))
+        else:
+            bpm_txtbx.setValidator(QtGui.QIntValidator(1, 100000))
 
         if spacing is not None: spacing_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=spacing)
         else:                   spacing_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=100)
