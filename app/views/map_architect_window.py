@@ -129,7 +129,7 @@ class MapArchitectWindow(QtGui.QMainWindow):
         self.OBJ_SPACING_SMALL = 5
         self.OBJ_SPACING_LARGE = 22
 
-        self.controls = {}
+        self.__controls = {}
 
         self.__init_components()
         self.__build_layout()
@@ -321,7 +321,7 @@ class MapArchitectWindow(QtGui.QMainWindow):
             QtGui.QMessageBox.error(self, 'Error', 'Bad configuration file! Number of spacings, angles, and times must be equal.')
             return
 
-        num_ctrls_now = len(list(self.controls.keys()))
+        num_ctrls_now = len(list(self.__controls.keys()))
         num_ctrls_req = len(data['spacings'])
 
         num_to_rmv = max(0, num_ctrls_now - num_ctrls_req)
@@ -334,10 +334,10 @@ class MapArchitectWindow(QtGui.QMainWindow):
         for _ in range(num_to_add):
             self.__add_control()
 
-        for spacing, angle, bpm, btn in zip(data['spacings'], data['angles'], data['bpms'], self.controls.keys()):
-            self.controls[btn]['spacing_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=spacing)
-            self.controls[btn]['angles_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=angle)
-            self.controls[btn]['bpm_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=bpm)
+        for spacing, angle, bpm, btn in zip(data['spacings'], data['angles'], data['bpms'], self.__controls.keys()):
+            self.__controls[btn]['spacing_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=spacing)
+            self.__controls[btn]['angles_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=angle)
+            self.__controls[btn]['bpm_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=bpm)
 
         self.num_notes_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=data['num_notes'])
         self.rotation_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=data['rotation'])
@@ -347,10 +347,10 @@ class MapArchitectWindow(QtGui.QMainWindow):
 
     def __get_data(self):
         # Validate the data before returning the values
-        for btn in self.controls.keys():
-            self.controls[btn]['spacing_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE)
-            self.controls[btn]['angles_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE)
-            self.controls[btn]['bpm_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE)
+        for btn in self.__controls.keys():
+            self.__controls[btn]['spacing_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE)
+            self.__controls[btn]['angles_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE)
+            self.__controls[btn]['bpm_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE)
 
         self.num_notes_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE)
         self.rotation_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE)
@@ -358,14 +358,14 @@ class MapArchitectWindow(QtGui.QMainWindow):
         self.ar_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE)
 
         return {
-            'spacings'  : list([ int(self.controls[btn]['spacing_txtbx'].text()) for btn in self.controls ]),
-            'angles'    : list([ int(self.controls[btn]['angles_txtbx'].text()) for btn in self.controls ]),
-            'bpms'      : list([ int(self.controls[btn]['bpm_txtbx'].text()) for btn in self.controls ]),
-            'num_notes' : int(self.num_notes_txtbx.text()),
-            'rotation'  : int(self.rotation_txtbx.text()),
-            'cs'        : int(self.cs_txtbx.text()),
-            'ar'        : int(self.ar_txtbx.text()),
             'comments'  : '',
+            'spacings'   : list([ int(self.__controls[btn]['spacing_txtbx'].text()) for btn in self.__controls ]),
+            'angles'     : list([ int(self.__controls[btn]['angles_txtbx'].text()) for btn in self.__controls ]),
+            'bpms'       : list([ int(self.__controls[btn]['bpm_txtbx'].text()) for btn in self.__controls ]),
+            'num_notes'  : int(self.num_notes_txtbx.text()),
+            'rotation'   : int(self.rotation_txtbx.text()),
+            'cs'         : int(self.cs_txtbx.text()),
+            'ar'         : int(self.ar_txtbx.text()),
         }
 
 
@@ -421,8 +421,8 @@ class MapArchitectWindow(QtGui.QMainWindow):
         bpm_txtbx.value_enter_event.connect(self.__update_gen_map)
         bpm_txtbx.broadcast_event.connect(lambda apply, value, txtbx=bpm_txtbx: self.__bpm_broadcast_event(apply, value, txtbx))
 
-        self.controls[remove_btn] = {
-            'layout' : ctrl_layout,
+        self.__controls[remove_btn] = {
+            'layout'        : ctrl_layout,
             'spacing_txtbx' : spacing_txtbx,
             'angles_txtbx'  : angles_txtbx,
             'bpm_txtbx'     : bpm_txtbx,
@@ -433,21 +433,21 @@ class MapArchitectWindow(QtGui.QMainWindow):
 
 
     def __remove_control(self, btn):
-        if len(self.controls) == 1:
+        if len(self.__controls) == 1:
             return
 
-        self.controls[btn]['spacing_txtbx'].value_enter_event.disconnect()
-        self.controls[btn]['spacing_txtbx'].broadcast_event.disconnect()
+        self.__controls[btn]['spacing_txtbx'].value_enter_event.disconnect()
+        self.__controls[btn]['spacing_txtbx'].broadcast_event.disconnect()
 
-        self.controls[btn]['angles_txtbx'].value_enter_event.disconnect()
-        self.controls[btn]['angles_txtbx'].broadcast_event.disconnect()
+        self.__controls[btn]['angles_txtbx'].value_enter_event.disconnect()
+        self.__controls[btn]['angles_txtbx'].broadcast_event.disconnect()
 
-        self.controls[btn]['bpm_txtbx'].value_enter_event.disconnect()
-        self.controls[btn]['bpm_txtbx'].broadcast_event.disconnect()
+        self.__controls[btn]['bpm_txtbx'].value_enter_event.disconnect()
+        self.__controls[btn]['bpm_txtbx'].broadcast_event.disconnect()
 
-        self.note_ctrl_layout.removeItem(self.controls[btn]['layout'])
-        self.__del_layout(self.controls[btn]['layout'])
-        del self.controls[btn]
+        self.note_ctrl_layout.removeItem(self.__controls[btn]['layout'])
+        self.__del_layout(self.__controls[btn]['layout'])
+        del self.__controls[btn]
 
         self.__update_gen_map()
 
@@ -469,27 +469,27 @@ class MapArchitectWindow(QtGui.QMainWindow):
                 
                 
     def __spacing_broadcast_event(self, apply, value, txtbx):
-        for btn in self.controls:
-            if self.controls[btn]['spacing_txtbx'] == txtbx:
+        for btn in self.__controls:
+            if self.__controls[btn]['spacing_txtbx'] == txtbx:
                 continue
             
-            self.controls[btn]['spacing_txtbx'].apply_value(apply, value)
+            self.__controls[btn]['spacing_txtbx'].apply_value(apply, value)
 
 
     def __angles_broadcast_event(self, apply, value, txtbx):
-        for btn in self.controls:
-            if self.controls[btn]['angles_txtbx'] == txtbx:
+        for btn in self.__controls:
+            if self.__controls[btn]['angles_txtbx'] == txtbx:
                 continue
             
-            self.controls[btn]['angles_txtbx'].apply_value(apply, value)
+            self.__controls[btn]['angles_txtbx'].apply_value(apply, value)
 
 
     def __bpm_broadcast_event(self, apply, value, txtbx):
-        for btn in self.controls:
-            if self.controls[btn]['bpm_txtbx'] == txtbx:
+        for btn in self.__controls:
+            if self.__controls[btn]['bpm_txtbx'] == txtbx:
                 continue
             
-            self.controls[btn]['bpm_txtbx'].apply_value(apply, value)
+            self.__controls[btn]['bpm_txtbx'].apply_value(apply, value)
 
 
     def __update_gen_map(self):
@@ -499,9 +499,9 @@ class MapArchitectWindow(QtGui.QMainWindow):
         # Handle DT/NC vs nomod setting
         rate_multiplier = 1.0 if (ar <= 10) else 1.5
 
-        spacings  = np.asarray([ int(self.controls[btn]['spacing_txtbx'].text()) for btn in self.controls ])
-        angles    = np.asarray([ int(self.controls[btn]['angles_txtbx'].text()) for btn in self.controls ])*math.pi/180
-        times     = 15000/np.asarray([ int(self.controls[btn]['bpm_txtbx'].text()) for btn in self.controls ])*rate_multiplier
+        spacings  = np.asarray([ int(self.__controls[btn]['spacing_txtbx'].text()) for btn in self.__controls ])
+        angles    = np.asarray([ int(self.__controls[btn]['angles_txtbx'].text()) for btn in self.__controls ])*math.pi/180
+        times     = 15000/np.asarray([ int(self.__controls[btn]['bpm_txtbx'].text()) for btn in self.__controls ])*rate_multiplier
         num_notes = int(self.num_notes_txtbx.text())
         rotation  = int(self.rotation_txtbx.text())*math.pi/180
 
@@ -516,9 +516,9 @@ class MapArchitectWindow(QtGui.QMainWindow):
         # Handle DT/NC vs nomod setting
         rate_multiplier = 1.0 if (ar <= 10) else 1.5
 
-        spacings  = np.asarray([ int(self.controls[btn]['spacing_txtbx'].text()) for btn in self.controls ])
-        angles    = np.asarray([ int(self.controls[btn]['angles_txtbx'].text()) for btn in self.controls ])*math.pi/180
-        times     = 15000/np.asarray([ int(self.controls[btn]['bpm_txtbx'].text()) for btn in self.controls ])*rate_multiplier
+        spacings  = np.asarray([ int(self.__controls[btn]['spacing_txtbx'].text()) for btn in self.__controls ])
+        angles    = np.asarray([ int(self.__controls[btn]['angles_txtbx'].text()) for btn in self.__controls ])*math.pi/180
+        times     = 15000/np.asarray([ int(self.__controls[btn]['bpm_txtbx'].text()) for btn in self.__controls ])*rate_multiplier
         num_notes = int(self.num_notes_txtbx.text())
         rotation  = int(self.rotation_txtbx.text())*math.pi/180
 
