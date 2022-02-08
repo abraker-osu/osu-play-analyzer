@@ -10,6 +10,7 @@ Features:
 import os
 import json
 import time
+import datetime
 import shutil
 import hashlib
 import math
@@ -130,6 +131,7 @@ class MapArchitectWindow(QtGui.QMainWindow):
         self.OBJ_SPACING_LARGE = 22
 
         self.__controls = {}
+        self.__id = 0
 
         self.__init_components()
         self.__build_layout()
@@ -146,11 +148,13 @@ class MapArchitectWindow(QtGui.QMainWindow):
         self.save_config_action = QtGui.QAction("&Save config", self.file_menu, triggered=lambda: self.__save_config_dialog())
         self.open_config_action = QtGui.QAction("&Open config", self.file_menu, triggered=lambda: self.__open_config_dialog())
 
+        # Labels on the left side: https://i.imgur.com/ACZkQ2n.png
         self.spacing_label = QtGui.QLabel('Spacings:')
         self.angles_label  = QtGui.QLabel('Angles:')
         self.bpm_label     = QtGui.QLabel('BPMs:')
         self.label_layout  = QtGui.QVBoxLayout()
 
+        # Inputs on bottom: https://i.imgur.com/xvZnhHe.png
         self.num_notes_txtbx  = _ValueLineEdit()
         self.num_notes_label  = QtGui.QLabel('Num Notes')
         self.num_notes_layout = QtGui.QVBoxLayout()
@@ -169,6 +173,7 @@ class MapArchitectWindow(QtGui.QMainWindow):
 
         self.spacer = QtGui.QSpacerItem(0, 0, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
 
+        # Control area: https://i.imgur.com/hxMYN8M.png
         self.ctrl_area = QtGui.QWidget()
         self.ctrl_scroll_area = QtGui.QScrollArea()
         self.note_ctrl_layout = QtGui.QHBoxLayout()
@@ -176,11 +181,27 @@ class MapArchitectWindow(QtGui.QMainWindow):
 
         self.ctrl_layout = QtGui.QHBoxLayout()
 
+        # Buttons below input on bottom: https://i.imgur.com/dl3WtZH.png
         self.btn_layout = QtGui.QHBoxLayout()
         self.add_btn = QtGui.QPushButton('Add Control')
         self.gen_btn = QtGui.QPushButton('Generate Map')
 
-        self.architect_layout = QtGui.QVBoxLayout()
+        self.architect_widget = QtGui.QWidget()
+        self.architect_layout = QtGui.QVBoxLayout(self.architect_widget)
+
+        self.splitter = QtGui.QSplitter()
+        
+        self.name_label = QtGui.QLabel('Map Name:')
+        self.name_txtbx = QtGui.QLineEdit()
+
+        self.description_label = QtGui.QLabel('Map Description:')
+        self.description_txtbx = QtGui.QTextEdit()
+
+        self.name_layout = QtGui.QVBoxLayout()
+        self.description_layout = QtGui.QVBoxLayout()
+
+        self.metadata_widget = QtGui.QWidget()
+        self.metadata_layout = QtGui.QVBoxLayout(self.metadata_widget)
 
         self.main_widget = QtGui.QWidget()
         self.main_layout = QtGui.QVBoxLayout(self.main_widget)
@@ -228,8 +249,20 @@ class MapArchitectWindow(QtGui.QMainWindow):
         self.architect_layout.addLayout(self.map_ctrl_layout)
         self.architect_layout.addLayout(self.btn_layout)
 
+        self.name_layout.addWidget(self.name_label)
+        self.name_layout.addWidget(self.name_txtbx)
+
+        self.description_layout.addWidget(self.description_label)
+        self.description_layout.addWidget(self.description_txtbx)
+
+        self.metadata_layout.addLayout(self.name_layout)
+        self.metadata_layout.addLayout(self.description_layout)
+
+        self.splitter.addWidget(self.architect_widget)
+        self.splitter.addWidget(self.metadata_widget)
+
         self.main_layout.addWidget(self.menu_bar)
-        self.main_layout.addLayout(self.architect_layout)
+        self.main_layout.addWidget(self.splitter)
 
         self.setCentralWidget(self.main_widget)
 
@@ -282,7 +315,22 @@ class MapArchitectWindow(QtGui.QMainWindow):
 
         self.map_ctrl_layout.setContentsMargins(100, self.OBJ_MARGIN, self.OBJ_MARGIN, self.OBJ_MARGIN)
 
+        self.name_layout.setContentsMargins(0, 0, 0, 0)
+        self.name_layout.setSpacing(self.OBJ_SPACING_SMALL)
+        self.name_layout.setSizeConstraint(QtGui.QLayout.SetNoConstraint)
+        
+        self.name_txtbx.setSizePolicy(QtGui.QSizePolicy.Ignored, QtGui.QSizePolicy.Fixed)
+        self.name_txtbx.setFixedHeight(self.OBJ_HEIGHT)
+        self.name_txtbx.setMaximumWidth(self.name_txtbx.parent().maximumSize().width())
+
+        self.description_layout.setContentsMargins(0, 0, 0, 0)
+        self.description_layout.setSpacing(self.OBJ_SPACING_SMALL)
+
+        self.metadata_layout.setContentsMargins(self.OBJ_MARGIN, 0, self.OBJ_MARGIN, self.OBJ_MARGIN)
+        self.metadata_layout.setSpacing(self.OBJ_SPACING_LARGE)
+
         self.main_layout.setContentsMargins(0, 0, 0, 0)
+        self.setMaximumHeight(0)
 
 
     def __connect_signals(self):
@@ -320,6 +368,12 @@ class MapArchitectWindow(QtGui.QMainWindow):
         if not (len(data['spacings']) == len(data['angles']) == len(data['bpms'])):
             QtGui.QMessageBox.error(self, 'Error', 'Bad configuration file! Number of spacings, angles, and times must be equal.')
             return
+        
+        if 'name' in data:
+            self.name_txtbx.setText(data['name'])
+        
+        if 'description' in data:
+            self.description_txtbx.setText(data['description'])
 
         num_ctrls_now = len(list(self.__controls.keys()))
         num_ctrls_req = len(data['spacings'])
@@ -357,7 +411,6 @@ class MapArchitectWindow(QtGui.QMainWindow):
         self.ar_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE)
 
         return {
-            'comments'  : '',
             'spacings'   : list([ int(self.__controls[btn]['spacing_txtbx'].text()) for btn in self.__controls ]),
             'angles'     : list([ int(self.__controls[btn]['angles_txtbx'].text()) for btn in self.__controls ]),
             'bpms'       : list([ int(self.__controls[btn]['bpm_txtbx'].text()) for btn in self.__controls ]),
@@ -365,6 +418,8 @@ class MapArchitectWindow(QtGui.QMainWindow):
             'rotation'   : int(self.rotation_txtbx.text()),
             'cs'         : int(self.cs_txtbx.text()),
             'ar'         : int(self.ar_txtbx.text()),
+            'name'       : self.name_txtbx.text(),
+            'description': self.description_txtbx.toPlainText(),
         }
 
 
@@ -524,6 +579,8 @@ class MapArchitectWindow(QtGui.QMainWindow):
         gen_map, _ = OsuUtils.generate_pattern(rotation, spacings, times, angles, num_notes, 1)
         ar = min(ar, 10) if (ar <= 10) else OsuUtils.ms_to_ar(OsuUtils.ar_to_ms(ar)*rate_multiplier)
 
+        date = datetime.datetime.now()
+
         beatmap_data = textwrap.dedent(
             f"""\
             osu file format v14
@@ -555,7 +612,7 @@ class MapArchitectWindow(QtGui.QMainWindow):
             Source:
             Tags:
             BeatmapID:0
-            BeatmapSetID:882805
+            BeatmapSetID:0
 
             [Difficulty]
             HPDrainRate:8
