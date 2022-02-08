@@ -328,8 +328,7 @@ class MapArchitectWindow(QtGui.QMainWindow):
         num_to_add = max(0, num_ctrls_req - num_ctrls_now)
 
         for _ in range(num_to_rmv):
-            btn, _ = self.controls.popitem()
-            self.__remove_control(btn)
+            self.__remove_control(list(self.__controls)[-1])
 
         for _ in range(num_to_add):
             self.__add_control()
