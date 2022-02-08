@@ -7,7 +7,7 @@ class _AppConfig():
     cfg = { 
         'id'         : random.randint(100, 1000000),
         'osu_dir'    : '',
-        'delete_gen' : False,
+        'delete_gen' : True,
     }
 
     @staticmethod
