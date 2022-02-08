@@ -130,6 +130,8 @@ class MapArchitectWindow(QtGui.QMainWindow):
         self.OBJ_SPACING_SMALL = 5
         self.OBJ_SPACING_LARGE = 22
 
+        self.__bpm_display = True
+
         self.__controls = {}
         self.__id = 0
 
@@ -144,9 +146,11 @@ class MapArchitectWindow(QtGui.QMainWindow):
     def __init_components(self):
         self.menu_bar  = QtGui.QMenuBar()
         self.file_menu = QtGui.QMenu("&File")
+        self.view_menu = QtGui.QMenu("&View")
 
         self.save_config_action = QtGui.QAction("&Save config", self.file_menu, triggered=lambda: self.__save_config_dialog())
         self.open_config_action = QtGui.QAction("&Open config", self.file_menu, triggered=lambda: self.__open_config_dialog())
+        self.time_toggle_action = QtGui.QAction("&Change BPM to Time", self.view_menu, triggered=lambda: self.__toggle_time_display())
 
         # Labels on the left side: https://i.imgur.com/ACZkQ2n.png
         self.spacing_label = QtGui.QLabel('Spacings:')
@@ -209,8 +213,11 @@ class MapArchitectWindow(QtGui.QMainWindow):
 
     def __build_layout(self):
         self.menu_bar.addMenu(self.file_menu)
+        self.menu_bar.addMenu(self.view_menu)
+
         self.file_menu.addAction(self.save_config_action)
         self.file_menu.addAction(self.open_config_action)
+        self.view_menu.addAction(self.time_toggle_action)
 
         self.label_layout.addWidget(self.spacing_label)
         self.label_layout.addWidget(self.angles_label)
@@ -343,6 +350,22 @@ class MapArchitectWindow(QtGui.QMainWindow):
         self.ar_txtbx.value_enter_event.connect(self.__update_gen_map)
 
 
+    def __toggle_time_display(self):
+        if self.__bpm_display == True:
+            self.bpm_label.setText('Times:')
+            self.time_toggle_action.setText('Change Time to BPM')
+        else:
+            self.bpm_label.setText('BPMs:')
+            self.time_toggle_action.setText('Change BPM to Time')
+
+        # Converts between time <-> bpm and vice-versa
+        for btn in self.__controls.keys():
+            bpm = int(self.__controls[btn]['bpm_txtbx'].text())
+            self.__controls[btn]['bpm_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=int(15000/bpm))
+
+        self.__bpm_display = not self.__bpm_display
+
+
     def __save_config_dialog(self):
         file_name, _ = QtGui.QFileDialog.getSaveFileName(self, 'Save Configuration', '', '*.json')
         if not file_name:
@@ -368,6 +391,10 @@ class MapArchitectWindow(QtGui.QMainWindow):
         if not (len(data['spacings']) == len(data['angles']) == len(data['bpms'])):
             QtGui.QMessageBox.error(self, 'Error', 'Bad configuration file! Number of spacings, angles, and times must be equal.')
             return
+
+        if 'is_bpm' in data:
+            if data['is_bpm'] != self.__bpm_display:
+                self.__toggle_time_display()
         
         if 'name' in data:
             self.name_txtbx.setText(data['name'])
@@ -420,6 +447,7 @@ class MapArchitectWindow(QtGui.QMainWindow):
             'ar'         : int(self.ar_txtbx.text()),
             'name'       : self.name_txtbx.text(),
             'description': self.description_txtbx.toPlainText(),
+            'is_bpm'     : self.__bpm_display
         }
 
 
@@ -440,7 +468,7 @@ class MapArchitectWindow(QtGui.QMainWindow):
         else:                   angles_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=90)
 
         if bpm is not None:     bpm_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=bpm)
-        else:                   bpm_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=60)
+        else:                   bpm_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=60 if self.__bpm_display else 1000)
 
         ctrl_layout = QtGui.QVBoxLayout()
         ctrl_layout.addWidget(spacing_txtbx)
@@ -547,17 +575,22 @@ class MapArchitectWindow(QtGui.QMainWindow):
 
 
     def __update_gen_map(self):
-        cs        = float(self.cs_txtbx.text())
-        ar        = float(self.ar_txtbx.text())
+        cs = float(self.cs_txtbx.text())
+        ar = float(self.ar_txtbx.text())
 
         # Handle DT/NC vs nomod setting
         rate_multiplier = 1.0 if (ar <= 10) else 1.5
 
         spacings  = np.asarray([ int(self.__controls[btn]['spacing_txtbx'].text()) for btn in self.__controls ])
         angles    = np.asarray([ int(self.__controls[btn]['angles_txtbx'].text()) for btn in self.__controls ])*math.pi/180
-        times     = 15000/np.asarray([ int(self.__controls[btn]['bpm_txtbx'].text()) for btn in self.__controls ])*rate_multiplier
+        times     = np.asarray([ int(self.__controls[btn]['bpm_txtbx'].text()) for btn in self.__controls ])
         num_notes = int(self.num_notes_txtbx.text())
         rotation  = int(self.rotation_txtbx.text())*math.pi/180
+
+        if self.__bpm_display:
+            times = 15000/times*rate_multiplier
+        else:
+            times = times/rate_multiplier
 
         gen_map, _ = OsuUtils.generate_pattern(rotation, spacings, times, angles, num_notes, 1)
         self.gen_map_event.emit(gen_map, cs, ar)
@@ -572,9 +605,14 @@ class MapArchitectWindow(QtGui.QMainWindow):
 
         spacings  = np.asarray([ int(self.__controls[btn]['spacing_txtbx'].text()) for btn in self.__controls ])
         angles    = np.asarray([ int(self.__controls[btn]['angles_txtbx'].text()) for btn in self.__controls ])*math.pi/180
-        times     = 15000/np.asarray([ int(self.__controls[btn]['bpm_txtbx'].text()) for btn in self.__controls ])*rate_multiplier
+        times     = np.asarray([ int(self.__controls[btn]['bpm_txtbx'].text()) for btn in self.__controls ])
         num_notes = int(self.num_notes_txtbx.text())
         rotation  = int(self.rotation_txtbx.text())*math.pi/180
+
+        if self.__bpm_display:
+            times = 15000/times*rate_multiplier
+        else:
+            times = times/rate_multiplier
 
         gen_map, _ = OsuUtils.generate_pattern(rotation, spacings, times, angles, num_notes, 1)
         ar = min(ar, 10) if (ar <= 10) else OsuUtils.ms_to_ar(OsuUtils.ar_to_ms(ar)*rate_multiplier)
