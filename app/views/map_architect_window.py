@@ -608,7 +608,7 @@ class MapArchitectWindow(QtGui.QMainWindow):
             Artist:abraker
             ArtistUnicode:abraker
             Creator:abraker
-            Version:generated_{time.time()}
+            Version:gen_{date.hour}:{date.minute}:{date.second}_{self.name_txtbx.text()}_{self.__id}
             Source:
             Tags:
             BeatmapID:0
