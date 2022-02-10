@@ -103,13 +103,20 @@ class _MapsDB():
         columns = ', '.join([ 'md5', 'md5h', 'path' ])
         placeholders = ':' + ', :'.join([ 'md5', 'md5h', 'path' ])
         
+        # Drop maps table
+        _MapsDB.db.execute('DROP TABLE maps')
+        _MapsDB.db.commit()
+
+        _MapsDB.db.execute("CREATE TABLE meta(num_maps INT, last_modified REAL)")
+
+        # Add maps into table
         for entry in data:
-            reply = _MapsDB.db.execute(f'SELECT md5 FROM maps WHERE md5="{entry["md5"]}"').fetchone()
-            if reply == None:
                 _MapsDB.db.execute(f'INSERT INTO maps ({columns}) VALUES ({placeholders});', tuple(entry[k] for k in entry.keys()))
 
         _MapsDB.db.execute(f'UPDATE meta SET num_maps = {num_beatmaps_read};')
         _MapsDB.db.execute(f'UPDATE meta SET last_modified = {last_modified_read};')
+
+        _MapsDB.db.commit()
 
 
     def get_map_file_name(self, map_md5, md5h=False, reprocess_if_missing=False):
