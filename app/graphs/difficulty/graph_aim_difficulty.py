@@ -78,22 +78,35 @@ class GraphAimDifficulty(QtGui.QWidget):
             self.__calc_data_event.emit(data_stub, data_stub, data_stub)
             return
 
-        # Sliders are selected based on x1-x2 being press-release or x2-x3 being press-release
-        # slider_select is first filled with data for x2-x3 because that has one less element than data being worked with
-        slider_select = np.zeros(play_data.shape[0] - 2, dtype=bool)
-        slider_select[:-1] = (play_data[3:, RecData.ACT_TYPE] == StdScoreData.ACTION_RELEASE)
+        # Filter out release points for short sliders
+        slider_end_select = np.zeros(play_data.shape[0], dtype=bool)
+        slider_end_select[1:] = \
+            ((play_data[:-1, RecData.ACT_TYPE] == StdScoreData.ACTION_PRESS) & (play_data[1:, RecData.ACT_TYPE] == StdScoreData.ACTION_RELEASE))
 
-        slider_select = ( \
-            ((play_data[1:-1, RecData.ACT_TYPE] == StdScoreData.ACTION_PRESS) & (play_data[2:, RecData.ACT_TYPE] == StdScoreData.ACTION_RELEASE)) | \
-            ((play_data[2:, RecData.ACT_TYPE] == StdScoreData.ACTION_PRESS) & slider_select)   \
-        )
-
-        # Calculate data (x2 is considered current score point, x1 and x0 are previous score points)
         cs_px = OsuUtils.cs_to_px(play_data[0, RecData.CS])
         pos_x = play_data[:, RecData.X_POS]
         pos_y = play_data[:, RecData.Y_POS]
-        timing = play_data[:, RecData.TIMINGS]
-        is_miss = (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_MISS)
+        
+        distances = np.sqrt(np.square(pos_x[1:] - pos_x[:-1]) + np.square(pos_y[1:] - pos_y[:-1]))
+
+        small_slider_filter = np.ones(play_data.shape[0], dtype=bool)
+        small_slider_filter[1:] = ~((distances < cs_px*1.5) & slider_end_select[1:])
+
+        # Sliders are selected based on x1-x2 being press-release or x2-x3 being press-release
+        # slider_select is first filled with data for x2-x3 because that has one less element than data being worked with
+        slider_select = np.zeros(play_data.shape[0], dtype=bool)
+        slider_select[2:] = (play_data[2:, RecData.ACT_TYPE] == StdScoreData.ACTION_RELEASE)
+
+        slider_select = ( \
+            slider_end_select | \
+            ((play_data[:, RecData.ACT_TYPE] == StdScoreData.ACTION_PRESS) & slider_select)   \
+        )[small_slider_filter][2:]
+
+        # Calculate data (x2 is considered current score point, x1 and x0 are previous score points)
+        pos_x = play_data[:, RecData.X_POS][small_slider_filter]
+        pos_y = play_data[:, RecData.Y_POS][small_slider_filter]
+        timing = play_data[:, RecData.TIMINGS][small_slider_filter]
+        is_miss = (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_MISS)[small_slider_filter]
 
         dx0 = pos_x[1:-1] - pos_x[:-2]   # x1 - x0
         dx1 = pos_x[2:] - pos_x[1:-1]    # x2 - x1
