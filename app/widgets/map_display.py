@@ -414,7 +414,7 @@ class MapDisplay(QtGui.QWidget):
 
 
     def __open_replay_dialog(self):
-        name_filter = 'osu! replay files (*.osr)' if self.map_md5 == None else f'osu! replay files ({self.map_md5}-*.osr)'
+        name_filter = 'osu! replay files (*.osr)' if self.map_md5 == None else f'osu! replay files ({self.map_md5}-*.osr)\nosu! replay files (*.osr)'
 
         file_name = QtGui.QFileDialog.getOpenFileName(self, 'Open replay',  f'{AppConfig.cfg["osu_dir"]}/Data/r', name_filter)
         file_name = file_name[0]
