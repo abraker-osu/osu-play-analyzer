@@ -61,15 +61,33 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
 
     def plot_data(self, play_data):
         if play_data.shape[0] == 0:
+            self.hit_metrics.setText('No data to display')
+
+            data_blank = np.asarray([])
+            self.__plot.setData(data_blank, data_blank, pen=None, symbol='o', symbolPen=None, symbolSize=2, symbolBrush=(100, 100, 255, 200))
+            self.__std_plot.setData(x=data_blank, y=data_blank, top=data_blank, bottom=data_blank, pen=(150, 150, 0, 100))
+            self.__miss_plot.setData(x=data_blank, y=data_blank, top=data_blank, bottom=data_blank, pen=mkPen((200, 0, 0, 50), width=5))
             return
 
         unique_map_hashes = np.unique(play_data[:, RecData.MAP_HASH])
         if unique_map_hashes.shape[0] > 1:
+            self.hit_metrics.setText('Data is displayed only one map must be selected')
+
+            data_blank = np.asarray([])
+            self.__plot.setData(data_blank, data_blank, pen=None, symbol='o', symbolPen=None, symbolSize=2, symbolBrush=(100, 100, 255, 200))
+            self.__std_plot.setData(x=data_blank, y=data_blank, top=data_blank, bottom=data_blank, pen=(150, 150, 0, 100))
+            self.__miss_plot.setData(x=data_blank, y=data_blank, top=data_blank, bottom=data_blank, pen=mkPen((200, 0, 0, 50), width=5))
             return
 
         unique_map_hash_select = (play_data[:, RecData.MAP_HASH] == unique_map_hashes[0])
         unique_map_mods = np.unique(play_data[unique_map_hash_select, RecData.MODS])
         if unique_map_mods[0] > 1:
+            self.hit_metrics.setText('Data is displayed only when one mod combination is selected')
+
+            data_blank = np.asarray([])
+            self.__plot.setData(data_blank, data_blank, pen=None, symbol='o', symbolPen=None, symbolSize=2, symbolBrush=(100, 100, 255, 200))
+            self.__std_plot.setData(x=data_blank, y=data_blank, top=data_blank, bottom=data_blank, pen=(150, 150, 0, 100))
+            self.__miss_plot.setData(x=data_blank, y=data_blank, top=data_blank, bottom=data_blank, pen=mkPen((200, 0, 0, 50), width=5))
             return
 
         unique_timestamps = np.unique(play_data[:, RecData.TIMESTAMP])
