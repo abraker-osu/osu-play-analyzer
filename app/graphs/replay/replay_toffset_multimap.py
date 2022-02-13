@@ -46,8 +46,9 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
         self.__graph.addLine(x=None, y=0, pen=pyqtgraph.mkPen((0, 150, 0, 255), width=1))
 
         # Hit stats
-        self.hit_metrics = pyqtgraph.TextItem('', anchor=(0, 0), )
-        self.__graph.addItem(self.hit_metrics)
+        self.__hit_metrics = pyqtgraph.TextItem('', anchor=(0, 0), )
+        self.__graph.addItem(self.__hit_metrics)
+        self.__hit_metrics.setText('Select a map to display data')
 
         # Put it all together
         self.__layout = QtGui.QHBoxLayout(self)
@@ -61,7 +62,7 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
 
     def plot_data(self, play_data):
         if play_data.shape[0] == 0:
-            self.hit_metrics.setText('No data to display')
+            self.__hit_metrics.setText('No data to display')
 
             data_blank = np.asarray([])
             self.__plot.setData(data_blank, data_blank, pen=None, symbol='o', symbolPen=None, symbolSize=2, symbolBrush=(100, 100, 255, 200))
@@ -71,7 +72,7 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
 
         unique_map_hashes = np.unique(play_data[:, RecData.MAP_HASH])
         if unique_map_hashes.shape[0] > 1:
-            self.hit_metrics.setText('Data is displayed only one map must be selected')
+            self.__hit_metrics.setText('Data is displayed only when one map must be selected')
 
             data_blank = np.asarray([])
             self.__plot.setData(data_blank, data_blank, pen=None, symbol='o', symbolPen=None, symbolSize=2, symbolBrush=(100, 100, 255, 200))
@@ -81,8 +82,8 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
 
         unique_map_hash_select = (play_data[:, RecData.MAP_HASH] == unique_map_hashes[0])
         unique_map_mods = np.unique(play_data[unique_map_hash_select, RecData.MODS])
-        if unique_map_mods[0] > 1:
-            self.hit_metrics.setText('Data is displayed only when one mod combination is selected')
+        if unique_map_mods.shape[0] > 1:
+            self.__hit_metrics.setText('Data is displayed only when one mod combination is selected')
 
             data_blank = np.asarray([])
             self.__plot.setData(data_blank, data_blank, pen=None, symbol='o', symbolPen=None, symbolSize=2, symbolBrush=(100, 100, 255, 200))
@@ -224,7 +225,7 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
 
         # Need at least 2 plays for probability calc
         if self.cache_num_plays < 2:
-            self.hit_metrics.setText(
+            self.__hit_metrics.setText(
             f'''
             worst acc: {100*worst_acc:.2f}%
 
@@ -289,7 +290,7 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
         #   but if there are sliders that have good accuracy, oh well, good for you
         num_presses -= num_sliders
 
-        self.hit_metrics.setText(
+        self.__hit_metrics.setText(
             f'''
             worst acc: {100*worst_acc:.2f}%
 
@@ -314,4 +315,4 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
         margin_x = 0.001*(view.right() - view.left())
         margin_y = 0.001*(view.top() - view.bottom())
 
-        self.hit_metrics.setPos(pos_x + margin_x, pos_y + margin_y)
+        self.__hit_metrics.setPos(pos_x + margin_x, pos_y + margin_y)
