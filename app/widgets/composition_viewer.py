@@ -5,12 +5,14 @@ import numpy as np
 
 from osu_analysis import StdScoreData
 
+from app.misc.Logger import Logger
 from app.data_recording.data import RecData
 
 
 
 class CompositionViewer(QtGui.QWidget):
 
+    logger = Logger.get_logger(__name__)
     region_changed = QtCore.pyqtSignal(object)
 
     def __init__(self, parent=None):
@@ -278,6 +280,8 @@ class CompositionViewer(QtGui.QWidget):
         (the current multidimensional plane), then composes the selections
         in all planes together, and emits the resulting selected play data.
         '''
+        self.logger.debug('__roi_selection_event')
+
         # Update selection mask for the current plane
         roi_id_xy = self.__get_roi_id(self.__id_x, self.__id_y)
         roi_plot_xy = self.roi_selections[roi_id_xy]['roi']
@@ -318,7 +322,9 @@ class CompositionViewer(QtGui.QWidget):
             return
 
         if emit_data:
+            self.logger.debug('region_changed.emit ->')
             self.region_changed.emit(play_data_out)
+            self.logger.debug('region_changed.emit <-')
 
 
     def __select_data_in_roi(self, roi_plot, data):
@@ -493,8 +499,10 @@ class CompositionViewer(QtGui.QWidget):
 
 
     def __x_axis_selection_event(self, id_x):
+        self.logger.debug('__x_axis_selection_event')
         self.__set_composition_data(id_x=id_x)
 
 
     def __y_axis_selection_event(self, id_y):
+        self.logger.debug('__y_axis_selection_event')
         self.__set_composition_data(id_y=id_y)

@@ -14,8 +14,10 @@ The is a selection menu on the side that allows the user to select which player'
 Design note: Maybe have a scatter plot instead. Really depends on how much data there is and how laggy it will get.
 """
 import numpy as np
+import time
 from pyqtgraph.Qt import QtGui, QtCore
 
+from app.misc.Logger import Logger
 from app.widgets.play_list import PlayList
 from app.widgets.plays_graph import PlaysGraph
 from app.widgets.composition_viewer import CompositionViewer
@@ -28,10 +30,14 @@ from app.file_managers import AppConfig
 
 class DataOverviewWindow(QtGui.QWidget):
 
+    logger = Logger.get_logger(__name__)
+
     show_map_event = QtCore.pyqtSignal(object)
     region_changed = QtCore.pyqtSignal(object)
 
     def __init__(self, parent=None):
+        self.logger.debug('__init__ enter')
+
         QtGui.QWidget.__init__(self, parent)
 
         self.map_list_data = []
@@ -40,7 +46,6 @@ class DataOverviewWindow(QtGui.QWidget):
         self.setWindowTitle('Data overview')
         
         self.map_list = PlayList()
-
         self.composition_viewer = CompositionViewer()
         self.play_graph = PlaysGraph()
 
@@ -82,17 +87,23 @@ class DataOverviewWindow(QtGui.QWidget):
         self.play_graph.region_changed.connect(self.composition_viewer.set_composition_from_play_data)
         self.composition_viewer.region_changed.connect(self.region_changed)
         self.show_map_btn.clicked.connect(self.__show_map_event)
+
+        self.logger.debug('__init__ exit')
         
 
     def new_replay_event(self, is_import):
+        self.logger.debug('new_replay_event')
         self.map_list.load_latest_play(is_import)
 
     
     def __map_select_event(self, play_data):
+        self.logger.debug('__map_select_event')
         self.play_graph.plot_plays(play_data)
 
 
     def __show_map_event(self):
+        self.logger.debug('__show_map_event')
+
         self.composition_viewer.reset_roi_selections()
         play_data = self.composition_viewer.get_selected()
         unique_timestamps = np.unique(play_data[:, RecData.TIMESTAMP])

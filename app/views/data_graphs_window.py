@@ -5,6 +5,8 @@ A menubar on the top allows the user to select which graph to display.
 
 from pyqtgraph.Qt import QtGui
 
+from app.misc.Logger import Logger
+
 from app.graphs.replay.hit_offset_graph import HitOffsetGraph
 from app.graphs.replay.replay_hit_doffset_graph import ReplayHitDOffsetGraph
 from app.graphs.replay.replay_toffset_multimap import ReplayTOffsetMultimap
@@ -30,7 +32,11 @@ from app.file_managers import PlayData
 
 class DataGraphsWindow(QtGui.QMainWindow):
 
+    logger = Logger.get_logger(__name__)
+
     def __init__(self, parent=None):
+        self.logger.debug('__init__ enter')
+
         QtGui.QMainWindow.__init__(self, parent)
         self.setWindowTitle('Data graphs')
     
@@ -79,11 +85,15 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.main_widget.addTab(self.play_data_tabs, 'Deviation data graphs')
         self.setCentralWidget(self.main_widget)
 
+        self.logger.debug('__init__ exit')
+
 
     def new_replay_event(self):
         '''
         Called when a single new replay is loaded
         '''
+        self.logger.debug('new_replay_event')
+
         play_data = PlayData.data
         data_filter = (play_data[:, RecData.TIMESTAMP] == max(play_data[:, RecData.TIMESTAMP]))
         play_data = play_data[data_filter]
@@ -105,6 +115,8 @@ class DataGraphsWindow(QtGui.QMainWindow):
         """
         Called when a single map is selected in the overview window.
         """
+        self.logger.debug('overview_single_map_selection_event')
+
         self.hit_offset_graph.plot_data(play_data)
         self.replay_offset_multimap_graph.plot_data(play_data)
         self.replay_hit_doffset_graph.plot_data(play_data)

@@ -3,11 +3,14 @@ import glob
 import os
 import time
 
+from app.misc.Logger import Logger
 from app.osu_db_reader.osu_db_reader import OsuDbReader
 from app.file_managers.config_mgr import AppConfig
 
 
 class _MapsDB():
+
+    logger = Logger.get_logger(__name__)
 
     # For resolving replays to maps
     db = sqlite3.connect("data/maps.db")
@@ -15,43 +18,54 @@ class _MapsDB():
 
     @staticmethod
     def __check_maps_table():
+        _MapsDB.logger.info('Checking maps table')
+
         reply = _MapsDB.db.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='maps'").fetchone()[0]
-        if reply == 0:
-            _MapsDB.db.execute("CREATE TABLE maps(md5 TEXT, md5h TEXT, path TEXT)")
+        if reply > 0:
+            _MapsDB.logger.info('Map table ok')
+            return False
 
-            columns = ', '.join([ 'md5', 'md5h', 'path' ])
-            placeholders = ':' + ', :'.join([ 'md5', 'md5h', 'path' ])
+        _MapsDB.logger.info('Map table does not exist - creating')
 
-            data = OsuDbReader.get_beatmap_md5_paths(f'{_MapsDB.osu_path}/osu!.db')
-            for entry in data:
-                _MapsDB.db.execute(f'INSERT INTO maps ({columns}) VALUES ({placeholders});', tuple(entry[k] for k in entry.keys()))
+        _MapsDB.db.execute("CREATE TABLE maps(md5 TEXT, md5h TEXT, path TEXT)")
 
-            print('Map table did not exist - created it')
+        columns = ', '.join([ 'md5', 'md5h', 'path' ])
+        placeholders = ':' + ', :'.join([ 'md5', 'md5h', 'path' ])
+
+        data = OsuDbReader.get_beatmap_md5_paths(f'{_MapsDB.osu_path}/osu!.db')
+        for entry in data:
+            _MapsDB.db.execute(f'INSERT INTO maps ({columns}) VALUES ({placeholders});', tuple(entry[k] for k in entry.keys()))
             _MapsDB.db.commit()
-            return True
 
-        return False
+        _MapsDB.logger.info('Map table created')
+        return True
 
 
     @staticmethod
     def __check_meta_table():
+        _MapsDB.logger.info('Checking meta table')
+
         reply = _MapsDB.db.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='meta'").fetchone()[0]
-        if reply == 0:
-            _MapsDB.db.execute("CREATE TABLE meta(num_maps INT, last_modified REAL)")
+        if reply > 0:
+            _MapsDB.logger.info('Meta table ok')
+            return False
 
-            num_beatmaps_read = OsuDbReader.get_num_beatmaps(f'{_MapsDB.osu_path}/osu!.db')
-            last_modified_read = os.stat(f'{_MapsDB.osu_path}/osu!.db').st_mtime
+        _MapsDB.logger.info('Meta table does not exist - creating')
 
-            columns = ', '.join([ 'num_maps', 'last_modified' ])
-            placeholders = ':' + ', :'.join([ 'num_maps', 'last_modified' ])
+        _MapsDB.db.execute("CREATE TABLE meta(num_maps INT, last_modified REAL)")
 
-            _MapsDB.db.execute(f'INSERT INTO meta ({columns}) VALUES ({placeholders});', (num_beatmaps_read, last_modified_read))
+        num_beatmaps_read = OsuDbReader.get_num_beatmaps(f'{_MapsDB.osu_path}/osu!.db')
+        last_modified_read = os.stat(f'{_MapsDB.osu_path}/osu!.db').st_mtime
 
-            print('Meta table did not exist - created it')
-            _MapsDB.db.commit()
-            return True
+        columns = ', '.join([ 'num_maps', 'last_modified' ])
+        placeholders = ':' + ', :'.join([ 'num_maps', 'last_modified' ])
 
-        return False
+        _MapsDB.db.execute(f'INSERT INTO meta ({columns}) VALUES ({placeholders});', (num_beatmaps_read, last_modified_read))
+        _MapsDB.db.commit()
+
+        _MapsDB.logger.info('Meta table created')
+        return True
+
 
 
     def check_db(self):
@@ -62,7 +76,6 @@ class _MapsDB():
         meta_table_built = _MapsDB.__check_meta_table()
 
         if maps_table_built and meta_table_built:
-            print('Map db did not exist - created it')
             return
         
         num_beatmaps_read = OsuDbReader.get_num_beatmaps(f'{_MapsDB.osu_path}/osu!.db')
@@ -80,15 +93,16 @@ class _MapsDB():
 
         if num_maps_changed or osu_db_modified:
             if osu_db_modified:
+                # TODO: This needs a GUI interface
                 user_input = input('osu!.db was modified. If you modified a map for testing, it will not be found until you update db. Update db? (y/n)')
                 if not 'y' in user_input.lower(): return
 
             MapsDB.update_maps_db()
 
             if num_beatmaps_save != None:
-                print(f'Added {num_beatmaps_read - num_beatmaps_save} new maps')
+                _MapsDB.logger.info(f'Added {num_beatmaps_read - num_beatmaps_save} new maps')
             else:
-                print(f'Added {num_beatmaps_read} new maps')
+                _MapsDB.logger.info(f'Added {num_beatmaps_read} new maps')
 
 
     def update_maps_db(self):
@@ -111,7 +125,7 @@ class _MapsDB():
 
         # Add maps into table
         for entry in data:
-                _MapsDB.db.execute(f'INSERT INTO maps ({columns}) VALUES ({placeholders});', tuple(entry[k] for k in entry.keys()))
+            _MapsDB.db.execute(f'INSERT INTO maps ({columns}) VALUES ({placeholders});', tuple(entry[k] for k in entry.keys()))
 
         _MapsDB.db.execute(f'UPDATE meta SET num_maps = {num_beatmaps_read};')
         _MapsDB.db.execute(f'UPDATE meta SET last_modified = {last_modified_read};')
@@ -126,7 +140,7 @@ class _MapsDB():
         if reply != None:
             map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/{reply[0]}'
             return map_file_name, False
-
+        
         # Try to find the map file by hash
         if md5h == False:
             # See if it's a generated map, it has its md5 hash in the name
@@ -144,10 +158,10 @@ class _MapsDB():
 
         # Find by hash failed, reprocess the db and try if enabled
         if not reprocess_if_missing:
-            print('Associated beatmap not found. If you modified or added a new map since starting osu!, close osu! and rebuild db. Then try again.')
+            _MapsDB.logger.info('Associated beatmap not found. If you modified or added a new map since starting osu!, close osu! and rebuild db. Then try again.')
             return None, False
 
-        print('Associated beatmap not found, updating maps database...')
+        _MapsDB.logger.info('Associated beatmap not found, updating maps database...')
         MapsDB.update_maps_db()
         reply = _MapsDB.db.execute(f'SELECT path FROM maps WHERE {field}="{map_md5}"').fetchone()
 
@@ -155,7 +169,7 @@ class _MapsDB():
             map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/{reply[0]}'
             return map_file_name, False
 
-        print('Associated beatmap not found. Do you have it?')
+        _MapsDB.logger.info('Associated beatmap not found. Do you have it?')
         return None, False
 
 

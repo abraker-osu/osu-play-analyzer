@@ -1,17 +1,19 @@
 import numpy as np
 
+from app.misc.Logger import Logger
 from app.data_recording.data import RecData
 
 
 class _PlayData():
 
     SAVE_FILE = 'data/osu_performance_recording_v2.npy'
+    logger = Logger.get_logger(__name__)
 
     try: 
         data_file = open(SAVE_FILE, 'rb+')
         data = np.load(data_file, allow_pickle=False)
     except FileNotFoundError:
-        print('Data file not found. Creating...')
+        logger.info('Data file not found. Creating...')
 
         data = np.asarray([])
         np.save(SAVE_FILE, np.empty((0, RecData.NUM_COLS)), allow_pickle=False)
@@ -20,7 +22,7 @@ class _PlayData():
         data = np.load(data_file, allow_pickle=False)
 
         if data.shape[1] != RecData.NUM_COLS:
-            print(
+            logger.info(
                 '\n'+
                 '============================================================\n' +
                 'Warning: This version of the tool expects a different file format and may crash.' +
@@ -43,7 +45,6 @@ class _PlayData():
         # Now reopen it so it can be used
         _PlayData.data_file = open(_PlayData.SAVE_FILE, 'rb+')
         _PlayData.data = np.load(_PlayData.data_file, allow_pickle=False)
-
 
 
     @staticmethod

@@ -22,12 +22,18 @@ import pandas as pd
 from pyqtgraph.Qt import QtGui, QtCore
 
 from osu_analysis import StdMapData
+
+from app.misc.Logger import Logger
 from app.misc.osu_utils import OsuUtils
 from app.widgets.map_display import MapDisplay
 
 class MapDisplayWindow(QtGui.QMainWindow):
 
+    logger = Logger.get_logger(__name__)
+
     def __init__(self, parent=None):
+        self.logger.debug('__init__ enter')
+
         QtGui.QMainWindow.__init__(self, parent)
         self.setWindowTitle('Map Display')
 
@@ -41,6 +47,8 @@ class MapDisplayWindow(QtGui.QMainWindow):
         self.map_tabs.addTab(self.processed_map_display, 'Processed')
 
         self.setCentralWidget(self.map_tabs)
+
+        self.logger.debug('__init__ exit')
         
 
     def set_from_play_data(self, play_data):
@@ -48,6 +56,7 @@ class MapDisplayWindow(QtGui.QMainWindow):
 
 
     def new_replay_event(self, map_data, replay_data, cs, ar, mods, name):
+        self.logger.debug('new_replay_event')
         self.selected_map_display.new_replay_event(map_data, replay_data, cs, ar, mods, name)
 
 

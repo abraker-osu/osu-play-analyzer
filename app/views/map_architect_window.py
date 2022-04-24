@@ -20,7 +20,10 @@ import textwrap
 from pyqtgraph.Qt import QtCore, QtGui
 
 from osu_analysis import BeatmapIO
+
+from app.misc.Logger import Logger
 from app.misc.osu_utils import OsuUtils
+
 from app.file_managers import AppConfig
 
 
@@ -117,9 +120,13 @@ class _ValueLineEdit(QtGui.QLineEdit):
 
 class MapArchitectWindow(QtGui.QMainWindow):
 
+    logger = Logger.get_logger(__name__)
+
     gen_map_event = QtCore.pyqtSignal(object, float, float)
 
     def __init__(self, parent=None):
+        self.logger.debug('__init__ enter')
+
         QtGui.QMainWindow.__init__(self, parent)
         self.setWindowTitle('Map Architect')
 
@@ -141,6 +148,8 @@ class MapArchitectWindow(QtGui.QMainWindow):
         self.__connect_signals()
 
         self.__add_control()
+        
+        self.logger.debug('__init__ exit')
 
 
     def __init_components(self):
@@ -560,6 +569,8 @@ class MapArchitectWindow(QtGui.QMainWindow):
                 
                 
     def __spacing_broadcast_event(self, apply, value, txtbx):
+        self.logger.debug('__spacing_broadcast_event')
+
         for btn in self.__controls:
             if self.__controls[btn]['spacing_txtbx'] == txtbx:
                 continue
@@ -568,6 +579,8 @@ class MapArchitectWindow(QtGui.QMainWindow):
 
 
     def __angles_broadcast_event(self, apply, value, txtbx):
+        self.logger.debug('__angles_broadcast_event')
+
         for btn in self.__controls:
             if self.__controls[btn]['angles_txtbx'] == txtbx:
                 continue
@@ -576,6 +589,8 @@ class MapArchitectWindow(QtGui.QMainWindow):
 
 
     def __bpm_broadcast_event(self, apply, value, txtbx):
+        self.logger.debug('__bpm_broadcast_event')
+
         for btn in self.__controls:
             if self.__controls[btn]['bpm_txtbx'] == txtbx:
                 continue

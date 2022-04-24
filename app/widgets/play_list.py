@@ -18,18 +18,22 @@ import time
 import numpy as np
 from pyqtgraph.Qt import QtGui, QtCore
 
+from app.misc.Logger import Logger
 from app.data_recording.data import RecData
 from app.file_managers import MapsDB, PlayData
 from osu_analysis import Mod
 
 
-
 class PlayList(pyqtgraph.TableWidget):
+
+    logger = Logger.get_logger(__name__)
 
     map_selected = QtCore.pyqtSignal(object)
     new_map_loaded = QtCore.pyqtSignal()
 
     def __init__(self):
+        self.logger.debug(f'__init__ enter')
+
         pyqtgraph.TableWidget.__init__(self)
 
         self.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
@@ -45,6 +49,8 @@ class PlayList(pyqtgraph.TableWidget):
 
         self.setColumnHidden(0, True)
         self.setColumnHidden(1, True)
+
+        self.logger.debug(f'__init__ exit')
 
 
     def load_latest_play(self, is_import):
@@ -75,9 +81,9 @@ class PlayList(pyqtgraph.TableWidget):
 
             if not is_import:
                 # Fire off the new map loaded event so the roi selection in composition viewer is reset
-                start_time = time.time()
+                self.logger.debug('new_map_loaded.emit ->')
                 self.new_map_loaded.emit()
-                print(f'play_list - new_map_loaded.emit(): {(time.time() - start_time):.2f}s')
+                self.logger.debug('new_map_loaded.emit <-')
 
             # Fire off the list select event so the timeline in overview window is updated
             if not is_import:
@@ -125,9 +131,9 @@ class PlayList(pyqtgraph.TableWidget):
 
             if not is_import:
                 # Fire off the new map loaded event so the roi selection in composition viewer is reset
-                start_time = time.time()
+                self.logger.debug(f'new_map_loaded.emit ->')
                 self.new_map_loaded.emit()
-                print(f'play_list - new_map_loaded.emit(): {(time.time() - start_time):.2f}s')
+                self.logger.debug(f'new_map_loaded.emit <-')
 
         if not is_import:
             # Fire off the list select event so the timeline in overview window is updated
@@ -163,7 +169,7 @@ class PlayList(pyqtgraph.TableWidget):
             ]
         )
 
-        print('Num of plays to load:', unique_map_hash_mods.shape[0])
+        self.logger.debug(f'Num of plays to load: {unique_scores.shape[0]}')
 
         data['md5']  = unique_map_hash_mods[:, 0]
         data['IMod'] = unique_map_hash_mods[:, 1]
@@ -179,6 +185,7 @@ class PlayList(pyqtgraph.TableWidget):
     def __list_select_event(self, _):
         map_hash_mods = PlayData.data[:, [ RecData.MAP_HASH, RecData.MODS ]].astype(np.uint64)
         select = np.zeros((map_hash_mods.shape[0], ), dtype=np.bool)
+        self.logger.info_debug(True, '__list_select_event')
 
         selection_model = self.selectionModel()
         md5_selects = selection_model.selectedRows(column=0)
@@ -190,7 +197,9 @@ class PlayList(pyqtgraph.TableWidget):
             
             select |= ((md5 == map_hash_mods[:, 0]) & (mod == map_hash_mods[:, 1]))
 
+        self.logger.debug('map_selected.emit ->')
         self.map_selected.emit(PlayData.data[select])
+        self.logger.debug('map_selected.emit <-')
 
 
     @staticmethod

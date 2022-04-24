@@ -8,6 +8,9 @@ from app.data_recording.data import RecData
 from osu_analysis import BeatmapIO, ReplayIO, Gamemode
 from osu_analysis import StdScoreData
 
+from app.misc.utils import Utils
+from app.misc.Logger import Logger
+
 from app.data_recording.data_processing import DataProcessing
 from app.data_recording.monitor import Monitor
 
@@ -16,12 +19,16 @@ from app.file_managers import AppConfig, MapsDB, PlayData
 
 class _OsuRecorder(QtCore.QObject):
 
+    logger = Logger.get_logger(__name__)
+
     new_replay_event = QtCore.pyqtSignal(tuple, bool)
     handle_new_replay = QtCore.pyqtSignal(str, bool, bool)
 
     SAVE_FILE = 'data/osu_performance_recording_v1.npy'
 
     def __init__(self):
+        self.logger.debug('__init__ enter')
+
         QtCore.QObject.__init__(self)
 
         if not os.path.isdir(AppConfig.cfg['osu_dir']):
@@ -32,8 +39,11 @@ class _OsuRecorder(QtCore.QObject):
 
         self.handle_new_replay.connect(self.__handle_new_replay)
 
+        self.logger.debug('__init__ exit')
+
 
     def __del__(self):
+        self.logger.debug('__del__')
         PlayData.data_file.close()
 
 
@@ -42,12 +52,12 @@ class _OsuRecorder(QtCore.QObject):
             # Needed sleep to wait for osu! to finish writing the replay file
             time.sleep(2)
 
-        print('Processing replay:', replay_file_name)
+        self.logger.info(f'Processing replay: {replay_file_name}')
         #time_start = time.time()
 
         try: replay = ReplayIO.open_replay(replay_file_name)
         except Exception as e:
-            print(f'Error opening replay: {e}')
+            self.logger.error(Utils.get_traceback(e, 'Error opening replay'))
             return
 
         #print('Replay load time: ', time.time() - time_start)
@@ -60,15 +70,15 @@ class _OsuRecorder(QtCore.QObject):
             return
 
         if replay.game_mode != Gamemode.OSU:
-            print(f'{replay.game_mode} gamemode is not supported')
+            self.logger.info(f'{replay.game_mode} gamemode is not supported')
             return
 
         #time_start = time.time()
 
-        print('Determining beatmap...')
+        self.logger.debug('Determining beatmap...')
         map_file_name, is_gen = MapsDB.get_map_file_name(replay.beatmap_hash, md5h=False, reprocess_if_missing=False)
         if map_file_name == None:
-            print(f'Warning: file_name is None. Unable to open map for replay with beatmap hash {replay.beatmap_hash}')
+            self.logger.info(f'Warning: file_name is None. Unable to open map for replay with beatmap hash {replay.beatmap_hash}')
             return
 
         #print('Processing beatmap:', map_file_name)
@@ -77,7 +87,7 @@ class _OsuRecorder(QtCore.QObject):
             if is_gen and (AppConfig.cfg['delete_gen'] == True):
                 os.remove(map_file_name)
         except FileNotFoundError:
-            print(f'Warning: Map {map_file_name} not longer exists!')
+            self.logger.info(f'Warning: Map {map_file_name} not longer exists!')
             return
             
         #print('Beatmap load time: ', time.time() - time_start)
@@ -103,7 +113,7 @@ class _OsuRecorder(QtCore.QObject):
         # Save data and emit to notify other components that there is a new replay
         try: PlayData.add_to_data(data)
         except ValueError as e:
-            print(
+            self.logger.error(
                 '\n' +
                 '============================================================\n' +
                 f'Error saving data: {e}\n' +

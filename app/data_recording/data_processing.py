@@ -2,17 +2,21 @@ import numpy as np
 import math
 
 from osu_analysis import BeatmapIO, ReplayIO, StdMapData, StdReplayData, StdScoreData, Gamemode
+
+from app.misc.Logger import Logger
 from app.misc.utils import Utils
 from app.misc.osu_utils import OsuUtils
 
 
 class DataProcessing():
 
+    logger = Logger.get_logger(__name__)
+
     @staticmethod
     def get_map_data_from_file(file_name):
         try: beatmap = BeatmapIO.open_beatmap(file_name)
         except Exception as e:
-            print(Utils.get_traceback(e, 'Error opening map'))
+            DataProcessing.logger.error(Utils.get_traceback(e, 'Error opening map'))
             return None
 
         return DataProcessing.get_map_data_from_object(beatmap)
@@ -21,12 +25,12 @@ class DataProcessing():
     @staticmethod
     def get_map_data_from_object(beatmap):
         if beatmap.gamemode != Gamemode.OSU:
-            print(f'{Gamemode(beatmap.gamemode)} gamemode is not supported')
+            DataProcessing.logger.info(f'{Gamemode(beatmap.gamemode)} gamemode is not supported')
             return None
 
         try: map_data = StdMapData.get_map_data(beatmap)
         except Exception as e:
-            print(Utils.get_traceback(e, 'Error reading map'))
+            DataProcessing.logger.error(Utils.get_traceback(e, 'Error reading map'))
             return None
 
         return map_data
@@ -36,7 +40,7 @@ class DataProcessing():
     def get_replay_data_from_file(file_name):
         try: replay = ReplayIO.open_replay(file_name)
         except Exception as e:
-            print(Utils.get_traceback(e, 'Error opening replay'))
+            DataProcessing.logger.error(Utils.get_traceback(e, 'Error opening replay'))
             return None
 
         return DataProcessing.get_replay_data_from_object(replay)
@@ -46,7 +50,7 @@ class DataProcessing():
     def get_replay_data_from_object(replay):
         try: replay_data = StdReplayData.get_replay_data(replay)
         except Exception as e:
-            print(Utils.get_traceback(e, 'Error reading replay'))
+            DataProcessing.logger.error(Utils.get_traceback(e, 'Error reading replay'))
             return None
 
         return replay_data
@@ -117,7 +121,7 @@ class DataProcessing():
         not_empty_idx_ref = np.arange(empty_filter.shape[0])[empty_filter]
 
         if not_empty_idx_ref.shape[0] <= 3:
-            print('Warning: Not enough notes to calculate difficulty')
+            DataProcessing.logger.info('Warning: Not enough notes to calculate difficulty')
 
         def __get_note_dt():
             """
@@ -515,7 +519,7 @@ class DataProcessing():
         otypes = score_data['action'].values
 
         if not (dt.shape[0] == timings.shape[0] == htypes.shape[0] == otypes.shape[0] == x_pos.shape[0] == y_pos.shape[0]):
-            print(
+            DataProcessing.logger.error(
                 'Data shapes do not match:',
                 f'   DT: {dt.shape[0]} '
                 f'   TIMINGS: {timings.shape[0]} '

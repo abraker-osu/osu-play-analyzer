@@ -6,6 +6,7 @@ import numpy as np
 
 from pyqtgraph.Qt import QtGui
 
+from app.misc.Logger import Logger
 from app.views.data_graphs_window import DataGraphsWindow
 from app.views.data_overview_window import DataOverviewWindow
 from app.views.map_architect_window import MapArchitectWindow
@@ -41,7 +42,7 @@ def exception_hook(exctype, value, tb):
     sys.__excepthook = (exctype, value, tb)
 
     trace = ''.join(traceback.format_exception(exctype, value, tb))
-    print(trace)
+    Logger.exception('Core', trace)
 
     # Log assertion errors, but don't exit because of them
     if exctype == AssertionError:
@@ -58,6 +59,9 @@ Main app class
 """
 class App(QtGui.QMainWindow):
 
+    logger = Logger.get_logger(__name__)
+    debug = True
+
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
         os.makedirs('data', exist_ok=True)
@@ -67,6 +71,8 @@ class App(QtGui.QMainWindow):
 
 
     def __contruct_gui(self):
+        self.logger.debug('Constructing GUI start')
+
         self.data_graphs_window   = DataGraphsWindow()
         self.data_overview_window = DataOverviewWindow()
         self.map_display_window   = MapDisplayWindow()
@@ -122,8 +128,12 @@ class App(QtGui.QMainWindow):
         self.setFixedWidth(480)
         self.show()
 
+        self.logger.debug('Constructing GUI end')
+
 
     def __connect_signals(self):
+        self.logger.debug('Connecting signals start')
+
         OsuRecorder.new_replay_event.connect(self.new_replay_event)
         
         self.data_overview_window.show_map_event.connect(self.map_display_window.set_from_play_data)
@@ -132,8 +142,12 @@ class App(QtGui.QMainWindow):
 
         self.map_architect_window.gen_map_event.connect(self.map_display_window.set_from_generated)
 
+        self.logger.debug('Connecting signals end')
+
 
     def generate_map_button_clicked(self):
+        self.logger.info_debug(App.debug, 'generate_map_button_clicked')
+
         self.data_graphs_window.hide() 
         self.data_overview_window.show()
         self.map_display_window.show()
@@ -141,6 +155,8 @@ class App(QtGui.QMainWindow):
 
 
     def analyze_data_button_clicked(self):
+        self.logger.info_debug(App.debug, 'analyze_data_button_clicked')
+
         self.data_graphs_window.show() 
         self.data_overview_window.show()
         self.map_display_window.hide()
@@ -148,6 +164,8 @@ class App(QtGui.QMainWindow):
 
 
     def record_data_button_clicked(self):
+        self.logger.info_debug(App.debug, 'record_data_button_clicked')
+
         self.data_graphs_window.show() 
         self.data_overview_window.hide()
         self.map_display_window.hide()
@@ -155,6 +173,8 @@ class App(QtGui.QMainWindow):
 
 
     def browse_plays_button_clicked(self):
+        self.logger.info_debug(App.debug, 'browse_plays_button_clicked')
+
         self.data_graphs_window.hide() 
         self.data_overview_window.show()
         self.map_display_window.show()
@@ -162,6 +182,8 @@ class App(QtGui.QMainWindow):
 
 
     def train_skills_button_clicked(self):
+        self.logger.info_debug(App.debug, 'train_skills_button_clicked')
+
         self.data_graphs_window.show() 
         self.data_overview_window.hide()
         self.map_display_window.show()
@@ -169,6 +191,8 @@ class App(QtGui.QMainWindow):
 
 
     def new_replay_event(self, data, is_import):
+        self.logger.debug('new_replay_event')
+
         map_data, replay_data, cs, ar, mods, name = data
 
         # Broadcast the new replay event to the other windows
@@ -182,6 +206,8 @@ class App(QtGui.QMainWindow):
 
 
     def closeEvent(self, event):
+        self.logger.info_debug(App.debug, 'closeEvent')
+
         # Gracefully stop monitoring
         #if self.engaged:
         #    self.__action_event()
