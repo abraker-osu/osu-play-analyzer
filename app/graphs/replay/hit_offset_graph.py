@@ -6,7 +6,7 @@ from pyqtgraph.Qt import QtGui
 from osu_analysis import StdScoreData
 
 from app.misc.utils import MathUtils
-from app.data_recording.data import RecData
+from app.data_recording.data import PlayNpyData
 from app.widgets.miss_plot import MissPlotItem
 
 
@@ -25,9 +25,12 @@ class HitOffsetGraph(QtGui.QWidget):
         self.__graph.setRange(xRange=[-10, 10000], yRange=[-250, 250])
         self.__graph.setLabel('left', 't-offset', units='ms', unitPrefix='')
         self.__graph.setLabel('bottom', 'time', units='ms', unitPrefix='')
-        self.__graph.addLegend()
+        
+        self.__legend = self.__graph.addLegend()
+        self.__legend.setOffset((0, 1))
 
-        self.__plot = self.__graph.plot()
+        self.__plot_hits = self.__graph.plot(name='presses')
+        self.__plot_rels = self.__graph.plot(name='releases')
 
         self.__miss_plot = MissPlotItem()
         self.__graph.addItem(self.__miss_plot)
@@ -61,54 +64,81 @@ class HitOffsetGraph(QtGui.QWidget):
         if play_data.shape[0] == 0:
             return
 
+        # Determine what was the latest play
+        # This assumes new plays are added at the end of the array
+        #latest_timestamp = np.unique(play_data[0, PlayNpyData.TIMESTAMP])[-1]
+
+        #data_filter = \
+        #    (play_data[:, PlayNpyData.TIMESTAMP] == latest_timestamp)
+        #data = play_data[data_filter]
+
         self.__plot_misses(play_data)
         self.__plot_hit_offsets(play_data)
+        self.__plot_rel_offsets(play_data)
         self.__plot_avg_global(play_data)
         self.__update_hit_stats(play_data)
 
 
-    def __plot_hit_offsets(self, play_data):
-        # Determine what was the latest play
-        data_filter = \
-            (play_data[:, RecData.TIMESTAMP] == max(play_data[:, RecData.TIMESTAMP])) & \
-            (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP)
-        data = play_data[data_filter]
-
+    def __plot_hit_offsets(self, data):
         # Extract timings and hit_offsets
-        hit_timings = data[:, RecData.TIMINGS]
-        hit_offsets = data[:, RecData.T_OFFSETS]
+        prs_select  = data['TYPE_MAP'] == StdScoreData.ACTION_PRESS
+        data = data[prs_select]
+
+        if data.shape[0] == 0:
+            return
+
+        hit_timings = data['T_MAP'].values
+        hit_offsets = data['T_HIT'].values - hit_timings
 
         # Calculate view
         xMin = min(hit_timings) - 100
         xMax = max(hit_timings) + 100
 
         # Set plot data
-        self.__plot.setData(hit_timings, hit_offsets, pen=None, symbol='o', symbolPen=None, symbolSize=2, symbolBrush=(100, 100, 255, 200))
+        self.__plot_hits.setData(hit_timings, hit_offsets, pen=None, symbol='o', symbolPen=None, symbolSize=2, symbolBrush=(100, 100, 255, 200))
         self.__graph.setLimits(xMin=xMin - 100, xMax=xMax + 100)
         self.__graph.setRange(xRange=[ xMin - 100, xMax + 100 ])
 
 
-    def __plot_misses(self, play_data):
-        # Determine what was the latest play
-        data_filter = \
-            (play_data[:, RecData.TIMESTAMP] == max(play_data[:, RecData.TIMESTAMP])) & \
-            (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_MISS)
-        data = play_data[data_filter]
+    def __plot_rel_offsets(self, data):
+        # Extract timings and hit_offsets
+        rel_select  = data['TYPE_MAP'] == StdScoreData.ACTION_RELEASE
+        data = data[rel_select]
 
+        if data.shape[0] == 0:
+            return
+
+        hit_timings = data['T_MAP'].values
+        hit_offsets = data['T_HIT'].values - hit_timings
+
+        # Calculate view
+        xMin = min(hit_timings) - 100
+        xMax = max(hit_timings) + 100
+
+        # Set plot data
+        self.__plot_rels.setData(hit_timings, hit_offsets, pen=None, symbol='o', symbolPen=None, symbolSize=2, symbolBrush=(105, 217, 255, 200))
+        self.__graph.setLimits(xMin=xMin - 100, xMax=xMax + 100)
+        self.__graph.setRange(xRange=[ xMin - 100, xMax + 100 ])
+
+
+    def __plot_misses(self, data):
         # Extract data and plot
-        hit_timings = data[:, RecData.TIMINGS]
+        miss_select = \
+            (data['TYPE_HIT'] == StdScoreData.TYPE_MISS) & \
+            (data['TYPE_MAP'] == StdScoreData.ACTION_PRESS)
+        data = data[miss_select]
+
+        if data.shape[0] == 0:
+            return
+
+        hit_timings = data['T_HIT'].values
         self.__miss_plot.setData(hit_timings)
 
 
-    def __plot_avg_global(self, play_data):
-        # Determine what was the latest play
-        data_filter = \
-            (play_data[:, RecData.TIMESTAMP] == max(play_data[:, RecData.TIMESTAMP])) & \
-            (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP)
-        data = play_data[data_filter]
-
+    def __plot_avg_global(self, data):
         # Extract timings and hit_offsets
-        hit_offsets = data[:, RecData.T_OFFSETS]
+        hit_offsets = data['T_HIT'].values - data['T_MAP'].values
+
         mean_offset = np.mean(hit_offsets)
         std_offset = np.std(hit_offsets)
 
@@ -120,37 +150,32 @@ class HitOffsetGraph(QtGui.QWidget):
         print(f'mean = {mean_offset:.2f} ms    std = {std_offset:.2f} ms')
 
 
-    def __update_hit_stats(self, play_data):
-        # Determine what was the latest play
-        data_filter = \
-            (play_data[:, RecData.TIMESTAMP] == max(play_data[:, RecData.TIMESTAMP]))
-        data = play_data[data_filter]
-        
+    def __update_hit_stats(self, data):        
         free_misses = \
-            (data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_MISS) & \
-            (data[:, RecData.ACT_TYPE] == StdScoreData.ACTION_FREE)
+            (data['TYPE_HIT'] == StdScoreData.TYPE_MISS) & \
+            (data['TYPE_MAP'] == StdScoreData.ACTION_FREE)
         num_free_misses = np.count_nonzero(free_misses)
 
         press_misses = \
-            (data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_MISS) & \
-            (data[:, RecData.ACT_TYPE] == StdScoreData.ACTION_PRESS)
+            (data['TYPE_HIT'] == StdScoreData.TYPE_MISS) & \
+            (data['TYPE_MAP'] == StdScoreData.ACTION_PRESS)
         num_press_misses = np.count_nonzero(press_misses)
 
         release_misses = \
-            (data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_MISS) & \
-            (data[:, RecData.ACT_TYPE] == StdScoreData.ACTION_RELEASE)
+            (data['TYPE_HIT'] == StdScoreData.TYPE_MISS) & \
+            (data['TYPE_MAP'] == StdScoreData.ACTION_RELEASE)
         num_release_misses = np.count_nonzero(release_misses)
 
         hold_misses = \
-            (data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_MISS) & \
-            (data[:, RecData.ACT_TYPE] == StdScoreData.ACTION_HOLD)
+            (data['TYPE_HIT'] == StdScoreData.TYPE_MISS) & \
+            (data['TYPE_MAP'] == StdScoreData.ACTION_HOLD)
         num_hold_misses = np.count_nonzero(hold_misses)
 
         hits = \
-            (data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP)
+            (data['TYPE_HIT'] == StdScoreData.TYPE_HITP)
         data = data[hits]
 
-        t_offsets = data[:, RecData.T_OFFSETS]
+        t_offsets = data['T_HIT'].values - data['T_MAP'].values
 
         acc_window = 200  # 95% dev (ms)
         acc_score = MathUtils.normal_distr(t_offsets, 0, acc_window/2)/MathUtils.normal_distr(0, 0, acc_window/2)

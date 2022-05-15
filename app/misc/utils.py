@@ -20,6 +20,15 @@ class Utils():
 class MathUtils():
 
     @staticmethod
+    def max_rolling(a, window, axis=1):
+        # Thanks https://stackoverflow.com/a/52219082
+        shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
+        strides = a.strides + (a.strides[-1],)
+        rolling = np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
+        return np.max(rolling, axis=axis)
+
+
+    @staticmethod
     def normal_distr(x, avg, std):
         return 1/(std*((2*math.pi)**0.5))*np.exp(-0.5*((x - avg)/std)**2)
 

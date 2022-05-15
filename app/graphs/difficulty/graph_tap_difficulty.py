@@ -8,7 +8,7 @@ from pyqtgraph.Qt import QtGui, QtCore
 
 from osu_analysis import StdScoreData
 
-from app.data_recording.data import RecData
+from app.data_recording.data import ScoreNpyData
 
 
 class GraphTapDifficulty(QtGui.QWidget):
@@ -65,14 +65,14 @@ class GraphTapDifficulty(QtGui.QWidget):
 
     def __plot_tap_factors(self, play_data):
         # Determine what was the latest play
-        data_filter = \
-            (play_data[:, RecData.TIMESTAMP] == max(play_data[:, RecData.TIMESTAMP]))
-        play_data = play_data[data_filter]
+        #data_filter = \
+        #    (play_data[:, ScoreNpyData.TIMESTAMP] == max(play_data[:, ScoreNpyData.TIMESTAMP]))
+        #play_data = play_data[data_filter]
 
         # Filter out sliders holds and releases
         data_filter = (
-            (play_data[:, RecData.ACT_TYPE] != StdScoreData.ACTION_HOLD) & \
-            (play_data[:, RecData.ACT_TYPE] != StdScoreData.ACTION_RELEASE)
+            (play_data['TYPE_MAP'].values != StdScoreData.ACTION_HOLD) & \
+            (play_data['TYPE_MAP'].values != StdScoreData.ACTION_RELEASE)
         )
         play_data = play_data[data_filter]
 
@@ -83,12 +83,16 @@ class GraphTapDifficulty(QtGui.QWidget):
             return
 
         # Calculate data
-        toffsets = play_data[:, RecData.T_OFFSETS]
-        timings = play_data[:, RecData.TIMINGS]
-        is_miss = (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_MISS)
-        bpm_inc = play_data[:, RecData.DT_DEC]
-        bpm_dec = play_data[:, RecData.DT_INC]
+        timings = play_data['T_MAP'].values
+        toffsets = play_data['T_HIT'].values - timings
+        bpm_inc = play_data['DIFF_T_PRESS_DEC'].values
+        bpm_dec = play_data['DIFF_T_PRESS_INC'].values
 
+        is_miss = (
+            (play_data['TYPE_HIT'].values == StdScoreData.TYPE_MISS) & (
+                (play_data['TYPE_MAP'].values == StdScoreData.ACTION_PRESS)
+            )
+        )
         score_mask = np.zeros((timings.shape[0] - 2, 3), dtype=np.bool)
         score_mask[:, 0] = is_miss[2:]
         score_mask[:, 1] = np.abs(toffsets[2:] <= 32)

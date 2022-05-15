@@ -19,8 +19,8 @@ import numpy as np
 from pyqtgraph.Qt import QtGui, QtCore
 
 from app.misc.Logger import Logger
-from app.data_recording.data import RecData
-from app.file_managers import MapsDB, PlayData
+from app.data_recording.data import ScoreNpyData
+from app.file_managers import MapsDB, score_data_obj
 from osu_analysis import Mod
 
 
@@ -47,35 +47,25 @@ class PlayList(pyqtgraph.TableWidget):
             
         self.selectionModel().selectionChanged.connect(self.__list_select_event)
 
+        # Hide displayed columns
         self.setColumnHidden(0, True)
-        self.setColumnHidden(1, True)
+        #self.setColumnHidden(1, True)
 
         self.logger.debug(f'__init__ exit')
 
 
-    def load_latest_play(self, is_import):
-        play_data = PlayData.data.astype(np.uint64)
-        if PlayData.data.shape[0] == 0:
+    def load_latest_play(self, is_import, map_md5_str):
+        if score_data_obj.is_empty():
             return
 
-        # Determine what was the latest play
-        data_filter = \
-            (play_data[:, RecData.TIMESTAMP] == play_data[0, RecData.TIMESTAMP])
-        play_data = play_data[data_filter]
-
         # Get list of hashes and mods for loaded maps
-        md5s = np.asarray([ int(self.model().data(self.model().index(i, 0), role=QtCore.Qt.DisplayRole)) for i in range(self.rowCount()) ])
-        mods = np.asarray([ int(self.model().data(self.model().index(i, 1), role=QtCore.Qt.DisplayRole)) for i in range(self.rowCount()) ])
+        map_hashes = np.asarray([ int(self.model().data(self.model().index(i, 0), role=QtCore.Qt.DisplayRole), 16) for i in range(self.rowCount()) ])
 
-        # Get map's md5 half hash and mods used in the play
-        map_md5 = play_data[0, RecData.MAP_HASH]
-        map_mod = play_data[0, RecData.MODS]
-
-        if (map_md5 in md5s) and (map_mod in mods):
+        if map_md5_str in map_hashes:
             # Check if only one map is selected
             if len(self.selectionModel().selectedRows()) <= 1:
                 # Select to new map
-                matching_items = self.findItems(str(map_md5), QtCore.Qt.MatchContains)
+                matching_items = self.findItems(str(map_md5_str), QtCore.Qt.MatchContains)
                 if matching_items:
                     self.setCurrentItem(matching_items[0])
 
@@ -89,43 +79,48 @@ class PlayList(pyqtgraph.TableWidget):
             if not is_import:
                 self.__list_select_event(None)
             return
-        
-        # Process data to get stuff that will be shown
-        map_md5h_str = MapsDB.md5h_to_md5h_str_func(map_md5)
-        map_name_str = self.__md5h_str_to_name_func(map_md5h_str)
-        map_mods_str = self.__mods_to_name_func(map_mod)
-        map_time_str = self.__md5_to_timestamp_str(map_md5, map_mod)
-        map_num_points = self.__md5_to_num_data(map_md5, map_mod)
-        map_avg_bpm = self.__md5_to_avg_bpm(map_md5, map_mod)
 
         # Build data structure and add to table
         data = np.empty(
             shape=(1, ),
             dtype=[
-                ('md5',  np.uint64),   # Map hash (int, not shown)
-                ('IMod', np.uint64),   # Mods used on the map (int, not shown)
-                ('Name', object),      # Name of the map 
-                ('Mods', object),      # Mods used on the map (string)
-                ('Time', object),      # Time of the play
-                ('Data', np.uint64),   # Number of points in the play
-                ('Avg BPM', object)    # Average BPM of the map
+                ('md5',  object),         # Map hash (str, not shown)
+                ('Name', object),         # Name of the map 
+                ('Mods', object),         # Mods used on the map (string)
+                ('Time', object),         # Time of the play
+                ('Data', np.uint64),      # Number of points in the play
+                ('Avg BPM', object),      # Average BPM of the map
+                ('Avg Lin Vel', object),  # Average linear velocity of the map
+                ('Avg Ang Vel', object),  # Average angular velocity of the map
             ]
         )
 
-        data['md5']  = map_md5
-        data['IMod'] = map_mod
+        # Process data to get stuff that will be shown
+        score_data = score_data_obj.data(map_md5_str)
+
+        map_name_str       = self.__map_name_str(map_md5_str)
+        map_mods_str       = self.__map_mods_str(score_data)
+        map_time_str       = self.__map_timestamp_str(score_data)
+        map_num_points     = score_data.shape[0]
+        map_avg_bpm        = self.__map_avg_bpm(score_data)
+        map_to_avg_lin_vel = self.__map_avg_lin_vel(score_data)
+        map_to_avg_ang_vel = self.__map_avg_ang_vel(score_data)
+
+        data['md5']  = map_md5_str
         data['Name'] = map_name_str
         data['Mods'] = map_mods_str
         data['Time'] = map_time_str
         data['Data'] = map_num_points
         data['Avg BPM'] = map_avg_bpm
+        data['Avg Lin Vel'] = map_to_avg_lin_vel
+        data['Avg Ang Vel'] = map_to_avg_ang_vel
         
         self.appendData(data)
         
         # Check if only one map is selected
         if len(self.selectionModel().selectedRows()) <= 1:
             # Select to new map
-            matching_items = self.findItems(str(map_md5), QtCore.Qt.MatchContains)
+            matching_items = self.findItems(str(map_md5_str), QtCore.Qt.MatchContains)
             if matching_items:
                 self.setCurrentItem(matching_items[0])
 
@@ -143,106 +138,121 @@ class PlayList(pyqtgraph.TableWidget):
     def reload_map_list(self):
         self.clear()
 
-        if PlayData.data.shape[0] == 0:
+        if score_data_obj.is_empty():
             return
 
-        md5h_to_md5h_str = np.vectorize(lambda md5h: MapsDB.md5h_to_md5h_str_func(md5h))
-        md5h_str_to_name = np.vectorize(lambda md5h_str: self.__md5h_str_to_name_func(md5h_str))
-        mod_to_name      = np.vectorize(lambda mod: self.__mods_to_name_func(mod))
-        md5_to_time_str  = np.vectorize(lambda md5, mods: self.__md5_to_timestamp_str(md5, mods))
-        map_num_points   = np.vectorize(lambda md5, mods: self.__md5_to_num_data(md5, mods))
-        md5_to_avg_bpm   = np.vectorize(lambda md5, mods: self.__md5_to_avg_bpm(md5, mods))
-
-        map_hash_mods = PlayData.data[:, [ RecData.MAP_HASH, RecData.MODS ]].astype(np.uint64)
-        unique_map_hash_mods = np.unique(map_hash_mods, axis=0)
+        map_md5_strs = score_data_obj.get_entries()
+        num_md5_strs = len(map_md5_strs)
+        print(map_md5_strs)
 
         data = np.empty(
-            shape=(unique_map_hash_mods.shape[0], ),
+            shape=(num_md5_strs, ),
             dtype=[
-                ('md5',  np.uint64),  # Map hash (int, not shown)
-                ('IMod', np.uint64),  # Mods used on the map (int, not shown)
-                ('Name', object),     # Name of the map 
-                ('Mods', object),     # Mods used on the map (string)
-                ('Time', object),     # Time of the play
-                ('Data', np.uint64),  # Number of points in the play
-                ('Avg BPM', object)   # Average BPM of the map
+                ('md5',  object),         # Map hash (str, not shown)
+                ('Name', object),         # Name of the map 
+                ('Mods', object),         # Mods used on the map (string)
+                ('Time', object),         # Time of the play
+                ('Data', np.uint64),      # Number of points in the play
+                ('Avg BPM', object),      # Average BPM of the map
+                ('Avg Lin Vel', object),  # Average linear velocity of the map
+                ('Avg Ang Vel', object),  # Average angular velocity of the map
             ]
         )
 
-        self.logger.debug(f'Num of plays to load: {unique_scores.shape[0]}')
+        self.logger.debug(f'Num of plays to load: {num_md5_strs}')
 
-        data['md5']  = unique_map_hash_mods[:, 0]
-        data['IMod'] = unique_map_hash_mods[:, 1]
-        data['Name'] = md5h_str_to_name(md5h_to_md5h_str(data['md5']))
-        data['Mods'] = mod_to_name(data['IMod'])
-        data['Time'] = md5_to_time_str(data['md5'], data['IMod'])
-        data['Data'] = map_num_points(data['md5'], data['IMod'])
-        data['Avg BPM'] = md5_to_avg_bpm(data['md5'], data['IMod'])
+        md5_to_score_data  = np.frompyfunc(score_data_obj.data, 1, 1)
+        score_datas        = md5_to_score_data(map_md5_strs)
+
+        md5_to_name        = np.frompyfunc(self.__map_name_str, 1, 1)
+        map_to_mod         = np.frompyfunc(self.__map_mods_str, 1, 1)
+        map_to_time_str    = np.frompyfunc(self.__map_timestamp_str, 1, 1)
+        map_to_num_points  = np.frompyfunc(lambda score_data: score_data.shape[0], 1, 1)
+        map_to_avg_bpm     = np.frompyfunc(self.__map_avg_bpm, 1, 1)
+        map_to_avg_lin_vel = np.frompyfunc(self.__map_avg_lin_vel, 1, 1)
+        map_to_avg_ang_vel = np.frompyfunc(self.__map_avg_ang_vel, 1, 1)
+
+        data['md5']  = map_md5_strs
+        data['Name'] = md5_to_name(map_md5_strs)
+        data['Mods'] = map_to_mod(score_datas)
+        data['Time'] = map_to_time_str(score_datas)
+        data['Data'] = map_to_num_points(score_datas)
+        data['Avg BPM'] = map_to_avg_bpm(score_datas)
+        data['Avg Lin Vel'] = map_to_avg_lin_vel(score_datas)
+        data['Avg Ang Vel'] = map_to_avg_ang_vel(score_datas)
 
         self.setData(data)    
 
     
     def __list_select_event(self, _):
-        map_hash_mods = PlayData.data[:, [ RecData.MAP_HASH, RecData.MODS ]].astype(np.uint64)
-        select = np.zeros((map_hash_mods.shape[0], ), dtype=np.bool)
         self.logger.info_debug(True, '__list_select_event')
 
-        selection_model = self.selectionModel()
-        md5_selects = selection_model.selectedRows(column=0)
-        mod_selects = selection_model.selectedRows(column=1)
-
-        for md5, mod in zip(md5_selects, mod_selects):
-            md5 = int(md5.data(role=QtCore.Qt.DisplayRole))
-            mod = int(mod.data(role=QtCore.Qt.DisplayRole))
-            
-            select |= ((md5 == map_hash_mods[:, 0]) & (mod == map_hash_mods[:, 1]))
+        selected_rows = self.selectionModel().selectedRows(column=0)
+        md5_strs = [ selected_row.data(role=QtCore.Qt.DisplayRole) for selected_row in selected_rows ]
 
         self.logger.debug('map_selected.emit ->')
-        self.map_selected.emit(PlayData.data[select])
+        self.map_selected.emit(md5_strs)
         self.logger.debug('map_selected.emit <-')
 
 
     @staticmethod
-    def __md5h_str_to_name_func(md5h_str):
-        result, _ = MapsDB.get_map_file_name(md5h_str, md5h=True)
+    def __map_name_str(md5_str):
+        result, _ = MapsDB.get_map_file_name(md5_str)
         if result == None:
-            return md5h_str
+            return md5_str
 
         return result.replace('\\', '/').split('/')[-1]
 
 
     @staticmethod
-    def __md5_to_timestamp_str(md5, mods):
-        play_select = (PlayData.data[:, [ RecData.MAP_HASH, RecData.MODS ]] == (md5, mods)).all(axis=1)
-        unique_timestamps = np.unique(PlayData.data[play_select, RecData.TIMESTAMP])
-        
-        play_start = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(unique_timestamps[0]))
-        play_end   = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(unique_timestamps[-1]))
-
-        return f'{play_start} - {play_end}'
-
-
-    @staticmethod
-    def __md5_to_num_data(md5, mods):
-        play = (PlayData.data[:, [ RecData.MAP_HASH, RecData.MODS ]] == (md5, mods)).all(axis=1)
-        unique_timestamp = np.unique(PlayData.data[play, RecData.TIMESTAMP])[0]
-
-        return play[PlayData.data[:, RecData.TIMESTAMP] == unique_timestamp].shape[0]
-
-
-    @staticmethod
-    def __md5_to_avg_bpm(md5, mods):
-        play = (PlayData.data[:, [ RecData.MAP_HASH, RecData.MODS ]] == (md5, mods)).all(axis=1)
-        unique_timestamp = np.unique(PlayData.data[play, RecData.TIMESTAMP])[0]
-
-        one_play = PlayData.data[PlayData.data[:, RecData.TIMESTAMP] == unique_timestamp]
-        bpm_data = 30000/one_play[:, RecData.DT_NOTES]
-        bpm_data = bpm_data[~(np.isnan(bpm_data) | np.isinf(bpm_data))]
-
-        return f'{np.mean(bpm_data):.2f}'
-
-
-    @staticmethod
-    def __mods_to_name_func(mods):
+    def __map_mods_str(score_data):
+        mods = score_data['MODS'].values[0]
         mods_text = Mod(int(mods)).get_mods_txt()
+
         return f' +{mods_text}' if len(mods_text) != 0 else ''
+
+
+    @staticmethod
+    def __map_timestamp_str(score_data):
+        timestamp_start = min(score_data.index.get_level_values(0))
+        timestamp_end   = max(score_data.index.get_level_values(0))
+
+        try:
+            if timestamp_start == timestamp_end:
+                play_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp_start))
+
+                time_str = f'{play_time}'
+            else:
+                play_start = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp_start))
+                play_end   = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp_end))
+
+                time_str = f'{play_start} - {play_end}'
+        except IndexError:
+            play_start = 'N/A'
+            play_end   = 'N/A'
+
+        return time_str
+
+
+    @staticmethod
+    def __map_avg_bpm(score_data):        
+        data = 15000/score_data['DIFF_T_PRESS_DIFF'].values
+        data = data[~np.isnan(data)]
+
+        return f'{np.mean(data):.2f}'
+
+
+    @staticmethod
+    def __map_avg_lin_vel(score_data):        
+        data = score_data['DIFF_XY_LIN_VEL'].values
+        data = data[~np.isnan(data)]
+
+        return f'{np.mean(data):.2f}'
+
+
+    @staticmethod
+    def __map_avg_ang_vel(score_data):        
+        data = score_data['DIFF_XY_ANG_VEL'].values
+        data = data[~np.isnan(data)]
+
+        return f'{np.mean(data):.2f}'

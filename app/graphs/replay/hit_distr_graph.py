@@ -6,7 +6,7 @@ import scipy
 import math
 
 from osu_analysis import StdScoreData
-from app.data_recording.data import RecData
+from app.data_recording.data import PlayNpyData
 
 
 class HitDistrGraph(QtGui.QWidget):
@@ -50,22 +50,22 @@ class HitDistrGraph(QtGui.QWidget):
             return
 
         # Determine what was the latest play
-        data_filter = \
-            (play_data[:, RecData.TIMESTAMP] == max(play_data[:, RecData.TIMESTAMP]))
+        #data_filter = \
+        #    (play_data[:, PlayNpyData.TIMESTAMP] == max(play_data[:, PlayNpyData.TIMESTAMP]))
 
-        play_data = play_data[data_filter]
+        #play_data = play_data[data_filter]
             
         slider_select = np.zeros(play_data.shape[0], dtype=bool)
         slider_select[:-1] = \
-            (play_data[:-1, RecData.ACT_TYPE] == StdScoreData.ACTION_PRESS) & (
-                (play_data[1:, RecData.ACT_TYPE] == StdScoreData.ACTION_HOLD) | \
-                (play_data[1:, RecData.ACT_TYPE] == StdScoreData.ACTION_RELEASE)
+            (play_data['TYPE_MAP'].values[:-1] == StdScoreData.ACTION_PRESS) & (
+                (play_data['TYPE_MAP'].values[1:] == StdScoreData.ACTION_HOLD) | \
+                (play_data['TYPE_MAP'].values[1:] == StdScoreData.ACTION_RELEASE)
             )
 
         num_sliders = np.sum(slider_select)
             
         data_filter = \
-            (play_data[:, RecData.ACT_TYPE] == StdScoreData.ACTION_PRESS)
+            (play_data['TYPE_MAP'] == StdScoreData.ACTION_PRESS)
 
         play_data = play_data[data_filter]
         slider_select = slider_select[data_filter]
@@ -74,7 +74,7 @@ class HitDistrGraph(QtGui.QWidget):
         num_scores = play_data.shape[0]
 
         data_filter = \
-            (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP)
+            (play_data['TYPE_HIT'] == StdScoreData.TYPE_HITP)
             
         play_data = play_data[data_filter]
         slider_select = slider_select[data_filter]
@@ -82,11 +82,11 @@ class HitDistrGraph(QtGui.QWidget):
         if play_data.shape[0] == 0:
             return
 
-        hit_offsets = play_data[:, RecData.T_OFFSETS]
+        hit_offsets = play_data['T_HIT'].values - play_data['T_MAP'].values
 
         # Get a histogram for hit offsets
         step = (150 - 0)/(0.1*hit_offsets.shape[0])
-        y, x = np.histogram(hit_offsets, bins=np.linspace(-150, 150, int(0.15*hit_offsets.shape[0])))
+        y, x = np.histogram(hit_offsets, bins=np.linspace(-150, 150, int(0.3*hit_offsets.shape[0])))
         
         if y.shape[0] == 0:
             return

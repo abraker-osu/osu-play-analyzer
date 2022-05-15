@@ -6,7 +6,7 @@ import math
 import numpy as np
 
 from osu_analysis import StdScoreData
-from app.data_recording.data import RecData
+from app.data_recording.data import ScoreNpyData
 
 
 class DevGraphVel(QtGui.QWidget):
@@ -74,27 +74,27 @@ class DevGraphVel(QtGui.QWidget):
 
         # Filter out sliders
         data_filter[:-1] = \
-            (play_data[:-1, RecData.ACT_TYPE] == StdScoreData.ACTION_PRESS) & ~(
-                (play_data[1:, RecData.ACT_TYPE] == StdScoreData.ACTION_HOLD) | \
-                (play_data[1:, RecData.ACT_TYPE] == StdScoreData.ACTION_RELEASE)
+            (play_data[:-1, ScoreNpyData.ACT_TYPE] == StdScoreData.ACTION_PRESS) & ~(
+                (play_data[1:, ScoreNpyData.ACT_TYPE] == StdScoreData.ACTION_HOLD) | \
+                (play_data[1:, ScoreNpyData.ACT_TYPE] == StdScoreData.ACTION_RELEASE)
             )
 
         # Select hit presses
-        data_filter &= (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP)
+        data_filter &= (play_data[:, ScoreNpyData.HIT_TYPE] == StdScoreData.TYPE_HITP)
 
         # Apply filter
         play_data = play_data[data_filter]
 
         # Gather relevant data
-        data_c = play_data[:, RecData.ANGLE]
-        data_x = 1000*play_data[:, RecData.DS]/play_data[:, RecData.DT]
+        data_c = play_data[:, ScoreNpyData.ANGLE]
+        data_x = 1000*play_data[:, ScoreNpyData.DS]/play_data[:, ScoreNpyData.DT]
 
         if self.__dev_data_select == self.DEV_DATA_X:
-            data_y = play_data[:, RecData.X_OFFSETS]
+            data_y = play_data[:, ScoreNpyData.X_OFFSETS]
         elif self.__dev_data_select == self.DEV_DATA_Y:
-            data_y = play_data[:, RecData.Y_OFFSETS]
+            data_y = play_data[:, ScoreNpyData.Y_OFFSETS]
         elif self.__dev_data_select == self.DEV_DATA_T:
-            data_y = play_data[:, RecData.T_OFFSETS]
+            data_y = play_data[:, ScoreNpyData.T_OFFSETS]
 
         #            MIN    MAX   MIN DELTA
         chunks_c = [   0,   180,   15  ]     # Angle,    12 bins max

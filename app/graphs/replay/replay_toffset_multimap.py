@@ -9,7 +9,7 @@ from pyqtgraph.functions import mkPen
 from osu_analysis import StdScoreData
 
 from app.misc.utils import MathUtils
-from app.data_recording.data import RecData
+from app.data_recording.data import PlayNpyData
 
 
 
@@ -70,8 +70,8 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
             self.__miss_plot.setData(x=data_blank, y=data_blank, top=data_blank, bottom=data_blank, pen=mkPen((200, 0, 0, 50), width=5))
             return
 
-        unique_map_hashes = np.unique(play_data[:, RecData.MAP_HASH])
-        if unique_map_hashes.shape[0] > 1:
+        self.cache_unique_map_timestamps = np.unique(play_data.index.get_level_values(0))
+        if self.cache_unique_map_timestamps.shape[0] > 1:
             self.__hit_metrics.setText('Data is displayed only when one map must be selected')
 
             data_blank = np.asarray([])
@@ -80,8 +80,7 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
             self.__miss_plot.setData(x=data_blank, y=data_blank, top=data_blank, bottom=data_blank, pen=mkPen((200, 0, 0, 50), width=5))
             return
 
-        unique_map_hash_select = (play_data[:, RecData.MAP_HASH] == unique_map_hashes[0])
-        unique_map_mods = np.unique(play_data[unique_map_hash_select, RecData.MODS])
+        unique_map_mods = np.unique(play_data['MODS'])
         if unique_map_mods.shape[0] > 1:
             self.__hit_metrics.setText('Data is displayed only when one mod combination is selected')
 
@@ -91,8 +90,7 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
             self.__miss_plot.setData(x=data_blank, y=data_blank, top=data_blank, bottom=data_blank, pen=mkPen((200, 0, 0, 50), width=5))
             return
 
-        unique_timestamps = np.unique(play_data[:, RecData.TIMESTAMP])
-        self.cache_num_plays = unique_timestamps.shape[0]
+        self.cache_num_plays = self.cache_unique_map_timestamps.shape[0]
 
         self.__plot_misses(play_data)
         self.__plot_hit_offsets(play_data)
@@ -102,7 +100,7 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
     def __plot_hit_offsets(self, play_data):
         # Determine what was the latest play
         data_filter = \
-            (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP)
+            (play_data['TYPE_HIT'] == StdScoreData.TYPE_HITP)
         data = play_data[data_filter]
 
         if data.shape[0] == 0:
@@ -112,8 +110,8 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
             return
 
         # Extract timings and hit_offsets
-        hit_timings = data[:, RecData.TIMINGS]
-        hit_offsets = data[:, RecData.T_OFFSETS]
+        hit_timings = data['T_HIT']
+        hit_offsets = data['T_HIT'] - data['T_MAP']
 
         # Process overlapping data points along x-axis
         hit_offsets_avg = np.asarray([ np.mean(hit_offsets[hit_timings == hit_timing]) for hit_timing in np.unique(hit_timings) ])
@@ -139,10 +137,11 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
 
 
     def __plot_misses(self, play_data):
-        # Determine what was the latest play
-        data_filter = \
-            (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_MISS)
-        data = play_data[data_filter]
+        # Select press misses
+        select_press_miss = \
+            (play_data['TYPE_HIT'] == StdScoreData.TYPE_MISS) & \
+            (play_data['TYPE_MAP'] == StdScoreData.ACTION_PRESS)
+        data = play_data[select_press_miss]
 
         if data.shape[0] == 0:
             blank_data = np.asarray([])
@@ -150,7 +149,7 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
             return
 
         # Extract data and plot
-        hit_timings = data[:, RecData.TIMINGS]
+        hit_timings = data['T_HIT']
         
         # Process overlapping data points along x-axis
         miss_count = np.asarray([ hit_timings[hit_timings == hit_timing].shape[0] for hit_timing in np.unique(hit_timings) ])
@@ -168,22 +167,20 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
 
     def __update_hit_stats(self, play_data):
         # Determine what was the latest play
-        data_filter = \
-            (play_data[:, RecData.TIMESTAMP] == max(play_data[:, RecData.TIMESTAMP]))
-
-        play_data = play_data[data_filter]
+        latest = np.max(self.cache_unique_map_timestamps)
+        play_data = play_data.loc[latest]
             
         slider_select = np.zeros(play_data.shape[0], dtype=bool)
         slider_select[:-1] = \
-            (play_data[:-1, RecData.ACT_TYPE] == StdScoreData.ACTION_PRESS) & (
-                (play_data[1:, RecData.ACT_TYPE] == StdScoreData.ACTION_HOLD) | \
-                (play_data[1:, RecData.ACT_TYPE] == StdScoreData.ACTION_RELEASE)
+            (play_data['TYPE_MAP'].values[:-1] == StdScoreData.ACTION_PRESS) & (
+                (play_data['TYPE_MAP'].values[1:] == StdScoreData.ACTION_HOLD) | \
+                (play_data['TYPE_MAP'].values[1:] == StdScoreData.ACTION_RELEASE)
             )
 
         num_sliders = np.sum(slider_select)
             
         data_filter = \
-            (play_data[:, RecData.ACT_TYPE] == StdScoreData.ACTION_PRESS)
+            (play_data['TYPE_MAP'] == StdScoreData.ACTION_PRESS)
 
         num_presses = np.sum(data_filter)
         slider_select = slider_select[data_filter]

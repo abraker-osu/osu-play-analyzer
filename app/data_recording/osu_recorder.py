@@ -1,20 +1,19 @@
 import time
 import os
 
-from PyQt5 import QtCore, QtWidgets 
 import numpy as np
-from app.data_recording.data import RecData
+
+from PyQt5 import QtCore, QtWidgets
 
 from osu_analysis import BeatmapIO, ReplayIO, Gamemode
-from osu_analysis import StdScoreData
-
 from app.misc.utils import Utils
 from app.misc.Logger import Logger
 
-from app.data_recording.data_processing import DataProcessing
+from app.data_recording.score_npy import ScoreNpy
+from app.data_recording.diff_npy import DiffNpy
 from app.data_recording.monitor import Monitor
 
-from app.file_managers import AppConfig, MapsDB, PlayData
+from app.file_managers import AppConfig, MapsDB, score_data_obj
 
 
 class _OsuRecorder(QtCore.QObject):
@@ -23,8 +22,6 @@ class _OsuRecorder(QtCore.QObject):
 
     new_replay_event = QtCore.pyqtSignal(tuple, bool)
     handle_new_replay = QtCore.pyqtSignal(str, bool, bool)
-
-    SAVE_FILE = 'data/osu_performance_recording_v1.npy'
 
     def __init__(self):
         self.logger.debug('__init__ enter')
@@ -36,15 +33,9 @@ class _OsuRecorder(QtCore.QObject):
 
         self.monitor = Monitor(AppConfig.cfg['osu_dir'])
         self.monitor.create_replay_monitor('Replay Grapher', lambda replay_file_name: self.handle_new_replay.emit(replay_file_name, True, False))
-
         self.handle_new_replay.connect(self.__handle_new_replay)
 
         self.logger.debug('__init__ exit')
-
-
-    def __del__(self):
-        self.logger.debug('__del__')
-        PlayData.data_file.close()
 
 
     def __handle_new_replay(self, replay_file_name, wait=True, is_import=False):
@@ -53,35 +44,28 @@ class _OsuRecorder(QtCore.QObject):
             time.sleep(2)
 
         self.logger.info(f'Processing replay: {replay_file_name}')
-        #time_start = time.time()
 
         try: replay = ReplayIO.open_replay(replay_file_name)
         except Exception as e:
             self.logger.error(Utils.get_traceback(e, 'Error opening replay'))
             return
 
-        #print('Replay load time: ', time.time() - time_start)
         QtWidgets.QApplication.processEvents()
 
-        # Check if replay already exists in data
-        unique_timestamps = np.unique(PlayData.data[:, RecData.TIMESTAMP])
-        if replay.timestamp.timestamp() in unique_timestamps:
-            print(f'Replay already exists in data: {replay.timestamp}')
+        if score_data_obj.is_entry_exist(replay.beatmap_hash):
+            self.logger.info(f'Replay already exists in data: {replay.beatmap_hash}')
             return
 
         if replay.game_mode != Gamemode.OSU:
             self.logger.info(f'{replay.game_mode} gamemode is not supported')
             return
 
-        #time_start = time.time()
-
         self.logger.debug('Determining beatmap...')
-        map_file_name, is_gen = MapsDB.get_map_file_name(replay.beatmap_hash, md5h=False, reprocess_if_missing=False)
+        map_file_name, is_gen = MapsDB.get_map_file_name(replay.beatmap_hash)
         if map_file_name == None:
             self.logger.info(f'Warning: file_name is None. Unable to open map for replay with beatmap hash {replay.beatmap_hash}')
             return
 
-        #print('Processing beatmap:', map_file_name)
         try:
             beatmap = BeatmapIO.open_beatmap(map_file_name)
             if is_gen and (AppConfig.cfg['delete_gen'] == True):
@@ -90,43 +74,41 @@ class _OsuRecorder(QtCore.QObject):
             self.logger.info(f'Warning: Map {map_file_name} not longer exists!')
             return
             
-        #print('Beatmap load time: ', time.time() - time_start)
-
-        #time_start = time.time()
         QtWidgets.QApplication.processEvents()
 
-        map_data = DataProcessing.get_map_data_from_object(beatmap)
-        replay_data = DataProcessing.get_replay_data_from_object(replay)
-        DataProcessing.process_mods(map_data, replay_data, replay)
-
-        #print('Data processing time: ', time.time() - time_start)
-
-        #time_start = time.time()
-        # Get data
-        score_data = DataProcessing.get_score_data(map_data, replay_data, beatmap.difficulty.cs, beatmap.difficulty.ar)
-        data = DataProcessing.get_data(score_data, replay.timestamp.timestamp(), beatmap.metadata.beatmap_md5, replay.mods.value, beatmap.difficulty.cs, beatmap.difficulty.ar)
-
-        #print('Score data processing time: ', time.time() - time_start)
+        map_data, replay_data, score_data = ScoreNpy.compile_data(beatmap, replay)
         QtWidgets.QApplication.processEvents()
 
-        #time_start = time.time()
         # Save data and emit to notify other components that there is a new replay
-        try: PlayData.add_to_data(data)
+        diff_data = DiffNpy.get_data(score_data)
+        score_data = score_data.join(diff_data, on='IDXS')
+
+        try: score_data_obj.append(replay.beatmap_hash, score_data)
         except ValueError as e:
             self.logger.error(
                 '\n' +
                 '============================================================\n' +
                 f'Error saving data: {e}\n' +
                 'The data format has probably changed.\n' +
-                'You will need to delete "data/osu_performance_recording_v1.npy" and reimport plays.\n' +
+                f'You will need to delete "{diff_data_obj.save_file}" and reimport plays.\n' +
                 '============================================================\n' +
                 '\n'
             )
             return
 
-        #print('Play data saving time: ', time.time() - time_start)
-
-        self.new_replay_event.emit((map_data, replay_data, beatmap.difficulty.cs, beatmap.difficulty.ar, replay.mods.value, beatmap.metadata.name + ' ' + replay.get_name()), is_import)
+        self.new_replay_event.emit(
+            (
+                map_data,
+                replay_data,
+                score_data,
+                #beatmap.difficulty.cs, 
+                #beatmap.difficulty.ar, 
+                #replay.mods.value,
+                beatmap.metadata.name + ' ' + replay.get_name(),
+                replay.beatmap_hash,
+            ), 
+            is_import
+        )
 
 
 OsuRecorder = _OsuRecorder()

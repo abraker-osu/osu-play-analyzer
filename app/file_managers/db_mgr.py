@@ -27,15 +27,15 @@ class _MapsDB():
 
         _MapsDB.logger.info('Map table does not exist - creating')
 
-        _MapsDB.db.execute("CREATE TABLE maps(md5 TEXT, md5h TEXT, path TEXT)")
+        _MapsDB.db.execute("CREATE TABLE maps(md5 TEXT, path TEXT)")
 
-        columns = ', '.join([ 'md5', 'md5h', 'path' ])
-        placeholders = ':' + ', :'.join([ 'md5', 'md5h', 'path' ])
+        columns = ', '.join([ 'md5', 'path' ])
+        placeholders = ':' + ', :'.join([ 'md5', 'path' ])
 
         data = OsuDbReader.get_beatmap_md5_paths(f'{_MapsDB.osu_path}/osu!.db')
         for entry in data:
             _MapsDB.db.execute(f'INSERT INTO maps ({columns}) VALUES ({placeholders});', tuple(entry[k] for k in entry.keys()))
-            _MapsDB.db.commit()
+        _MapsDB.db.commit()
 
         _MapsDB.logger.info('Map table created')
         return True
@@ -114,8 +114,8 @@ class _MapsDB():
         data = OsuDbReader.get_beatmap_md5_paths(f'{_MapsDB.osu_path}/osu!.db')
 
         # Insert missing entries
-        columns = ', '.join([ 'md5', 'md5h', 'path' ])
-        placeholders = ':' + ', :'.join([ 'md5', 'md5h', 'path' ])
+        columns = ', '.join([ 'md5', 'path' ])
+        placeholders = ':' + ', :'.join([ 'md5', 'path' ])
         
         # Drop maps table
         _MapsDB.db.execute('DROP TABLE maps')
@@ -133,44 +133,19 @@ class _MapsDB():
         _MapsDB.db.commit()
 
 
-    def get_map_file_name(self, map_md5, md5h=False, reprocess_if_missing=False):
-        field = "md5h" if md5h else "md5"
-        reply = _MapsDB.db.execute(f'SELECT path FROM maps WHERE {field}="{map_md5}"').fetchone()
+    def get_map_file_name(self, map_md5, filename=True):
+        reply = _MapsDB.db.execute(f'SELECT path FROM maps WHERE md5 = "{map_md5}"').fetchone()
         
         if reply != None:
-            map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/{reply[0]}'
+            map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/{reply[0]}' if filename else reply[0]
             return map_file_name, False
         
-        # Try to find the map file by hash
-        if md5h == False:
-            # See if it's a generated map, it has its md5 hash in the name
-            map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/osu_play_analyzer/{map_md5}.osu'
-            if not os.path.isfile(map_file_name):
-                return None, False
-
-            return map_file_name, True
-        else:
-            map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/osu_play_analyzer/*{map_md5}*.osu'
-            matches = glob.glob(map_file_name, recursive=False)
-
-            if len(matches) > 0:
-                return matches[0], True
-
-        # Find by hash failed, reprocess the db and try if enabled
-        if not reprocess_if_missing:
-            _MapsDB.logger.info('Associated beatmap not found. If you modified or added a new map since starting osu!, close osu! and rebuild db. Then try again.')
+        # See if it's a generated map, it has its md5 hash in the name
+        map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/osu_play_analyzer/{map_md5}.osu' if filename else map_md5
+        if not os.path.isfile(map_file_name):
             return None, False
 
-        _MapsDB.logger.info('Associated beatmap not found, updating maps database...')
-        MapsDB.update_maps_db()
-        reply = _MapsDB.db.execute(f'SELECT path FROM maps WHERE {field}="{map_md5}"').fetchone()
-
-        if reply != None:
-            map_file_name = f'{AppConfig.cfg["osu_dir"]}/Songs/{reply[0]}'
-            return map_file_name, False
-
-        _MapsDB.logger.info('Associated beatmap not found. Do you have it?')
-        return None, False
+        return map_file_name, True
 
 
     def md5h_to_md5h_str_func(self, md5h):

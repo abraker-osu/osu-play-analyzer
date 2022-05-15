@@ -4,7 +4,7 @@ from pyqtgraph.Qt import QtGui
 import numpy as np
 
 from osu_analysis import StdScoreData
-from app.data_recording.data import RecData
+from app.data_recording.data import ScoreNpyData
 
 
 class GraphTimingBPMInc(QtGui.QWidget):
@@ -47,15 +47,15 @@ class GraphTimingBPMInc(QtGui.QWidget):
         x_data_all = np.asarray([])
         y_data_all = np.asarray([])
 
-        unique_timestamps = np.unique(play_data[:, RecData.TIMESTAMP])
+        unique_timestamps = np.unique(play_data[:, ScoreNpyData.TIMESTAMP])
         for timestamp in unique_timestamps:
             data_select = \
-                (play_data[:, RecData.TIMESTAMP] == timestamp) & \
-                (play_data[:, RecData.ACT_TYPE] == StdScoreData.ACTION_PRESS)
+                (play_data[:, ScoreNpyData.TIMESTAMP] == timestamp) & \
+                (play_data[:, ScoreNpyData.ACT_TYPE] == StdScoreData.ACTION_PRESS)
             data = play_data[data_select]
             
-            x_data_all = np.insert(x_data_all, 0, data[:, RecData.TIMINGS])
-            y_data_all = np.insert(y_data_all, 0, data[:, RecData.DT_DEC])
+            x_data_all = np.insert(x_data_all, 0, data[:, ScoreNpyData.TIMINGS])
+            y_data_all = np.insert(y_data_all, 0, data[:, ScoreNpyData.DT_DEC])
 
         colors = pyqtgraph.mkBrush(color=[ 255, 0, 0, 150 ])
         self.__graph.plot(x=x_data_all, y=y_data_all, pen=None, symbol='o', symbolPen=None, symbolSize=5, symbolBrush=colors)

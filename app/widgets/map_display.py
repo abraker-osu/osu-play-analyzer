@@ -17,7 +17,7 @@ from app.misc.osu_utils import OsuUtils
 from app.widgets.hitobject_plot import HitobjectPlot
 from app.widgets.timing_plot import TimingPlot
 
-from app.data_recording.data import RecData
+from app.data_recording.data import PlayNpyData
 from app.file_managers import AppConfig, MapsDB
 
 
@@ -189,28 +189,27 @@ class MapDisplay(QtGui.QWidget):
 
 
     def set_replay_from_play_data(self, play_data):
+        # Assumes play data pertianing to only one replay is passed
+        # 
         # Play data only has score info, so at best only score points are recoverable
         # Basically how old osu! 2007 - 2009 era replays looked like
         # Press timings are easy to recover, however matching cursor positions to map data is not
         #   because note/aimpoint positions are not saved in play data
-        data_filter = \
-            (play_data[:, RecData.TIMESTAMP] == max(play_data[:, RecData.TIMESTAMP])) & \
-            (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP)
+        data_filter = (play_data['TYPE_HIT'] == StdScoreData.TYPE_HITP)
         play_data = play_data[data_filter]
 
         self.replay_data = np.zeros((play_data.shape[0]*2, 7))
-        press_times = (play_data[:, RecData.TIMINGS] + play_data[:, RecData.T_OFFSETS])/1000
 
         # Press timings
-        self.replay_data[::2, self.REPLAY_T]   = press_times
-        self.replay_data[::2, self.REPLAY_X]   = play_data[:, RecData.X_OFFSETS] + play_data[:, RecData.X_POS]
-        self.replay_data[::2, self.REPLAY_Y]   = -(play_data[:, RecData.Y_OFFSETS] + play_data[:, RecData.Y_POS])
+        self.replay_data[::2, self.REPLAY_T]   = play_data['T_HIT']
+        self.replay_data[::2, self.REPLAY_X]   = play_data['X_HIT']
+        self.replay_data[::2, self.REPLAY_Y]   = -play_data['Y_HIT']
         self.replay_data[::2, self.REPLAY_K1]  = StdReplayData.PRESS
 
         # Release timings
-        self.replay_data[1::2, self.REPLAY_T]  = press_times + 0.05
-        self.replay_data[1::2, self.REPLAY_X]  = play_data[:, RecData.X_OFFSETS] + play_data[:, RecData.X_POS]
-        self.replay_data[1::2, self.REPLAY_Y]  = -(play_data[:, RecData.Y_OFFSETS] + play_data[:, RecData.Y_POS])
+        self.replay_data[1::2, self.REPLAY_T]  = play_data['T_HIT'] + 0.05
+        self.replay_data[1::2, self.REPLAY_X]  = play_data['X_HIT']
+        self.replay_data[1::2, self.REPLAY_Y]  = -play_data['Y_HIT']
         self.replay_data[1::2, self.REPLAY_K1] = StdReplayData.RELEASE
 
         self.__draw_replay_data()
@@ -244,17 +243,19 @@ class MapDisplay(QtGui.QWidget):
         self.status_label.setText(f'Viewing: {name}')
 
 
-    def set_from_play_data(self, play_data):
-        map_hash = play_data[:, RecData.MAP_HASH].astype(np.uint64)[0]
+    def set_from_play_data(self, play_data, md5_strs):
+        if len(md5_strs) != 1:
+            print('Error: multiple maps are selected')
+            return
 
-        md5h_str = MapsDB.md5h_to_md5h_str_func(map_hash)
-        map_file_name, _ = MapsDB.get_map_file_name(md5h_str, md5h=True, reprocess_if_missing=False)
+        map_file_name, _ = MapsDB.get_map_file_name(md5_strs[0])
+
         if map_file_name is None:
             print('Map display: map file not found')
             return
         
         self.set_replay_from_play_data(play_data)
-        self.__open_map_from_file_name(map_file_name, play_data[0, RecData.MODS])
+        self.__open_map_from_file_name(map_file_name, play_data['MODS'].values[0])
 
         # Draw note in timeline
         self.hitobject_plot.set_map_timeline(self.map_data)

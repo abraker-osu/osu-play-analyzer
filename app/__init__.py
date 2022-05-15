@@ -12,7 +12,7 @@ from app.views.data_overview_window import DataOverviewWindow
 from app.views.map_architect_window import MapArchitectWindow
 from app.views.map_display_window import MapDisplayWindow
 
-from app.file_managers import AppConfig, PlayData
+from app.file_managers import AppConfig
 from app.data_recording.osu_recorder import OsuRecorder
 
 
@@ -42,13 +42,14 @@ def exception_hook(exctype, value, tb):
     sys.__excepthook = (exctype, value, tb)
 
     trace = ''.join(traceback.format_exception(exctype, value, tb))
-    Logger.exception('Core', trace)
+    Logger.get_logger('core').exception(trace)
 
     # Log assertion errors, but don't exit because of them
     if exctype == AssertionError:
         return
 
-    PlayData.save_data_and_close()
+    #score_data_obj.save_data_and_close()
+    #diff_data_obj.save_data_and_close()
     sys.exit(1)
 sys.excepthook = exception_hook
 
@@ -193,16 +194,25 @@ class App(QtGui.QMainWindow):
     def new_replay_event(self, data, is_import):
         self.logger.debug('new_replay_event')
 
-        map_data, replay_data, cs, ar, mods, name = data
+        map_data, replay_data, score_data, name, md5_str = data
+
+        cs   = score_data['CS'].values[0]
+        ar   = score_data['AR'].values[0]
+        mods = score_data['MODS'].values[0]
 
         # Broadcast the new replay event to the other windows
         time_start = time.time()
-        self.data_overview_window.new_replay_event(is_import)
+        self.data_overview_window.new_replay_event(is_import, md5_str)
+        self.logger.debug(f'data_overview_window load time: {time.time() - time_start}')
 
         if not is_import:
-            self.data_graphs_window.new_replay_event()
+            time_start = time.time()
+            self.data_graphs_window.new_replay_event(score_data)
+            self.logger.debug(f'data_graphs_window load time:: {time.time() - time_start}')
 
+            time_start = time.time()
             self.map_display_window.new_replay_event(map_data, replay_data, cs, ar, mods, name)
+            self.logger.debug(f'map_display_window load time: {time.time() - time_start}')
 
 
     def closeEvent(self, event):
@@ -211,7 +221,8 @@ class App(QtGui.QMainWindow):
         # Gracefully stop monitoring
         #if self.engaged:
         #    self.__action_event()
-        PlayData.save_data_and_close()
+        #score_data_obj.save_data_and_close()
+        #diff_data_obj.save_data_and_close()
 
         # Hide any widgets to allow the app to close
         self.data_graphs_window.hide() 

@@ -9,7 +9,7 @@ from pyqtgraph.Qt import QtGui, QtCore
 from osu_analysis import StdScoreData
 
 from app.misc.osu_utils import OsuUtils
-from app.data_recording.data import RecData
+from app.data_recording.data import PlayNpyData
 
 
 class GraphAimDifficulty(QtGui.QWidget):
@@ -25,7 +25,7 @@ class GraphAimDifficulty(QtGui.QWidget):
         self.__graph.getPlotItem().getAxis('bottom').enableAutoSIPrefix(False)
         self.__graph.enableAutoRange(axis='x', enable=False)
         self.__graph.enableAutoRange(axis='y', enable=False)
-        self.__graph.setLimits(yMin=-1, yMax=12)
+        #self.__graph.setLimits(yMin=-1, yMax=12)
         self.__graph.setRange(xRange=[-0.1, 1.1], yRange=[-1, 5])
         self.__graph.setLabel('left', 'Aim factor', units='', unitPrefix='')
         self.__graph.setLabel('bottom', 'Factors', units='%', unitPrefix='')
@@ -62,74 +62,104 @@ class GraphAimDifficulty(QtGui.QWidget):
 
 
     def __plot_aim_factors(self, play_data):
-        # Determine what was the latest play
-        data_filter = \
-            (play_data[:, RecData.TIMESTAMP] == max(play_data[:, RecData.TIMESTAMP]))
-        play_data = play_data[data_filter]
-
-        # Filter out holds
-        data_filter = \
-            (play_data[:, RecData.ACT_TYPE] != StdScoreData.ACTION_HOLD)
-        play_data = play_data[data_filter]
-
         # Check if there is any data to operate on
         if play_data.shape[0] < 3:
             data_stub = np.asarray([])
             self.__calc_data_event.emit(data_stub, data_stub, data_stub)
             return
 
-        # Filter out release points for short sliders
-        slider_end_select = np.zeros(play_data.shape[0], dtype=bool)
-        slider_end_select[1:] = \
-            ((play_data[:-1, RecData.ACT_TYPE] == StdScoreData.ACTION_PRESS) & (play_data[1:, RecData.ACT_TYPE] == StdScoreData.ACTION_RELEASE))
+        type_map = play_data['TYPE_MAP'].values
 
-        cs_px = OsuUtils.cs_to_px(play_data[0, RecData.CS])
-        pos_x = play_data[:, RecData.X_POS]
-        pos_y = play_data[:, RecData.Y_POS]
-        
-        distances = np.sqrt(np.square(pos_x[1:] - pos_x[:-1]) + np.square(pos_y[1:] - pos_y[:-1]))
+        # Selects release points for short sliders. These kind of sliders
+        # do not have any consequences for not aiming the slider end. As a
+        # result, it is not a significant aiming challenge if they go very 
+        # fast. Sliders are considered short when they have no hold scorepoints.
+        short_slider_rel_select = np.zeros(play_data.shape[0], dtype=bool)
+        short_slider_rel_select[1:] = (
+            (type_map[:-1] == StdScoreData.ACTION_PRESS) & 
+            (type_map[1:] == StdScoreData.ACTION_RELEASE)
+        )
 
-        small_slider_filter = np.ones(play_data.shape[0], dtype=bool)
-        small_slider_filter[1:] = ~((distances < cs_px*1.5) & slider_end_select[1:])
+        # For now selects press points for short sliders. Sliders are considered 
+        # short when they have no hold scorepoints.
+        #
+        # Slider paths oriented in the direction of jump effectively have their 
+        # CS artificially increased by at least 1.5x (due to follow circle size).
+        # Can be a bit more if slider velocity and path is right.
+        #
+        # TODO: How to determine if slider path is oriented in the direction of jump?
+        # TODO: What if slider path goes into opposite direction of jump?
+        short_slider_prs_select = np.zeros(play_data.shape[0], dtype=bool)
+        short_slider_prs_select[:-1] = (
+            (type_map[:-1] == StdScoreData.ACTION_PRESS) & 
+            (type_map[1:] == StdScoreData.ACTION_RELEASE)
+        )
 
-        # Sliders are selected based on x1-x2 being press-release or x2-x3 being press-release
-        # slider_select is first filled with data for x2-x3 because that has one less element than data being worked with
-        slider_select = np.zeros(play_data.shape[0], dtype=bool)
-        slider_select[2:] = (play_data[2:, RecData.ACT_TYPE] == StdScoreData.ACTION_RELEASE)
+        play_data = play_data[~short_slider_rel_select]
+        short_slider_prs_select = short_slider_prs_select[~short_slider_rel_select]
+        type_map = type_map[~short_slider_rel_select]
 
-        slider_select = ( \
-            slider_end_select | \
-            ((play_data[:, RecData.ACT_TYPE] == StdScoreData.ACTION_PRESS) & slider_select)   \
-        )[small_slider_filter][2:]
+        cs_px = OsuUtils.cs_to_px(play_data['CS'].values[0])
+        dists = play_data['DIFF_XY_DIST'].values
+
+        # Small distance do not require to reposition the cursor to aim the next
+        # note. As a result patters like double taps can have very short timing
+        # between them while being offset by some amount, resulting in high 
+        # velocities. Distances are considered small if the scorepoints are less
+        # than 75% the diameter of circle size apart.
+        #
+        # NOTE: This doesn't work for streams or large stacks as they have multiple 
+        # successions of small distances, effectively requiring the player to move 
+        # the cursor. Perhaps look into implementing a strategy that decides whether
+        # velocity is too large for notes that are closely spaced.
+        small_small_dist_select = (dists < cs_px*1.5)
+
 
         # Calculate data (x2 is considered current score point, x1 and x0 are previous score points)
-        pos_x = play_data[:, RecData.X_POS][small_slider_filter]
-        pos_y = play_data[:, RecData.Y_POS][small_slider_filter]
-        timing = play_data[:, RecData.TIMINGS][small_slider_filter]
-        is_miss = (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_MISS)[small_slider_filter]
+        x_map  = play_data['X_MAP'].values
+        y_map  = play_data['Y_MAP'].values
+        t_map  = play_data['T_MAP'].values
+        vels   = play_data['DIFF_XY_LIN_VEL'].values
+        angles = play_data['DIFF_XY_ANGLE'].values
 
-        dx0 = pos_x[1:-1] - pos_x[:-2]   # x1 - x0
-        dx1 = pos_x[2:] - pos_x[1:-1]    # x2 - x1
+        is_miss = (
+            (play_data['TYPE_HIT'].values == StdScoreData.TYPE_MISS) & (
+                (type_map == StdScoreData.ACTION_HOLD) |
+                (type_map == StdScoreData.ACTION_PRESS)
+            )
+        )
 
-        dy0 = pos_y[1:-1] - pos_y[:-2]   # y1 - y0
-        dy1 = pos_y[2:] - pos_y[1:-1]    # y2 - y1
+        detected_zeros = t_map[2:] == t_map[1:-1]
+        if np.count_nonzero(detected_zeros) > 0:
+            print(
+                f"""
+                Warning: Detected zeros in timing data:
+                pos_x: {x_map[1:-1][detected_zeros]} {x_map[2:][detected_zeros]}
+                pos_y: {y_map[1:-1][detected_zeros]} {y_map[2:][detected_zeros]}
+                timing: {t_map[1:-1][detected_zeros]} {t_map[2:][detected_zeros]}
+                hit_type: {play_data[:, PlayNpyData.TYPE_HIT][1:-1][detected_zeros]} {play_data[:, PlayNpyData.TYPE_MAP][2:][detected_zeros]}
+                action_type: {play_data[:, PlayNpyData.TYPE_MAP][1:-1][detected_zeros]} {play_data[:, PlayNpyData.TYPE_HIT][2:][detected_zeros]}
+                """
+            )
 
-        theta_d0 = np.arctan2(dy0, dx0)*(180/math.pi)
-        theta_d1 = np.arctan2(dy1, dx1)*(180/math.pi)
-
-        angles = np.abs(theta_d1 - theta_d0)
-        angles[angles > 180] = 360 - angles[angles > 180]
-        angles = np.round(angles)
-
-        distances = np.sqrt(np.square(pos_x[2:] - pos_x[1:-1]) + np.square(pos_y[2:] - pos_y[1:-1]))
-        velocities = distances / (timing[2:] - timing[1:-1])
         angle_factor = (1 + 2.5*np.exp(-0.026*angles))/(1 + 2.5)
-        
         cs_factor = np.full_like(angle_factor, OsuUtils.cs_to_px(4)/cs_px)
-        cs_factor[slider_select] = (OsuUtils.cs_to_px(4)/(1.5*cs_px))
+        cs_factor[short_slider_prs_select] = (OsuUtils.cs_to_px(4)/(1.5*cs_px))
 
-        data_y = (cs_factor*velocities*angle_factor*4)
-        is_miss = is_miss[2:]
+        data_y = (cs_factor*vels*angle_factor*4)
+        inv_filter = ~np.isnan(data_y)
+        
+        data_y = data_y[inv_filter]
+        is_miss = is_miss[inv_filter]
+
+        #print(f'velocity spike: {velocities[timing[2:] == 31126]}')
+        #print(f'velocity end: {velocities[timing[2:] == 88531]}')
+
+        #print(f'angle spike: {angles[timing[2:] == 31126]}')
+        #print(f'angle end: {angles[timing[2:] == 88531]}')
+
+        #print(f'angle factor spike: {angle_factor[timing[2:] == 31126]}')
+        #print(f'angle factor end: {angle_factor[timing[2:] == 88531]}')
         
         if True:
             data_x = np.linspace(0, 1, data_y.shape[0])
@@ -139,7 +169,7 @@ class GraphAimDifficulty(QtGui.QWidget):
             is_miss = is_miss[sort_idx]
         else:
             # Debug
-            data_x = timing[2:]
+            data_x = t_map[inv_filter]
         
         self.__calc_data_event.emit(data_x, data_y, is_miss)
 

@@ -51,8 +51,27 @@ class MapDisplayWindow(QtGui.QMainWindow):
         self.logger.debug('__init__ exit')
         
 
-    def set_from_play_data(self, play_data):
-        self.selected_map_display.set_from_play_data(play_data)
+    def set_from_play_data(self, play_data, md5_strs):
+        self.selected_map_display.set_from_play_data(play_data, md5_strs)
+
+        '''
+        cs = play_data['cs'][0]
+        data_x = np.zeros(len(play_data)*3)
+        data_y = np.zeros(len(play_data)*3)
+        data_t = np.zeros(len(play_data)*3)
+
+        data_x[0::3] = 200
+        data_y[0::3] = -300
+        data_t[0::3] = play_data[:-2, ]
+
+        data_x[1::3] = 200
+        data_y[1::3] = -300
+        data_t[1::3] = play_data[1:-1, ]
+
+        data_x[2::3] = -200
+        data_y[2::3] = -300
+        data_t[2::3] = play_data[2:, ]
+        '''
 
 
     def new_replay_event(self, map_data, replay_data, cs, ar, mods, name):

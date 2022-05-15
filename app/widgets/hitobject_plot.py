@@ -59,7 +59,7 @@ class HitobjectPlot(pyqtgraph.GraphItem):
         # Reset drawn with empty data (sliders don't disappear otherwise)
         pos = np.zeros((0, 2), dtype=np.float)
         adj = np.zeros((0, ), dtype=np.int)
-        self.setData(pos=pos, adj=adj, size=[], symbol='o', pxMode=True)
+        self.setData(pos=pos, adj=adj, size=[], symbol='o', pxMode=False)
         
         # Select hitobjects within AR range of currently viewed timing
         ar_select = (t <= map_data['time']) & (map_data['time'] <= (t + ar_ms))

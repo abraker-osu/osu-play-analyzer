@@ -80,6 +80,10 @@ QSlider::handle:hover {
     background: #0091ff;
 }
 
+QLabel[hoverable=true]:hover {
+    background: #353646;
+}
+
 QLineEdit {
     max-width: 32px;
     background: #353646;
@@ -91,6 +95,10 @@ QLineEdit[Error=true] {
 
 QLineEdit[Unsaved=true] {
     border-bottom: 2px solid qlineargradient(x1: 0, y1: 1, x2: 0, y2: 0, stop: 0 #fffb00, stop: 1 rgba(255, 220, 0, 0%));
+}
+
+QTextEdit {
+    background: #353646;
 }
 
 QSpinBox 

@@ -7,7 +7,7 @@ from pyqtgraph.Qt import QtGui
 from pyqtgraph.Qt import QtCore
 
 from osu_analysis import StdScoreData, Mod
-from app.data_recording.data import RecData
+from app.data_recording.data import PlayNpyData
 
 
 class AimGraph(QtGui.QWidget):
@@ -138,30 +138,30 @@ class AimGraph(QtGui.QWidget):
 
     def plot_data(self, play_data):
         # Determine what was the latest play
-        data_filter = (play_data[:, RecData.TIMESTAMP] == max(play_data[:, RecData.TIMESTAMP]))
-        play_data = play_data[data_filter]
+        #data_filter = (play_data[:, PlayNpyData.TIMESTAMP] == max(play_data[:, PlayNpyData.TIMESTAMP]))
+        #play_data = play_data[data_filter]
 
-        cs = play_data[0, RecData.CS]
+        cs = play_data['CS'].values[0]
         
-        mods = Mod(int(play_data[0, RecData.MODS]))
+        mods = Mod(int(play_data['MODS'].values[0]))
         if mods.has_mod(Mod.HardRock): cs *= 1.3
         if mods.has_mod(Mod.Easy):     cs *= 0.5
 
         cs = min(cs, 10)
         self.set_cs(cs)
 
-        data_filter = (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP)
+        data_filter = (play_data['TYPE_HIT'] == StdScoreData.TYPE_HITP)
         data_hits = play_data[data_filter]
 
         data_filter = \
-            (play_data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_MISS) & \
-            (play_data[:, RecData.ACT_TYPE] == StdScoreData.ACTION_PRESS)
+            (play_data['TYPE_HIT'] == StdScoreData.TYPE_MISS) & \
+            (play_data['TYPE_MAP'] == StdScoreData.ACTION_PRESS)
         data_misses = play_data[data_filter]
 
-        offsets_hits  = data_hits[:, [ RecData.X_OFFSETS, RecData.Y_OFFSETS ]]
-        offsets_misses = data_misses[:, [ RecData.X_OFFSETS, RecData.Y_OFFSETS ]]
+        offsets_hits  = data_hits[[ 'X_HIT', 'Y_HIT' ]] - data_hits[[ 'X_MAP', 'Y_MAP' ]]
+        offsets_misses = data_misses[[ 'X_HIT', 'Y_HIT' ]] - data_misses[[ 'X_MAP', 'Y_MAP' ]]
 
-        self.plot_xy_data(offsets_hits, offsets_misses)
+        self.plot_xy_data(offsets_hits.values, offsets_misses.values)
 
 
     def plot_xy_data(self, offsets_hits, offsets_misses):

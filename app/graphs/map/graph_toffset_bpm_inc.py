@@ -5,7 +5,7 @@ import numpy as np
 import threading
 
 from osu_analysis import StdScoreData
-from app.data_recording.data import RecData
+from app.data_recording.data import ScoreNpyData
 
 
 class GraphTOffsetBPMInc(QtGui.QWidget):
@@ -60,17 +60,17 @@ class GraphTOffsetBPMInc(QtGui.QWidget):
         hit_timings_all = np.asarray([])
         time_bpm_all  = np.asarray([])
 
-        unique_timestamps = np.unique(play_data[:, RecData.TIMESTAMP])
+        unique_timestamps = np.unique(play_data[:, ScoreNpyData.TIMESTAMP])
         for timestamp in unique_timestamps:
             data_select = \
-                (play_data[:, RecData.TIMESTAMP] == timestamp) & \
-                (play_data[:, RecData.ACT_TYPE] == StdScoreData.ACTION_PRESS)
+                (play_data[:, ScoreNpyData.TIMESTAMP] == timestamp) & \
+                (play_data[:, ScoreNpyData.ACT_TYPE] == StdScoreData.ACTION_PRESS)
             data = play_data[data_select]
             
-            hit_timings  = data[:, RecData.T_OFFSETS]
-            time_bpm_inc = data[:, RecData.DT_DEC]
+            hit_timings  = data[:, ScoreNpyData.T_OFFSETS]
+            time_bpm_inc = data[:, ScoreNpyData.DT_DEC]
 
-            data_filter = data[:, RecData.HIT_TYPE] == StdScoreData.TYPE_HITP
+            data_filter = data[:, ScoreNpyData.HIT_TYPE] == StdScoreData.TYPE_HITP
 
             hit_timings  = hit_timings[data_filter]
             time_bpm_inc = time_bpm_inc[data_filter]

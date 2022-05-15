@@ -6,7 +6,6 @@ from app.misc.Logger import Logger
 from app.misc.utils import Utils
 
 
-
 class Monitor(watchdog.observers.Observer):
 
     logger = Logger.get_logger(__name__)
@@ -42,8 +41,3 @@ class Monitor(watchdog.observers.Observer):
 
         Monitor.logger.info(f'Created file creation monitor for {self.osu_path}/Data/r')
         self.monitors[name] = self.schedule(EventHandler(), replay_path, recursive=False)
-
-
-    def create_map_monitor(self, name, callback, beatmap_path):
-        # TODO
-        pass

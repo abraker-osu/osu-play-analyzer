@@ -2,12 +2,13 @@ import pyqtgraph
 from pyqtgraph import QtGui, QtCore
 
 import numpy as np
+import pandas as pd
 
 from osu_analysis import StdScoreData
 
 from app.misc.Logger import Logger
-from app.data_recording.data import RecData
-
+from app.data_recording.data import DiffNpyData, ScoreNpyData
+from app.file_managers import MapsDB, score_data_obj
 
 
 class CompositionViewer(QtGui.QWidget):
@@ -18,8 +19,13 @@ class CompositionViewer(QtGui.QWidget):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
 
-        self.data = np.zeros((0, 2))
-        self.play_data = None
+        # Displayed xy scatter plot data
+        self.xy_data = np.zeros((0, 2))
+
+        # Stored data is already filtered by map, mod, and time of play
+        # It is used to select the data to display in the scatter plot
+        self.score_data = np.empty((0, ScoreNpyData.NUM_COLS))
+        self.diff_data = np.empty((0, DiffNpyData.NUM_COLS))
 
         self.main_layout = QtGui.QHBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
@@ -57,31 +63,40 @@ class CompositionViewer(QtGui.QWidget):
         self.y_axis_selection.setExclusive(True)
 
         # MUST BE CONTIGUOUS
-        self.__ID_BPM          = 0
-        self.__ID_DT_NOTE      = 1
-        self.__ID_DT_RHYTM     = 2
-        self.__ID_ANGLE        = 3
-        self.__ID_DISTANCE     = 4
-        self.__ID_VELOCITY     = 5
-        self.__ID_BPM_INC_TIME = 6
-        self.__ID_BPM_DEC_TIME = 7
-        self.__CS              = 8
-        self.__AR              = 9
+        self.__ID_CS           = 0   # CS of map
+        self.__ID_AR           = 1   # AR of map
+        self.__ID_T_PRESS_DIFF = 2   # Time of press difference
+        self.__ID_T_PRESS_RATE = 3   # Time of press difference across 3 notes
+        self.__ID_T_BPM        = 4   # BPM of map
+        self.__ID_T_PRESS_INC  = 5   # Time since last increase between scorepoint press timing
+        self.__ID_T_PRESS_DEC  = 6   # Time since last decrease between scorepoint press timing
+        self.__ID_T_PRESS_RHM  = 7   # Scorepoint press's relative spacing compared to other scorepoint presses
+        self.__ID_T_HOLD_DUR   = 8   # Time duration of hold
+        self.__ID_XY_DIST      = 9   # Distance between every scorepoint
+        self.__ID_XY_ANGLE     = 10   # Angle between every scorepoint
+        self.__ID_XY_LIN_VEL   = 11  # Linear velocity between every scorepoint
+        self.__ID_XY_ANG_VEL   = 12  # Angular velocity between every scorepoint
+        self.__ID_VIS_VISIBLE  = 13  # Number of notes visible
+        self.__NUM_IDS         = 14
 
         self.__id_x = None
         self.__id_y = None
 
         selections = {
-             'BPM'          : self.__ID_BPM, 
-             'DT_NOTE'      : self.__ID_DT_NOTE,
-             'DT_RHYTM'     : self.__ID_DT_RHYTM,
-             'ANGLE'        : self.__ID_ANGLE, 
-             'DISTANCE'     : self.__ID_DISTANCE, 
-             'VELOCITY'     : self.__ID_VELOCITY, 
-             'BPM INC TIME' : self.__ID_BPM_INC_TIME,
-             'BPM DEC TIME' : self.__ID_BPM_DEC_TIME,
-             'CS'           : self.__CS,
-             'AR'           : self.__AR,
+            'CS':           self.__ID_CS,
+            'AR':           self.__ID_AR,
+            'T_PRESS_DIFF': self.__ID_T_PRESS_DIFF,
+            'T_PRESS_RATE': self.__ID_T_PRESS_RATE,
+            'T_PRESS_BPM':  self.__ID_T_BPM,
+            'T_PRESS_INC':  self.__ID_T_PRESS_INC,
+            'T_PRESS_DEC':  self.__ID_T_PRESS_DEC,
+            'T_PRESS_RHM':  self.__ID_T_PRESS_RHM,
+            'T_HOLD_DUR':   self.__ID_T_HOLD_DUR,
+            'XY_DIST':      self.__ID_XY_DIST,
+            'XY_ANGLE':     self.__ID_XY_ANGLE,
+            'XY_LIN_VEL':   self.__ID_XY_LIN_VEL,
+            'XY_ANG_VEL':   self.__ID_XY_ANG_VEL,
+            'VIS_VISIBLE':  self.__ID_VIS_VISIBLE,
         }
         self.num_selections = len(selections)
 
@@ -140,40 +155,66 @@ class CompositionViewer(QtGui.QWidget):
         self.x_axis_selection.idPressed.connect(self.__x_axis_selection_event)
         self.y_axis_selection.idPressed.connect(self.__y_axis_selection_event)
 
-        self.x_axis_selection.button(self.__ID_BPM).setChecked(True)
-        self.y_axis_selection.button(self.__ID_ANGLE).setChecked(True)
-        self.__set_composition_data(id_x=self.__ID_BPM, id_y=self.__ID_ANGLE)
+        self.x_axis_selection.button(self.__ID_CS).setChecked(True)
+        self.y_axis_selection.button(self.__ID_AR).setChecked(True)
+        self.__set_composition_data(id_x=self.__ID_CS, id_y=self.__ID_AR)
         
 
-    def set_composition_from_play_data(self, play_data):
+    def set_composition_from_score_data(self, map_md5_strs, timestamps):
         '''
         Called whenever different maps or time of plays are selected in
         the overview window. Updates the play data used to display the composition,
         and then proceeds to update everything else.
+
+        At this point the supplied `score_data` is already filtered by map, mod, and time of play
         '''
-        if play_data.shape[0] == 0:
+        self.logger.debug('set_composition_from_score_data')
+
+        if len(map_md5_strs) == 0:
             return
 
-        # Set displayed data
-        self.play_data = play_data
-        self.data = np.zeros((play_data.shape[0], 2))
+        if len(timestamps) == 0:
+            return
+
+        score_datas = [ score_data_obj.data(map_md5_str) for map_md5_str in map_md5_strs ]
+        score_data = pd.concat(score_datas)
+        score_data = score_data.loc[timestamps]
+
+        # Save filtered score data for play_data compilation when ROI selections are made
+        self.score_data = score_data
+        self.update_diff_data()
+
+
+    def update_diff_data(self):
+        '''
+        Called when there is a new score data selection or diff data gets recalculated
+        '''
+        self.logger.debug('update_diff_data')
+
+        if self.score_data.shape[0] == 0:
+            return
+
+        # Get filtered diff data based on score data
+        #self.diff_data = DiffNpyData.get_data_score(diff_data_obj.data, self.score_data)
+
+        self.xy_data = np.zeros((self.score_data.shape[0], 2))
         self.__set_composition_data(id_x=self.__id_x, id_y=self.__id_y, force_update=True)
 
         # Update all selection masks
-        data = np.zeros((self.play_data.shape[0], 2))
+        xy_data = np.zeros((self.score_data.shape[0], 2))
 
         for id_y in range(self.num_selections):
             for id_x in range(self.num_selections):
                 if id_y == id_x:
                     continue
                 
-                data[:, 0] = self.__id_to_data(id_x, self.play_data)
-                data[:, 1] = self.__id_to_data(id_y, self.play_data)
+                xy_data[:, 0] = self.__id_to_data(id_x)
+                xy_data[:, 1] = self.__id_to_data(id_y)
 
                 roi_id = self.__get_roi_id(id_x, id_y)
-                self.__update_roi_selection(roi_id, data)
+                self.__update_roi_selection(roi_id, xy_data)
 
-        if self.play_data.shape[0] < 10000:
+        if self.score_data.shape[0] < 10000:
             self.__process_master_selection(emit_data=True)
 
 
@@ -181,18 +222,24 @@ class CompositionViewer(QtGui.QWidget):
         '''
         Composes the selections in all planes together, and returns the resulting selected play data.
         '''
-        if type(self.play_data) == type(None):
+        if type(self.score_data) == type(None):
             return
 
         # Calculate master selection across all multidimensional planes
-        select = np.ones((self.play_data.shape[0]), dtype=np.bool)
+        select = np.ones((self.score_data.shape[0]), dtype=np.bool)
         for roi_selection in self.roi_selections.values():
             select &= roi_selection['select']
 
-        play_data_out = self.play_data[select]
-        self.num_data_points_label.setText(f'Num data points selected: {play_data_out.shape[0]}')
+        #play_data_out = np.zeros((np.count_nonzero(select), self.score_data.shape[1] + self.diff_data.shape[1]), dtype=np.int64)
+        #play_data_out[:, :self.score_data.shape[1]] = self.score_data[select]
+        #play_data_out[:, self.score_data.shape[1]:] = self.diff_data[select]
 
-        return play_data_out
+        # From https://github.com/ppy/osu/blob/master/osu.Game.Rulesets.Osu/Objects/OsuHitObject.cs#L137
+        #play_data_out[:, PlayNpyData.CS] = (108.8 - 8.96*play_data_out[:, PlayNpyData.CS])/2
+        #play_data_out[:, PlayNpyData.AR] /= 100
+
+        self.num_data_points_label.setText(f'Num data points selected: {np.count_nonzero(select)}')
+        return self.score_data[select]
 
 
     def __get_roi_id(self, id_x, id_y):
@@ -202,39 +249,39 @@ class CompositionViewer(QtGui.QWidget):
         return id_y*self.num_selections + id_x
 
 
-    def __update_roi_selection(self, roi_id, data):
+    def __update_roi_selection(self, roi_id, xy_data):
         '''
         Updates the cached selection mask
         '''
-        if type(data) == type(None):
+        if type(xy_data) == type(None):
             return
 
         roi_plot = self.roi_selections[roi_id]['roi']
-        inv_filter = ~(np.isnan(data).any(axis=1) | np.isinf(data).any(axis=1))
+        inv_filter = ~(np.isnan(xy_data).any(axis=1))
         
-        self.roi_selections[roi_id]['select'] = np.zeros((data.shape[0]), dtype=np.bool)
+        self.roi_selections[roi_id]['select'] = np.zeros((xy_data.shape[0]), dtype=np.bool)
         self.roi_selections[roi_id]['select'][~inv_filter] = True
-        self.roi_selections[roi_id]['select'][ inv_filter] = self.__select_data_in_roi(roi_plot, data[inv_filter])
+        self.roi_selections[roi_id]['select'][ inv_filter] = self.__select_data_in_roi(roi_plot, xy_data[inv_filter])
 
 
     def reset_roi_selections(self):
         '''
         Resets ROI selections to fit the entire displayed data
         '''
-        if type(self.play_data) == type(None):
+        if type(self.score_data) == type(None):
             return
 
-        data = np.zeros((self.play_data.shape[0], 2))
+        data = np.zeros((self.score_data.shape[0], 2))
 
         for id_y in range(self.num_selections):
             for id_x in range(self.num_selections):
                 if id_y == id_x:
                     continue
 
-                data[:, 0] = self.__id_to_data(id_x, self.play_data)
-                data[:, 1] = self.__id_to_data(id_y, self.play_data)
-                
-                inv_filter = ~(np.isnan(data).any(axis=1) | np.isinf(data).any(axis=1))
+                data[:, 0] = self.__id_to_data(id_x)
+                data[:, 1] = self.__id_to_data(id_y)
+            
+                inv_filter = ~(np.isnan(data).any(axis=1))
                 filtered_data = data[inv_filter]
 
                 if filtered_data.shape[0] == 0:
@@ -251,7 +298,6 @@ class CompositionViewer(QtGui.QWidget):
                 roi_plot = self.roi_selections[roi_id]['roi']
 
                 is_already_displayed = (roi_plot.scene() != None)
-
                 if not is_already_displayed:
                     self.plot_widget.addItem(roi_plot)
 
@@ -285,7 +331,7 @@ class CompositionViewer(QtGui.QWidget):
         # Update selection mask for the current plane
         roi_id_xy = self.__get_roi_id(self.__id_x, self.__id_y)
         roi_plot_xy = self.roi_selections[roi_id_xy]['roi']
-        self.__update_roi_selection(roi_id_xy, self.data)
+        self.__update_roi_selection(roi_id_xy, self.xy_data)
 
         roi_id_yx = self.__get_roi_id(self.__id_y, self.__id_x)
         roi_plot_yx = self.roi_selections[roi_id_yx]['roi']
@@ -366,6 +412,8 @@ class CompositionViewer(QtGui.QWidget):
 
         NOTE: Currently does not cause emission of play data
         '''
+        self.logger.debug('__set_composition_data')
+
         update_x = force_update
         update_y = force_update
  
@@ -401,99 +449,126 @@ class CompositionViewer(QtGui.QWidget):
 
             self.__id_y = id_y
             
-        if type(self.play_data) == type(None):
+        if self.score_data.shape[0] == 0:
             return
 
         if update_x:
-            self.data[:, 0] = self.__id_to_data(self.__id_x, self.play_data)
+            self.xy_data[:, 0] = self.__id_to_data(self.__id_x)
             self.plot_widget.setLabel('bottom', self.__get_selection_string(self.__id_x))
 
         if update_y:
-            self.data[:, 1] = self.__id_to_data(self.__id_y, self.play_data)
+            self.xy_data[:, 1] = self.__id_to_data(self.__id_y)
             self.plot_widget.setLabel('left', self.__get_selection_string(self.__id_y))
 
-        def score_data_to_str(data):
+        ''''
+        # Prepare dictionary of md5-to-map names to apply to each data point
+        unique_md5s = ScoreNpyData.get_unique_md5s(self.score_data)
+        md5_to_name = {}
+        
+        for unique_md5 in unique_md5s:
+            md5_str = ScoreNpyData.get_md5_str(*unique_md5)
+            md5_to_name[md5_str] = MapsDB.get_map_file_name(md5_str, filename=False)[0]
+        '''
+
+        # Add information that would be displayed when user hover over data point
+        def score_data_to_str(score_data):
+            '''
+            md5_str  = ScoreNpyData.get_md5_str(*score_data[[ScoreNpyData.MAP_MD5_LH, ScoreNpyData.MAP_MD5_UH]].astype(np.uint64))
+            
+            map_name = md5_to_name[md5_str]
+            time     = score_data[ScoreNpyData.T_MAP]
+            t_offset = score_data[ScoreNpyData.T_HIT] - score_data[ScoreNpyData.T_MAP]
+            x_offset = score_data[ScoreNpyData.X_HIT] - score_data[ScoreNpyData.X_MAP]
+            y_offset = score_data[ScoreNpyData.Y_HIT] - score_data[ScoreNpyData.Y_MAP]
+
             ret = f'\n' \
-                f'    t offset: {data[RecData.T_OFFSETS]:.2f}\n' \
-                f'    x offset: {data[RecData.X_OFFSETS]:.2f}\n' \
-                f'    y offset: {data[RecData.Y_OFFSETS]:.2f}'
+                f'    map:      {map_name}\n' \
+                f'    time:     {time}\n' \
+                f'    t offset: {t_offset}\n' \
+                f'    x offset: {x_offset}\n' \
+                f'    y offset: {y_offset}'
 
             return ret
+            '''
+            return ''
 
         if update_x or update_y:
-            i_data = np.apply_along_axis(lambda data: score_data_to_str(data), 1, self.play_data)
+            #i_data = np.apply_along_axis(score_data_to_str, 1, self.score_data)
 
             # Make sure no invalid values are passed to display or it will won't 
             # display points due to innability to compute bounds
-            inv_filter = ~(np.isnan(self.data).any(axis=1) | np.isinf(self.data).any(axis=1))
-            self.data_plot.setData(self.data[inv_filter, 0], self.data[inv_filter, 1], data=i_data[inv_filter])
+            inv_filter = ~(np.isnan(self.xy_data).any(axis=1))
+
+            #self.data_plot.setData(self.xy_data[inv_filter, 0], self.xy_data[inv_filter, 1], data=i_data[inv_filter])
+            self.data_plot.setData(self.xy_data[inv_filter, 0], self.xy_data[inv_filter, 1])
 
 
-    def __id_to_data(self, id_, play_data):
-        if id_ == self.__ID_BPM:
+    def __id_to_data(self, id_):
+        if id_ == self.__ID_CS:
+            return self.score_data['CS'].values
+
+        if id_ == self.__ID_AR:
+            return self.score_data['AR'].values
+
+        if id_ == self.__ID_T_PRESS_DIFF:
+            return self.score_data['DIFF_T_PRESS_DIFF'].values
+
+        if id_ == self.__ID_T_PRESS_RATE:
+            return self.score_data['DIFF_T_PRESS_RATE'].values
+
+        if id_ == self.__ID_T_BPM:
             # Convert 1/ms -> BPM then put it in terms of 1/4 snap
-            return 15000/play_data[:, RecData.DT]
+            return 15000/self.score_data['DIFF_T_PRESS_DIFF'].values
 
-        if id_ == self.__ID_DT_NOTE:
-            return play_data[:, RecData.DT_NOTES]
+        if id_ == self.__ID_T_PRESS_INC:
+            return self.score_data['DIFF_T_PRESS_INC'].values
 
-        if id_ == self.__ID_DT_RHYTM:
-            return play_data[:, RecData.DT_RHYM]
+        if id_ == self.__ID_T_PRESS_DEC:
+            return self.score_data['DIFF_T_PRESS_DEC'].values
 
-        if id_ == self.__ID_ANGLE:
-            return play_data[:, RecData.ANGLE]
+        if id_ == self.__ID_T_HOLD_DUR:
+            return self.score_data['DIFF_T_HOLD_DUR'].values
 
-        if id_ == self.__ID_DISTANCE:
-            return play_data[:, RecData.DS]
+        if id_ == self.__ID_T_PRESS_RHM:
+            return self.score_data['DIFF_T_PRESS_RHM'].values
 
-        if id_ == self.__ID_VELOCITY:
-            return 1000*play_data[:, RecData.DS]/play_data[:, RecData.DT]
+        #if id_ == self.__ID_DT_RHYTM_D:
+        #    return [ 0 ] #self.score_data['DIFF_DT_RHYM_D'].values
 
-        if id_ == self.__ID_BPM_DEC_TIME:
-            return play_data[:, RecData.DT_DEC]
+        if id_ == self.__ID_XY_DIST:
+            return self.score_data['DIFF_XY_DIST'].values
 
-        if id_ == self.__ID_BPM_INC_TIME:
-            return play_data[:, RecData.DT_INC]
+        if id_ == self.__ID_XY_ANGLE:
+            return self.score_data['DIFF_XY_ANGLE'].values
 
-        if id_ == self.__CS:
-            return play_data[:, RecData.CS]
+        if id_ == self.__ID_XY_LIN_VEL:
+            return 1000*self.score_data['DIFF_XY_LIN_VEL'].values
 
-        if id_ == self.__AR:
-            return play_data[:, RecData.AR]
+        if id_ == self.__ID_XY_ANG_VEL:
+            return self.score_data['DIFF_XY_ANG_VEL'].values
+
+        if id_ == self.__ID_VIS_VISIBLE:
+            return self.score_data['DIFF_VIS_VISIBLE'].values
 
         raise Exception(f'Unknown id: {id_}')
 
 
     def __get_selection_string(self, id_):
-        if id_ == self.__ID_BPM:
-            return 'BPM @ 1/4 meter (60/s)'
-
-        if id_ == self.__ID_DT_NOTE:
-            return 'Time interval across 3 notes (ms)'
-
-        if id_ == self.__ID_DT_RHYTM:
-            return '% the note is from previous note to next note (% of tn[2] - tn[0])'
-
-        if id_ == self.__ID_ANGLE:
-            return 'Angle (deg)'
-
-        if id_ == self.__ID_DISTANCE:
-            return 'Distance (osu!px)'
-
-        if id_ == self.__ID_VELOCITY:
-            return 'Velocity (osu!px/s)'
-
-        if id_ == self.__ID_BPM_DEC_TIME:
-            return 'BPM Decrease Time (ms)'
-
-        if id_ == self.__ID_BPM_INC_TIME:
-            return 'BPM Increase Time (ms)'
-
-        if id_ == self.__CS:
-            return 'CS'
-
-        if id_ == self.__AR:
-            return 'AR'
+        if id_ == self.__ID_CS:            return 'Beatmap CS'
+        if id_ == self.__ID_AR:            return 'Beatmap AR'
+        if id_ == self.__ID_T_PRESS_DIFF:  return 'Time interval between presses (ms)'
+        if id_ == self.__ID_T_PRESS_RATE:  return 'Time interval across 3 presses (ms)'
+        if id_ == self.__ID_T_BPM:         return 'BPM @ 1/4 meter (60/s)'
+        if id_ == self.__ID_T_PRESS_INC:   return 'BPM Increase Time (ms)'
+        if id_ == self.__ID_T_PRESS_DEC:   return 'BPM Decrease Time (ms)'
+        if id_ == self.__ID_T_PRESS_RHM:   return '% the note is from previous note to next note (% of tn[2] - tn[0])'
+        #if id_ == self.__ID_DT_RHYTM_D:   return 'Normalized rate (%)'
+        if id_ == self.__ID_T_HOLD_DUR:    return 'Hold duration (ms)'
+        if id_ == self.__ID_XY_DIST:       return 'Distance (osu!px)'
+        if id_ == self.__ID_XY_ANGLE:      return 'Angle (deg)'
+        if id_ == self.__ID_XY_LIN_VEL:    return 'Linear Velocity (osu!px/s)'
+        if id_ == self.__ID_XY_ANG_VEL:    return 'Angular Velocity (RPM)'
+        if id_ == self.__ID_VIS_VISIBLE:   return 'Number of notes visible (#)'
 
         raise Exception(f'Unknown id: {id_}')
 
