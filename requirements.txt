@@ -5,6 +5,7 @@ numpy>=1.22.0
 pyqt5
 pyqtgraph>=0.12.1
 watchdog
-PyInstaller
+PyInstaller>=4.8
 requests
 tinydb
+tables
