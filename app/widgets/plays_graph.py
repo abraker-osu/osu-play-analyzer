@@ -47,7 +47,7 @@ class PlaysGraph(pyqtgraph.PlotWidget):
         self.map_md5_strs = map_md5_strs
         
         score_datas = [ score_data_obj.data(map_md5_str) for map_md5_str in map_md5_strs ]
-        hit_timestamps = np.asarray([ np.unique(score_data.index.get_level_values(0)) for score_data in score_datas ])[0]
+        hit_timestamps = np.concatenate([ np.unique(score_data.index.get_level_values(0)) for score_data in score_datas ]).flatten()
 
         # Calculate view
         xMin = min(hit_timestamps) - 1  # -1 minute
