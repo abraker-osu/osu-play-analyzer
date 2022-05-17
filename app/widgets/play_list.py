@@ -143,7 +143,6 @@ class PlayList(pyqtgraph.TableWidget):
 
         map_md5_strs = score_data_obj.get_entries()
         num_md5_strs = len(map_md5_strs)
-        print(map_md5_strs)
 
         data = np.empty(
             shape=(num_md5_strs, ),
