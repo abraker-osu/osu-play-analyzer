@@ -119,7 +119,7 @@ class DiffNpyData():
 
         # The size of entry in diff data should match the one in score data
         # If it doesn't, it either non-existent or corrupted
-        data_out = np.zeros((score_data.shape[0], DiffNpyData.NUM_COLS))*np.nan
+        data_out = np.full((score_data.shape[0], DiffNpyData.NUM_COLS), np.nan)
         
         # The selection features a column for diff data and a column for score data
         # This allows to match the selection blocks in diff data with the selection blocks in score data
