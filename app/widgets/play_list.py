@@ -13,15 +13,16 @@ The is a selection menu on the side that allows the user to select which player'
 
 Design note: Maybe have a scatter plot instead. Really depends on how much data there is and how laggy it will get.
 """
+import multiprocessing
 import pyqtgraph
-import time
-import numpy as np
 from pyqtgraph.Qt import QtGui, QtCore
 
+import numpy as np
+import pandas as pd
+
 from app.misc.Logger import Logger
-from app.data_recording.data import ScoreNpyData
-from app.file_managers import MapsDB, score_data_obj
-from osu_analysis import Mod
+from app.misc.play_list_helper import PlayListHelper
+from app.file_managers import score_data_obj
 
 
 class PlayList(pyqtgraph.TableWidget):
@@ -98,13 +99,13 @@ class PlayList(pyqtgraph.TableWidget):
         # Process data to get stuff that will be shown
         score_data = score_data_obj.data(map_md5_str)
 
-        map_name_str       = self.__map_name_str(map_md5_str)
-        map_mods_str       = self.__map_mods_str(score_data)
-        map_time_str       = self.__map_timestamp_str(score_data)
+        map_name_str       = PlayListHelper.map_name_str(map_md5_str)
+        map_mods_str       = PlayListHelper.map_mods_str(score_data)
+        map_time_str       = PlayListHelper.map_timestamp_str(score_data)
         map_num_points     = score_data.shape[0]
-        map_avg_bpm        = self.__map_avg_bpm(score_data)
-        map_to_avg_lin_vel = self.__map_avg_lin_vel(score_data)
-        map_to_avg_ang_vel = self.__map_avg_ang_vel(score_data)
+        map_avg_bpm        = PlayListHelper.map_avg_bpm(score_data)
+        map_to_avg_lin_vel = PlayListHelper.map_avg_lin_vel(score_data)
+        map_to_avg_ang_vel = PlayListHelper.map_avg_ang_vel(score_data)
 
         data['md5']  = map_md5_str
         data['Name'] = map_name_str
@@ -160,25 +161,22 @@ class PlayList(pyqtgraph.TableWidget):
 
         self.logger.debug(f'Num of plays to load: {num_md5_strs}')
 
-        md5_to_score_data  = np.frompyfunc(score_data_obj.data, 1, 1)
-        score_datas        = md5_to_score_data(map_md5_strs)
-
-        md5_to_name        = np.frompyfunc(self.__map_name_str, 1, 1)
-        map_to_mod         = np.frompyfunc(self.__map_mods_str, 1, 1)
-        map_to_time_str    = np.frompyfunc(self.__map_timestamp_str, 1, 1)
-        map_to_num_points  = np.frompyfunc(lambda score_data: score_data.shape[0], 1, 1)
-        map_to_avg_bpm     = np.frompyfunc(self.__map_avg_bpm, 1, 1)
-        map_to_avg_lin_vel = np.frompyfunc(self.__map_avg_lin_vel, 1, 1)
-        map_to_avg_ang_vel = np.frompyfunc(self.__map_avg_ang_vel, 1, 1)
-
         data['md5']  = map_md5_strs
-        data['Name'] = md5_to_name(map_md5_strs)
-        data['Mods'] = map_to_mod(score_datas)
-        data['Time'] = map_to_time_str(score_datas)
-        data['Data'] = map_to_num_points(score_datas)
-        data['Avg BPM'] = map_to_avg_bpm(score_datas)
-        data['Avg Lin Vel'] = map_to_avg_lin_vel(score_datas)
-        data['Avg Ang Vel'] = map_to_avg_ang_vel(score_datas)
+
+        with multiprocessing.Pool(processes=8) as processes:
+            play_list_data = processes.map(PlayListHelper.do_read, map_md5_strs)
+            df = pd.DataFrame(play_list_data, columns=
+                ['Name', 'Mods', 'Time', 'Data', 'Avg BPM', 'Avg Lin Vel', 'Avg Ang Vel']
+            )
+
+            data['Name']        = df['Name']
+            data['Mods']        = df['Mods']
+            data['Time']        = df['Time']
+            data['Data']        = df['Data']
+            data['Avg BPM']     = df['Avg BPM']
+            data['Avg Lin Vel'] = df['Avg Lin Vel']
+            data['Avg Ang Vel'] = df['Avg Ang Vel']
+
 
         self.setData(data)    
 
@@ -192,66 +190,3 @@ class PlayList(pyqtgraph.TableWidget):
         self.logger.debug('map_selected.emit ->')
         self.map_selected.emit(md5_strs)
         self.logger.debug('map_selected.emit <-')
-
-
-    @staticmethod
-    def __map_name_str(md5_str):
-        result, _ = MapsDB.get_map_file_name(md5_str)
-        if result == None:
-            return md5_str
-
-        return result.replace('\\', '/').split('/')[-1]
-
-
-    @staticmethod
-    def __map_mods_str(score_data):
-        mods = score_data['MODS'].values[0]
-        mods_text = Mod(int(mods)).get_mods_txt()
-
-        return f' +{mods_text}' if len(mods_text) != 0 else ''
-
-
-    @staticmethod
-    def __map_timestamp_str(score_data):
-        timestamp_start = min(score_data.index.get_level_values(0))
-        timestamp_end   = max(score_data.index.get_level_values(0))
-
-        try:
-            if timestamp_start == timestamp_end:
-                play_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp_start))
-
-                time_str = f'{play_time}'
-            else:
-                play_start = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp_start))
-                play_end   = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp_end))
-
-                time_str = f'{play_start} - {play_end}'
-        except IndexError:
-            play_start = 'N/A'
-            play_end   = 'N/A'
-
-        return time_str
-
-
-    @staticmethod
-    def __map_avg_bpm(score_data):        
-        data = 15000/score_data['DIFF_T_PRESS_DIFF'].values
-        data = data[~np.isnan(data)]
-
-        return f'{np.mean(data):.2f}'
-
-
-    @staticmethod
-    def __map_avg_lin_vel(score_data):        
-        data = score_data['DIFF_XY_LIN_VEL'].values
-        data = data[~np.isnan(data)]
-
-        return f'{np.mean(data):.2f}'
-
-
-    @staticmethod
-    def __map_avg_ang_vel(score_data):        
-        data = score_data['DIFF_XY_ANG_VEL'].values
-        data = data[~np.isnan(data)]
-
-        return f'{np.mean(data):.2f}'
