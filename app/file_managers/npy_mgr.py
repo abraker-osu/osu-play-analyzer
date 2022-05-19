@@ -17,7 +17,7 @@ class NpyManager():
         if entry_name is None:
             return self.__data_file
         
-        return self.__data_file.select(f'_{entry_name}')
+        return self.__data_file.select(entry_name)
 
 
     def append(self, entry_name, data):
@@ -46,7 +46,7 @@ class NpyManager():
 
     def get_entries(self):
         # Drop the prefix '/_'
-        return [ key[2:] for key in self.__data_file.keys() ]
+        return [ key[1:] for key in self.__data_file.keys() ]
 
 
     def drop(self):

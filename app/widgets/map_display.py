@@ -248,7 +248,9 @@ class MapDisplay(QtGui.QWidget):
             print('Error: multiple maps are selected')
             return
 
-        map_file_name, _ = MapsDB.get_map_file_name(md5_strs[0])
+        # Possibly need to remove '_' if the md5 string comes from the pandas db
+        md5_str = md5_strs[0][1:] if (md5_strs[0][0] == '_') else md5_str[0]
+        map_file_name, _ = MapsDB.get_map_file_name(md5_str)
 
         if map_file_name is None:
             print('Map display: map file not found')
