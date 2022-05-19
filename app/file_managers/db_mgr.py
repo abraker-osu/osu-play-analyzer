@@ -1,7 +1,5 @@
 import sqlite3
-import glob
 import os
-import time
 
 from app.misc.Logger import Logger
 from app.osu_db_reader.osu_db_reader import OsuDbReader
@@ -13,7 +11,7 @@ class _MapsDB():
     logger = Logger.get_logger(__name__)
 
     # For resolving replays to maps
-    db = sqlite3.connect("data/maps.db")
+    db = sqlite3.connect('data/maps.db')
     osu_path = AppConfig.cfg['osu_dir']
 
     @staticmethod
@@ -67,7 +65,6 @@ class _MapsDB():
         return True
 
 
-
     def check_db(self):
         if not os.path.isdir(AppConfig.cfg['osu_dir']):
             return
@@ -106,7 +103,7 @@ class _MapsDB():
 
 
     def update_maps_db(self):
-        osu_path = AppConfig.cfg["osu_dir"]
+        osu_path = AppConfig.cfg['osu_dir']
 
         num_beatmaps_read = OsuDbReader.get_num_beatmaps(f'{osu_path}/osu!.db')
         last_modified_read = os.stat(f'{osu_path}/osu!.db').st_mtime
