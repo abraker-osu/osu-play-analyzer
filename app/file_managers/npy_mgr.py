@@ -1,24 +1,16 @@
 import os
-import numpy as np
 import pandas as pd
 
 from app.misc.Logger import Logger
-from app.data_recording.data import DiffNpyData, ScoreNpyData
 
 
 class NpyManager():
 
     logger = Logger.get_logger(__name__)
     
-    def __init__(self, name, data_cls):
-        #self.__data_cls = data_cls
+    def __init__(self, name):
         self.__save_file = f'data/{name}.h5'
         self.__data_file = pd.HDFStore(self.__save_file)
-
-        #df = pd.DataFrame()
-        #df['timestamp'] = np.array([])
-        #df['md5']       = np.array([])
-        #df.to_hdf(self.__save_file, f'_metadata', append=True)
 
 
     def data(self, entry_name=None):
@@ -29,15 +21,9 @@ class NpyManager():
 
 
     def append(self, entry_name, data):
-        #if entry_name in self.__data_file.keys():
-        #    return
-
         self.__data_file.close()
         data.to_hdf(self.__save_file, f'_{entry_name}', append=True)       
         self.__data_file = pd.HDFStore(self.__save_file)
-
-        #metadata = self.__data_file.select('_metadata')
-        #metadata.resize(metadata.shape[0] + 1, axis=0)
 
 
     def rewrite(self, md5, data):
@@ -69,5 +55,5 @@ class NpyManager():
         self.__data_file = pd.HDFStore(self.__save_file)   
 
 
-score_data_obj = NpyManager('score_data', ScoreNpyData)
+score_data_obj = NpyManager('score_data')
 
