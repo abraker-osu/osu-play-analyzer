@@ -162,4 +162,3 @@ class _MapsDB():
 
 
 MapsDB = _MapsDB()
-MapsDB.check_db()

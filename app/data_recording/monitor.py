@@ -18,7 +18,6 @@ class Monitor(watchdog.observers.Observer):
 
         self.osu_path = osu_path
         self.monitors = {}
-        self.start()
 
 
     def __del__(self):

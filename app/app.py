@@ -12,9 +12,8 @@ from app.views.data_overview_window import DataOverviewWindow
 from app.views.map_architect_window import MapArchitectWindow
 from app.views.map_display_window import MapDisplayWindow
 
-from app.file_managers import AppConfig
+from app.file_managers import AppConfig, MapsDB
 from app.data_recording.osu_recorder import OsuRecorder
-
 
 """
 Set numpy settings
@@ -66,8 +65,12 @@ class App(QtGui.QMainWindow):
         QtGui.QMainWindow.__init__(self)
         os.makedirs('data', exist_ok=True)
 
+        MapsDB.check_db()
+
         self.__contruct_gui()
         self.__connect_signals()
+
+        OsuRecorder.start_monitor()
 
 
     def __contruct_gui(self):

@@ -38,6 +38,10 @@ class _OsuRecorder(QtCore.QObject):
         self.logger.debug('__init__ exit')
 
 
+    def start_monitor(self):
+        self.monitor.start()
+
+
     def __handle_new_replay(self, replay_file_name, wait=True, is_import=False):
         if wait:
             # Needed sleep to wait for osu! to finish writing the replay file
