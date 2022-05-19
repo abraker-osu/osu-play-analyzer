@@ -91,8 +91,10 @@ class _MapsDB():
         if num_maps_changed or osu_db_modified:
             if osu_db_modified:
                 # TODO: This needs a GUI interface
-                user_input = input('osu!.db was modified. If you modified a map for testing, it will not be found until you update db. Update db? (y/n)')
-                if not 'y' in user_input.lower(): return
+                #user_input = input('osu!.db was modified. If you modified a map for testing, it will not be found until you update db. Update db? (y/n)')
+                #if not 'y' in user_input.lower(): return
+                _MapsDB.logger.info(f'osu!.db was modified. If you modified or added maps, they will not be found until you update db')
+                return
 
             MapsDB.update_maps_db()
 
