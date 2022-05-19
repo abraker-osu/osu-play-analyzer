@@ -16,7 +16,6 @@ from app.file_managers import AppConfig
 from app.data_recording.osu_recorder import OsuRecorder
 
 
-
 """
 Set numpy settings
 """

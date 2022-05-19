@@ -7,7 +7,7 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 
-from app import App
+    from app.app import App
 
 
 if __name__ == '__main__':
