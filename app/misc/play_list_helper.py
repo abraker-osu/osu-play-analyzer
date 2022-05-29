@@ -1,19 +1,72 @@
 import time
+import itertools
 import multiprocessing
 import numpy as np
 import pandas as pd
 
+
 from osu_analysis import Mod
-from app.file_managers import MapsDB, score_data_obj
+from app.misc.task_proc import TaskProc
+from app.file_managers import score_data_obj
+from app.file_managers.db_mgr import MapsDB
 
 
 class PlayListHelper():
 
+    def __init__(self):
+        self.data_queue = multiprocessing.Queue()
+
+
+
+    def reload_map_list_worker_thread(self):
+        """
+        Splits workload into batches of 100 maps to process
+        and distributes those batches across 4 processes.
+
+        This allows the gui to continue working while adding
+        loaded maps as they are processed. Sends completed
+        batches via `self.data_queue`.
+        """
+        # Thanks https://stackoverflow.com/a/62913856
+        def batcher(iterable, batch_size):
+            iterator = iter(iterable)
+            while batch := list(itertools.islice(iterator, batch_size)):
+                # [1:] to remove the '/' at the beginning
+                yield [ _._v_pathname[1:] for _ in batch ]
+
+        batch_size = 100
+        
+        task_proc = TaskProc(num_workers=4)
+        task_proc.start(task=self.do_read_task)
+
+        nodes = score_data_obj.data()._handle.get_node('/')
+        for batch in batcher(nodes, batch_size):
+            task_proc.add(batch)
+
+        task_proc.end()
+
+
+    def do_read_task(self, data):
+        """
+        Processes a batch of md5 strings to get map data
+        """
+        play_list_data = map(PlayListHelper.do_read, data)
+        df = pd.DataFrame(play_list_data, columns=
+            ['md5', 'Name', 'Mods', 'Time', 'Data', 'Avg BPM', 'Avg Lin Vel', 'Avg Ang Vel']
+        )
+
+        self.data_queue.put(df)
+
+
     @staticmethod
     def do_read(md5_str):
+        """
+        Processes a single md5 str to get map data
+        """
         score_data = score_data_obj.data(md5_str)
 
         return [
+            md5_str,
             PlayListHelper.map_name_str(md5_str),
             PlayListHelper.map_mods_str(score_data),
             PlayListHelper.map_timestamp_str(score_data),
