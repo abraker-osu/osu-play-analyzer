@@ -31,14 +31,14 @@ class PlayListHelper():
         def batcher(iterable, batch_size):
             iterator = iter(iterable)
             while batch := list(itertools.islice(iterator, batch_size)):
-                yield [ _._v_pathname for _ in batch ]
+                yield [ idx for idx, df in batch ]
 
         batch_size = 100
         
         task_proc = TaskProc(num_workers=4)
         task_proc.start(task=self.do_read_task)
 
-        nodes = score_data_obj.data()._handle.get_node('/')
+        nodes = score_data_obj.data().groupby(level=0)
         for batch in batcher(nodes, batch_size):
             task_proc.add(batch)
 

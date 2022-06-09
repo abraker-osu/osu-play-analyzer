@@ -94,6 +94,7 @@ class ScoreNpy():
         size = score_data.shape[0]
 
         df = pd.DataFrame()
+        df['MD5']         = [ map_md5 ] * size
         df['TIMESTAMP']   = np.full(size, int(timestamp))
         df['MODS']        = np.full(size, mods)
         df['CS']          = np.full(size, cs)
@@ -108,7 +109,7 @@ class ScoreNpy():
         df['TYPE_MAP']    = score_data['action']
         df['TYPE_HIT']    = score_data['type']
 
-        df.set_index(['TIMESTAMP', 'IDXS'], inplace=True)
+        df.set_index(['MD5', 'TIMESTAMP', 'IDXS'], inplace=True)
         return df
 
 
