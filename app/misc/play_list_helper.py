@@ -31,8 +31,7 @@ class PlayListHelper():
         def batcher(iterable, batch_size):
             iterator = iter(iterable)
             while batch := list(itertools.islice(iterator, batch_size)):
-                # [1:] to remove the '/' at the beginning
-                yield [ _._v_pathname[1:] for _ in batch ]
+                yield [ _._v_pathname for _ in batch ]
 
         batch_size = 100
         
@@ -51,11 +50,11 @@ class PlayListHelper():
         Processes a batch of md5 strings to get map data
         """
         play_list_data = map(PlayListHelper.do_read, data)
-        df = pd.DataFrame(play_list_data, columns=
-            ['md5', 'Name', 'Mods', 'Time', 'Data', 'Avg BPM', 'Avg Lin Vel', 'Avg Ang Vel']
+        self.data_queue.put(
+            pd.DataFrame(play_list_data, columns=
+                ['md5', 'Name', 'Mods', 'Time', 'Data', 'Avg BPM', 'Avg Lin Vel', 'Avg Ang Vel']
+            )
         )
-
-        self.data_queue.put(df)
 
 
     @staticmethod
@@ -142,3 +141,9 @@ class PlayListHelper():
         data = data[~np.isnan(data)]
 
         return f'{np.mean(data):.2f}'
+
+
+    @staticmethod
+    def do_get_timestamps(map_md5_str):
+        score_data = score_data_obj.data(map_md5_str)
+        return np.unique(score_data.index.get_level_values(0))

@@ -22,13 +22,13 @@ class NpyManager():
 
     def append(self, entry_name, data):
         self.__data_file.close()
-        data.to_hdf(self.__save_file, f'_{entry_name}', append=True)       
+        data.to_hdf(self.__save_file, entry_name, append=True)       
         self.__data_file = pd.HDFStore(self.__save_file)
 
 
     def rewrite(self, md5, data):
         self.__data_file.close()
-        data.to_hdf(self.__save_file, f'_{md5}', append=False)
+        data.to_hdf(self.__save_file, md5, append=False)
         self.__data_file = pd.HDFStore(self.__save_file)
         
 
@@ -41,11 +41,15 @@ class NpyManager():
 
 
     def is_entry_exist(self, entry_name):
-        return f'_{entry_name}' in self.__data_file.keys()
+        return entry_name in self.__data_file.keys()
 
+
+    def get_num_entries(self):
+        return len(self.__data_file)
+        
 
     def get_entries(self):
-        # Drop the prefix '/_'
+        # Drop the prefix '/'
         return [ key[1:] for key in self.__data_file.keys() ]
 
 

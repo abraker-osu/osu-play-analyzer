@@ -86,19 +86,7 @@ class _OsuRecorder(QtCore.QObject):
         # Save data and emit to notify other components that there is a new replay
         diff_data = DiffNpy.get_data(score_data)
         score_data = score_data.join(diff_data, on='IDXS')
-
-        try: score_data_obj.append(replay.beatmap_hash, score_data)
-        except ValueError as e:
-            self.logger.error(
-                '\n' +
-                '============================================================\n' +
-                f'Error saving data: {e}\n' +
-                'The data format has probably changed.\n' +
-                f'You will need to delete "{diff_data_obj.save_file}" and reimport plays.\n' +
-                '============================================================\n' +
-                '\n'
-            )
-            return
+        score_data_obj.append(replay.beatmap_hash, score_data)
 
         self.new_replay_event.emit(
             (
