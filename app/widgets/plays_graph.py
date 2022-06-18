@@ -1,3 +1,5 @@
+import threading
+
 import pyqtgraph
 from pyqtgraph import QtCore
 
@@ -57,7 +59,7 @@ class PlaysGraph(pyqtgraph.PlotWidget):
 
         # Mutex required to ensure multiple calls don't attempt to access
         # an outdated `self.map_md5_strs`. This mutex is acquired with the
-        # assumption all code paths end with `__region_changed_event`, where
+        # assumption all code paths end with `__plot_timestamps`, where
         # this mutex is then released.
         self.__timestamps_mutex.acquire()
         self.map_md5_strs = map_md5_strs
@@ -118,11 +120,12 @@ class PlaysGraph(pyqtgraph.PlotWidget):
             # Otherwise, still need to notify other components of the data change
             self.__region_changed_event()
 
+        self.__timestamps_mutex.release()
+
 
     def __region_changed_event(self):
         self.logger.debug('__region_changed_event')
         self.region_changed.emit(self.map_md5_strs, self.get_selected())
-        self.__timestamps_mutex.release()
     
 
     def get_selected(self):
