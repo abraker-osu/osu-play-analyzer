@@ -12,7 +12,9 @@ class PlaysGraph(pyqtgraph.PlotWidget):
 
     logger = Logger.get_logger(__name__)
 
-    region_changed = QtCore.pyqtSignal(list, list)
+    region_changed = QtCore.pyqtSignal(list, object)
+
+    __timestamps_load_done = QtCore.pyqtSignal(object)
 
     def __init__(self):
         self.logger.debug(f'__init__ enter')
@@ -36,6 +38,9 @@ class PlaysGraph(pyqtgraph.PlotWidget):
         self.__region_plot.sigRegionChangeFinished.connect(self.__region_changed_event)
         self.addItem(self.__region_plot)
 
+        self.__timestamps_mutex = threading.Lock()
+        self.__timestamps_load_done.connect(self.__plot_timestamps)
+
         self.logger.debug(f'__init__ exit')
 
 
@@ -44,11 +49,39 @@ class PlaysGraph(pyqtgraph.PlotWidget):
             self.logger.debug(f'plot_plays - No data to plot')
             return
 
-        self.map_md5_strs = map_md5_strs
-        
-        score_datas = [ score_data_obj.data(map_md5_str) for map_md5_str in map_md5_strs ]
-        hit_timestamps = np.concatenate([ np.unique(score_data.index.get_level_values(0)) for score_data in score_datas ]).flatten()
+        if self.__timestamps_mutex.locked():
+            self.logger.debug(f'plot_plays - __timestamps_mutex locked')
+            return
 
+        self.logger.debug(f'plot_plays - ')
+
+        # Mutex required to ensure multiple calls don't attempt to access
+        # an outdated `self.map_md5_strs`. This mutex is acquired with the
+        # assumption all code paths end with `__region_changed_event`, where
+        # this mutex is then released.
+        self.__timestamps_mutex.acquire()
+        self.map_md5_strs = map_md5_strs
+
+        # Thread gets list of timestamps
+        thread = threading.Thread(target=self.__load_timestamps)
+        thread.start()
+            
+
+    def __load_timestamps(self):
+        
+        def do_get_timestamps(map_md5_str):
+            score_data = score_data_obj.data(map_md5_str)
+            return np.unique(score_data.index.get_level_values(0))
+
+        hit_timestamps = map(do_get_timestamps, self.map_md5_strs)
+        hit_timestamps = list(hit_timestamps)
+        hit_timestamps = np.hstack(hit_timestamps)
+
+        # Calls __plot_timestamps
+        self.__timestamps_load_done.emit(hit_timestamps)
+
+
+    def __plot_timestamps(self, hit_timestamps):
         # Calculate view
         xMin = min(hit_timestamps) - 1  # -1 minute
         xMax = max(hit_timestamps) + 1  # +1 minute
@@ -78,27 +111,23 @@ class PlaysGraph(pyqtgraph.PlotWidget):
             left_center  = view_center - 1.1*half_range
             right_center = view_center + 1.1*half_range
 
+            # Calls __region_changed_event
             self.__region_plot.setBounds([left_center, right_center])
             self.__region_plot.setRegion([left_center, right_center])
         else:
             # Otherwise, still need to notify other components of the data change
-            self.__region_changed_event(self.__region_plot)
+            self.__region_changed_event()
 
 
-    def __region_changed_event(self, region):
+    def __region_changed_event(self):
         self.logger.debug('__region_changed_event')
-        
-        region = region.getRegion()
-        timestamps = [ timestamp for timestamp in self.plot.getData()[0] if region[0] < timestamp < region[1] ]
-
-        #select = (region[0] <= self.play_data[:, ScoreNpyData.TIMESTAMP]) & (self.play_data[:, ScoreNpyData.TIMESTAMP] <= region[1])
-        #self.region_changed.emit(self.play_data[select])
-        self.region_changed.emit(self.map_md5_strs, timestamps)
+        self.region_changed.emit(self.map_md5_strs, self.get_selected())
+        self.__timestamps_mutex.release()
     
 
     def get_selected(self):
         region = self.__region_plot.getRegion()
+        timestamps = self.plot.getData()[0]
 
-        timestamps = [ timestamp for timestamp in self.plot.getData()[0] if region[0] < timestamp < region[1] ]
-        return timestamps
-
+        select = ((region[0] < timestamps) & (timestamps < region[1]))
+        return timestamps[select]
