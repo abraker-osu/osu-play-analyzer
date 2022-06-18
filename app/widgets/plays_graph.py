@@ -70,14 +70,9 @@ class PlaysGraph(pyqtgraph.PlotWidget):
             
 
     def __load_timestamps(self):
-        
-        def do_get_timestamps(map_md5_str):
-            score_data = score_data_obj.data(map_md5_str)
-            return np.asarray([ timestamp for timestamp, _ in score_data.groupby(level=0) ], dtype=np.uint64)
-
-        hit_timestamps = map(do_get_timestamps, self.map_md5_strs)
-        hit_timestamps = list(hit_timestamps)
-        hit_timestamps = np.hstack(hit_timestamps)
+        hit_timestamps = np.asarray([ 
+            idx[1] for idx, df in score_data_obj.data().groupby([ 'MD5', 'TIMESTAMP' ]) if idx[0] in self.map_md5_strs
+        ], dtype=np.uint64)
 
         # Calls __plot_timestamps
         self.__timestamps_load_done.emit(hit_timestamps)
