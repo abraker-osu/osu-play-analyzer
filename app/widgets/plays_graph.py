@@ -73,7 +73,7 @@ class PlaysGraph(pyqtgraph.PlotWidget):
         
         def do_get_timestamps(map_md5_str):
             score_data = score_data_obj.data(map_md5_str)
-            return np.unique(score_data.index.get_level_values(0))
+            return np.asarray([ timestamp for timestamp, _ in score_data.groupby(level=0) ], dtype=np.uint64)
 
         hit_timestamps = map(do_get_timestamps, self.map_md5_strs)
         hit_timestamps = list(hit_timestamps)
