@@ -175,13 +175,13 @@ class CompositionViewer(QtGui.QWidget):
 
         if len(timestamps) == 0:
             return
-
-        score_datas = [ score_data_obj.data(map_md5_str) for map_md5_str in map_md5_strs ]
-        score_data = pd.concat(score_datas)
-        score_data = score_data.loc[timestamps]
-
+        
         # Save filtered score data for play_data compilation when ROI selections are made
-        self.score_data = score_data
+        idx_data = score_data_obj.data().groupby([ 'MD5', 'TIMESTAMP' ])
+        self.score_data = pd.concat([
+            df for idx, df in idx_data if ((idx[0] in map_md5_strs) and (idx[1] in timestamps))
+        ])
+
         self.update_diff_data()
 
 
@@ -496,7 +496,7 @@ class CompositionViewer(QtGui.QWidget):
             #i_data = np.apply_along_axis(score_data_to_str, 1, self.score_data)
 
             # Make sure no invalid values are passed to display or it will won't 
-            # display points due to innability to compute bounds
+            # display points due to inability to compute bounds
             inv_filter = ~(np.isnan(self.xy_data).any(axis=1))
 
             #self.data_plot.setData(self.xy_data[inv_filter, 0], self.xy_data[inv_filter, 1], data=i_data[inv_filter])
