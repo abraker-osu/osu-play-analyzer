@@ -244,13 +244,15 @@ class MapDisplay(QtGui.QWidget):
 
 
     def set_from_play_data(self, play_data, md5_strs):
-        if len(md5_strs) != 1:
-            print('Error: multiple maps are selected')
+        if len(md5_strs) == 0:
+            print('Error: No maps are selected')
             return
 
-        # Possibly need to remove '_' if the md5 string comes from the pandas db
-        md5_str = md5_strs[0][1:] if (md5_strs[0][0] == '_') else md5_str[0]
-        map_file_name, _ = MapsDB.get_map_file_name(md5_str)
+        if len(md5_strs) > 1:
+            print('Warning: multiple maps are selected. Taking just the first one...')
+
+        # In the event multiple md5 strings were passed, take just the first one
+        map_file_name, _ = MapsDB.get_map_file_name(md5_strs[0])
 
         if map_file_name is None:
             print('Map display: map file not found')
