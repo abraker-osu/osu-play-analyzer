@@ -86,7 +86,7 @@ class _OsuRecorder(QtCore.QObject):
         # Save data and emit to notify other components that there is a new replay
         diff_data = DiffNpy.get_data(score_data)
         score_data = score_data.join(diff_data, on='IDXS')
-        score_data_obj.append(replay.beatmap_hash, score_data)
+        score_data_obj.append(score_data)
 
         self.new_replay_event.emit(
             (

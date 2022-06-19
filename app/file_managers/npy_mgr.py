@@ -11,7 +11,7 @@ class NpyManager():
     def __init__(self, name):
         self.__save_file = f'data/{name}.h5'
         self.__data_file = pd.HDFStore(self.__save_file, mode='a')
-        self.__dataframe = self.__data_file['/a']
+        self.__dataframe = self.__data_file['/play_data']
 
 
     def data(self, entry_name=None):
@@ -21,18 +21,12 @@ class NpyManager():
         return self.__dataframe.loc[entry_name]
 
 
-    def append(self, entry_name, data):
-        self.__data_file.close()
-        data.to_hdf(self.__save_file, entry_name, append=True)       
-        self.__data_file = pd.HDFStore(self.__save_file)
-        self.__dataframe = self.__data_file['/a']
+    def append(self, data):
+        self.__data_file.append('play_data', data, data_columns=[ 'MD5', 'TIMESTAMP', 'IDX' ])
 
 
     def rewrite(self, md5, data):
-        self.__data_file.close()
-        data.to_hdf(self.__save_file, md5, append=False)
-        self.__data_file = pd.HDFStore(self.__save_file)
-        self.__dataframe = self.__data_file['/a']
+        self.__dataframe.loc[md5] = data
         
 
     def close(self):
@@ -59,7 +53,7 @@ class NpyManager():
         self.__data_file.close()
         os.remove(self.save_file)
         self.__data_file = pd.HDFStore(self.__save_file)
-        self.__dataframe = self.__data_file['/a']   
+        self.__dataframe = self.__data_file['/play_data']   
 
 
 score_data_obj = NpyManager('score_data')
