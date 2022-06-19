@@ -23,6 +23,7 @@ class HitDistrGraph(QtGui.QWidget):
         self.__graph.setLabel('left', 'Freq', units='#', unitPrefix='')
         self.__graph.setLabel('bottom', 'Hit offset', units='ms', unitPrefix='')
         self.__graph.setLimits(xMin=-200, yMin=-1, xMax=200)
+        self.__graph.setXRange(-110, 110)
         self.__graph.enableAutoRange(axis='x', enable=False)
         self.__graph.enableAutoRange(axis='y', enable=False)
 
