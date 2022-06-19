@@ -158,10 +158,10 @@ class AimGraph(QtGui.QWidget):
             (play_data['TYPE_MAP'] == StdScoreData.ACTION_PRESS)
         data_misses = play_data[data_filter]
 
-        offsets_hits  = data_hits[[ 'X_HIT', 'Y_HIT' ]] - data_hits[[ 'X_MAP', 'Y_MAP' ]]
-        offsets_misses = data_misses[[ 'X_HIT', 'Y_HIT' ]] - data_misses[[ 'X_MAP', 'Y_MAP' ]]
+        offsets_hits  = data_hits[[ 'X_HIT', 'Y_HIT' ]].values - data_hits[[ 'X_MAP', 'Y_MAP' ]].values
+        offsets_misses = data_misses[[ 'X_HIT', 'Y_HIT' ]].values - data_misses[[ 'X_MAP', 'Y_MAP' ]].values
 
-        self.plot_xy_data(offsets_hits.values, offsets_misses.values)
+        self.plot_xy_data(offsets_hits, offsets_misses)
 
 
     def plot_xy_data(self, offsets_hits, offsets_misses):
