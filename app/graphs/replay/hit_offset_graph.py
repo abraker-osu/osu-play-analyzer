@@ -31,6 +31,7 @@ class HitOffsetGraph(QtGui.QWidget):
 
         self.__plot_hits = self.__graph.plot(name='presses')
         self.__plot_rels = self.__graph.plot(name='releases')
+        self.__plot_rels.hide()
 
         self.__miss_plot = MissPlotItem()
         self.__graph.addItem(self.__miss_plot)
