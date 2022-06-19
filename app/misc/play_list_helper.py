@@ -78,7 +78,7 @@ class PlayListHelper():
 
     @staticmethod
     def map_name_str(md5_str):
-        result, _ = MapsDB.get_map_file_name(md5_str[1:])
+        result, _ = MapsDB.get_map_file_name(md5_str)
         if result == None:
             return md5_str
 
