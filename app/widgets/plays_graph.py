@@ -47,26 +47,28 @@ class PlaysGraph(pyqtgraph.PlotWidget):
 
 
     def plot_plays(self, map_md5_strs):
+        self.logger.debug(f'plot_plays - enter')
+
         if len(map_md5_strs) == 0:
-            self.logger.debug(f'plot_plays - No data to plot')
+            self.logger.warning(f'plot_plays - No data to plot')
             return
 
         if self.__timestamps_mutex.locked():
-            self.logger.debug(f'plot_plays - __timestamps_mutex locked')
+            self.logger.warning(f'plot_plays - __timestamps_mutex locked')
             return
-
-        self.logger.debug(f'plot_plays - ')
 
         # Mutex required to ensure multiple calls don't attempt to access
         # an outdated `self.map_md5_strs`. This mutex is acquired with the
-        # assumption all code paths end with `__plot_timestamps`, where
-        # this mutex is then released.
+        # assumption all code paths end with `__timestamps_load_done_event`, 
+        # where this mutex is then released.
         self.__timestamps_mutex.acquire()
         self.map_md5_strs = map_md5_strs
 
         # Thread gets list of timestamps
         thread = threading.Thread(target=self.__load_timestamps)
         thread.start()
+
+        self.logger.debug(f'plot_plays - exit')
             
 
     def __load_timestamps(self):
@@ -75,7 +77,9 @@ class PlaysGraph(pyqtgraph.PlotWidget):
         ], dtype=np.uint64)
 
         # Calls __plot_timestamps
+        self.logger.debug(f'__load_timestamps - __timestamps_load_done.emit ->')
         self.__timestamps_load_done.emit(hit_timestamps)
+        self.logger.debug(f'__load_timestamps - __timestamps_load_done.emit <-')
 
 
     def __plot_timestamps(self, hit_timestamps):

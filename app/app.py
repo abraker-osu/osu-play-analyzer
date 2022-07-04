@@ -194,7 +194,7 @@ class App(QtGui.QMainWindow):
 
 
     def new_replay_event(self, data, is_import):
-        self.logger.debug('new_replay_event')
+        self.logger.debug('new_replay_event - enter')
 
         map_data, replay_data, score_data, name, md5_str = data
 
@@ -215,6 +215,7 @@ class App(QtGui.QMainWindow):
             time_start = time.time()
             self.map_display_window.new_replay_event(map_data, replay_data, cs, ar, mods, name)
             self.logger.debug(f'map_display_window load time: {time.time() - time_start}')
+        self.logger.debug('new_replay_event - exit')
 
 
     def closeEvent(self, event):

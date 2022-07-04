@@ -47,6 +47,7 @@ class _OsuRecorder(QtCore.QObject):
             # Needed sleep to wait for osu! to finish writing the replay file
             time.sleep(2)
 
+        self.logger.debug('\n')
         self.logger.info(f'Processing replay: {replay_file_name}')
 
         try: replay = ReplayIO.open_replay(replay_file_name)
@@ -56,8 +57,8 @@ class _OsuRecorder(QtCore.QObject):
 
         QtWidgets.QApplication.processEvents()
 
-        if score_data_obj.is_entry_exist(replay.beatmap_hash):
-            self.logger.info(f'Replay already exists in data: {replay.beatmap_hash}')
+        if score_data_obj.is_entry_exist(replay.beatmap_hash, replay.timestamp):
+            self.logger.info(f'Replay already exists in data: md5={replay.beatmap_hash}  timestamp={replay.timestamp}')
             return
 
         if replay.game_mode != Gamemode.OSU:
@@ -67,7 +68,7 @@ class _OsuRecorder(QtCore.QObject):
         self.logger.debug('Determining beatmap...')
         map_file_name, is_gen = MapsDB.get_map_file_name(replay.beatmap_hash)
         if map_file_name == None:
-            self.logger.info(f'Warning: file_name is None. Unable to open map for replay with beatmap hash {replay.beatmap_hash}')
+            self.logger.warning(f'file_name is None. Unable to open map for replay with beatmap hash {replay.beatmap_hash}')
             return
 
         try:
@@ -75,7 +76,7 @@ class _OsuRecorder(QtCore.QObject):
             if is_gen and (AppConfig.cfg['delete_gen'] == True):
                 os.remove(map_file_name)
         except FileNotFoundError:
-            self.logger.info(f'Warning: Map {map_file_name} not longer exists!')
+            self.logger.warning(f'Map {map_file_name} not longer exists!')
             return
             
         QtWidgets.QApplication.processEvents()

@@ -41,7 +41,7 @@ class PlayList(pyqtgraph.TableWidget):
     __bulk_load_done  = QtCore.pyqtSignal()
 
     def __init__(self):
-        self.logger.debug(f'__init__ enter')
+        self.logger.debug(f'__init__ - enter')
 
         pyqtgraph.TableWidget.__init__(self)
 
@@ -59,11 +59,12 @@ class PlayList(pyqtgraph.TableWidget):
             
         self.selectionModel().selectionChanged.connect(self.__list_select_event)
 
-        self.logger.debug(f'__init__ exit')
+        self.logger.debug(f'__init__ - exit')
 
 
     def load_latest_play(self, is_import, map_md5_str):
         if score_data_obj.is_empty():
+            self.logger.warning('load_play_md5 - empty `score_data_obj` encountered')
             return
 
         # Get list of hashes and mods for loaded maps

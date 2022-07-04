@@ -168,7 +168,7 @@ class CompositionViewer(QtGui.QWidget):
 
         At this point the supplied `score_data` is already filtered by map, mod, and time of play
         '''
-        self.logger.debug('set_composition_from_score_data')
+        self.logger.debug('set_composition_from_score_data - enter')
 
         if len(map_md5_strs) == 0:
             return
@@ -182,7 +182,10 @@ class CompositionViewer(QtGui.QWidget):
             df for idx, df in idx_data if ((idx[0] in map_md5_strs) and (idx[1] in timestamps))
         ])
 
+        self.logger.debug('set_composition_from_score_data - Updating just displayed data...')
         self.update_diff_data()
+
+        self.logger.debug('set_composition_from_score_data - exit')
 
 
     def update_diff_data(self):
