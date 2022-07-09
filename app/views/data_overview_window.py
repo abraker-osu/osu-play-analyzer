@@ -118,17 +118,18 @@ class DataOverviewWindow(QtGui.QWidget):
             return
 
         timestamps = np.unique(score_data.index.get_level_values(0))
+        md5s = self.map_list.get_selected_md5s()
 
-        if len(timestamps) == 0:
+        if (len(md5s) == 0) or (len(timestamps) == 0):
             self.status_label.setText('A play must be selected to show the map')
             return
 
-        if len(timestamps) > 1:
+        if (len(md5s) > 1) or (len(timestamps) > 1):
             self.status_label.setText('Only one play must be selected to show the map')
             return
 
         self.status_label.setText('')
-        self.show_map_event.emit(score_data, self.selected_md5_strs)
+        self.show_map_event.emit(score_data, md5s)
 
 
     def __open_replay_dialog(self):
