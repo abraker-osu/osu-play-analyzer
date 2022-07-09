@@ -1,4 +1,5 @@
 import sqlite3
+import threading
 import os
 
 from app.misc.Logger import Logger
@@ -11,7 +12,9 @@ class _MapsDB():
     logger = Logger.get_logger(__name__)
 
     # For resolving replays to maps
-    db = sqlite3.connect('data/maps.db')
+    thread_id = threading.get_ident()
+
+    db = sqlite3.connect('data/maps.db', check_same_thread=False)
     osu_path = AppConfig.cfg['osu_dir']
 
     @staticmethod
@@ -105,6 +108,10 @@ class _MapsDB():
 
 
     def update_maps_db(self):
+        thread_id = threading.get_ident()
+        if thread_id != _MapsDB.thread_id:
+            raise Exception('Attempt to write to MapsDB from another thread')
+
         osu_path = AppConfig.cfg['osu_dir']
 
         num_beatmaps_read = OsuDbReader.get_num_beatmaps(f'{osu_path}/osu!.db')

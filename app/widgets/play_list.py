@@ -15,7 +15,6 @@ Design note: Maybe have a scatter plot instead. Really depends on how much data 
 """
 import time
 import queue
-from socket import timeout
 import threading
 import pyqtgraph
 from pyqtgraph.Qt import QtGui, QtCore
@@ -38,7 +37,6 @@ class PlayList(pyqtgraph.TableWidget):
     new_map_loaded = QtCore.pyqtSignal()
 
     __batch_processed = QtCore.pyqtSignal(object)
-    __bulk_load_done  = QtCore.pyqtSignal()
 
     def __init__(self):
         self.logger.debug(f'__init__ - enter')
@@ -138,39 +136,57 @@ class PlayList(pyqtgraph.TableWidget):
 
 
     def reload_map_list(self):
+        self.logger.debug('reload_map_list - enter')
+
         # Clearing table resets table config
         self.clear()
         self.__table_is_configured = False
 
-        # Thread collects batches of data that the next thread listens for
-        thread = threading.Thread(target=self.play_list_helper.reload_map_list_worker_thread)
-        thread.start()
-
-        # Thread listens for batches of data from prev thread
-        thread = threading.Thread(target=self.__reload_map_list_listener_thread)
+        thread = threading.Thread(target=self.__reload_map_list_thread)
         thread.start()
 
 
-    def __reload_map_list_listener_thread(self):
-        """
-        Listens for completed batches. Complete batches
-        are then forwarded to the main gui thread where
-        they are applied to the play list table.
-        """
-        timeout = 10
+    def __reload_map_list_thread(self):
+        score_data = score_data_obj.data()
+        if score_data is None:
+            return
 
-        while timeout > 0:
-            try: df = self.play_list_helper.data_queue.get(block=False)
-            except queue.Empty:
-                timeout -= 0.1
-                time.sleep(0.1)
-                continue
-            
-            timeout = 10
-            self.__batch_processed.emit(df)
+        data = []
 
-        self.__bulk_load_done.emit()
-        
+        entries = score_data.groupby(level=0)
+        num_entries = len(entries)
+
+        for i, entry in enumerate(entries):
+            data.append([
+                entry[0],
+                PlayListHelper.map_name_str(entry[0]),
+                PlayListHelper.map_mods_str(entry[1]),
+                PlayListHelper.map_timestamp_str(entry[1]),
+                PlayListHelper.map_num_data(entry[1]),
+                PlayListHelper.map_avg_bpm(entry[1]),
+                PlayListHelper.map_avg_lin_vel(entry[1]),
+                PlayListHelper.map_avg_ang_vel(entry[1]),
+            ])
+
+            # Send data for GUI update every 100 entries
+            if ((i % 100) == 0) or (i == (num_entries - 1)):
+                self.__batch_processed.emit(
+                    pd.DataFrame(
+                        data[:],
+                        columns=['md5', 'Name', 'Mods', 'Time', 'Data', 'Avg BPM', 'Avg Lin Vel', 'Avg Ang Vel']
+                    )
+                )
+
+                data = []
+
+
+    def get_num_selected(self):
+        return len(self.selectionModel().selectedRows())
+
+
+    def get_selected_md5s(self):
+        return [ int(self.model().data(self.model().index(i, 0), role=QtCore.Qt.DisplayRole), 16) for i in self.selectionModel().selectedRows() ]
+
     
     def __add_data(self, data):
         self.appendData(data.values)
@@ -188,10 +204,6 @@ class PlayList(pyqtgraph.TableWidget):
         header_labels = [ 'md5', 'Name', 'Mods', 'Time', 'Data', 'Avg BPM', 'Avg Lin Vel', 'Avg Ang Vel' ]
         self.setHorizontalHeaderLabels(header_labels)
 
-        # Select first row
-        if self.rowCount() > 0:
-            self.selectRow(0)
-        
         # Hide displayed columns
         self.setColumnHidden(0, True)
 
@@ -199,11 +211,9 @@ class PlayList(pyqtgraph.TableWidget):
 
 
     def __list_select_event(self, _):
-        self.logger.info_debug(True, '__list_select_event\n')
-
         selected_rows = self.selectionModel().selectedRows(column=0)
         md5_strs = [ selected_row.data(role=QtCore.Qt.DisplayRole) for selected_row in selected_rows ]
 
-        self.logger.debug('map_selected.emit ->')
+        self.logger.debug('__list_select_event - map_selected.emit ->')
         self.map_selected.emit(md5_strs)
-        self.logger.debug('map_selected.emit <-')
+        self.logger.debug('__list_select_event - map_selected.emit <-')
