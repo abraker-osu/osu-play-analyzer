@@ -11,6 +11,10 @@ from app.data_recording.data import DiffNpyData, ScoreNpyData
 from app.file_managers import MapsDB, score_data_obj
 
 
+__ROI_SELECTIONS_EN__ = False
+
+
+
 class CompositionViewer(QtGui.QWidget):
 
     logger = Logger.get_logger(__name__)
@@ -53,8 +57,10 @@ class CompositionViewer(QtGui.QWidget):
         self.data_type_selection.setSelectionMode(QtGui.QAbstractItemView.NoSelection)
 
         self.num_data_points_label = QtGui.QLabel('Num data points selected: 0')
-        self.reset_roi_selections_button = QtGui.QPushButton('Reset selections')
-        self.reset_roi_selections_button.setToolTip('Resets selections to select all data')
+
+        if __ROI_SELECTIONS_EN__:
+            self.reset_roi_selections_button = QtGui.QPushButton('Reset selections')
+            self.reset_roi_selections_button.setToolTip('Resets selections to select all data')
 
         self.x_axis_selection = QtGui.QButtonGroup()
         self.x_axis_selection.setExclusive(True)
@@ -100,24 +106,25 @@ class CompositionViewer(QtGui.QWidget):
         }
         self.num_selections = len(selections)
 
-        self.roi_selections = {}
-        for id_y in range(self.num_selections):
-            for id_x in range(self.num_selections):
-                if id_x == id_y:
-                    continue
+        if __ROI_SELECTIONS_EN__:
+            self.roi_selections = {}
+            for id_y in range(self.num_selections):
+                for id_x in range(self.num_selections):
+                    if id_x == id_y:
+                        continue
 
-                roi_id = self.__get_roi_id(id_x, id_y)
-                self.roi_selections[roi_id] = {
-                    'roi' : pyqtgraph.PolyLineROI(
-                        [[0, 0], [0, 100], [100, 100], [100, 0]], 
-                        pen=pyqtgraph.mkPen((0, 255, 0, 255), width=0.5), 
-                        closed=True
-                    ),
-                    'select' : np.empty(0, dtype=np.bool),
-                }
+                    roi_id = self.__get_roi_id(id_x, id_y)
+                    self.roi_selections[roi_id] = {
+                        'roi' : pyqtgraph.PolyLineROI(
+                            [[0, 0], [0, 100], [100, 100], [100, 0]], 
+                            pen=pyqtgraph.mkPen((0, 255, 0, 255), width=0.5), 
+                            closed=True
+                        ),
+                        'select' : np.empty(0, dtype=np.bool),
+                    }
 
-                self.roi_selections[roi_id]['roi'].sigRegionChanged.connect(lambda _: self.__roi_selection_event(emit_data=False))
-                self.roi_selections[roi_id]['roi'].sigRegionChangeFinished.connect(lambda _: self.__roi_selection_event(emit_data=True))
+                    self.roi_selections[roi_id]['roi'].sigRegionChanged.connect(lambda _: self.__roi_selection_event(emit_data=False))
+                    self.roi_selections[roi_id]['roi'].sigRegionChangeFinished.connect(lambda _: self.__roi_selection_event(emit_data=True))
 
         self.data_type_selection.addItem('x-axis                                 y-axis')
 
@@ -145,12 +152,15 @@ class CompositionViewer(QtGui.QWidget):
         self.right_side_layout.setContentsMargins(0, 0, 0, 0)
         self.right_side_layout.addWidget(self.data_type_selection)
         self.right_side_layout.addWidget(self.num_data_points_label)
-        self.right_side_layout.addWidget(self.reset_roi_selections_button)
+
+        if  __ROI_SELECTIONS_EN__:
+            self.right_side_layout.addWidget(self.reset_roi_selections_button)
 
         self.main_layout.addWidget(self.plot_widget)
         self.main_layout.addLayout(self.right_side_layout)
 
-        self.reset_roi_selections_button.clicked.connect(self.reset_roi_selections)
+        if __ROI_SELECTIONS_EN__:
+            self.reset_roi_selections_button.clicked.connect(self.reset_roi_selections)
 
         self.x_axis_selection.idPressed.connect(self.__x_axis_selection_event)
         self.y_axis_selection.idPressed.connect(self.__y_axis_selection_event)
@@ -214,155 +224,213 @@ class CompositionViewer(QtGui.QWidget):
                 xy_data[:, 0] = self.__id_to_data(id_x)
                 xy_data[:, 1] = self.__id_to_data(id_y)
 
-                roi_id = self.__get_roi_id(id_x, id_y)
-                self.__update_roi_selection(roi_id, xy_data)
+                if __ROI_SELECTIONS_EN__:
+                    roi_id = self.__get_roi_id(id_x, id_y)
+                    self.__update_roi_selection(roi_id, xy_data)
 
-        if self.score_data.shape[0] < 10000:
+
+    if __ROI_SELECTIONS_EN__:
+
+        def get_selected(self):
+            '''
+            Composes the selections in all planes together, and returns the resulting selected play data.
+            '''
+            if type(self.score_data) == type(None):
+                return
+
+            # Calculate master selection across all multidimensional planes
+            select = np.ones((self.score_data.shape[0]), dtype=np.bool)
+            for roi_selection in self.roi_selections.values():
+                select &= roi_selection['select']
+
+            #play_data_out = np.zeros((np.count_nonzero(select), self.score_data.shape[1] + self.diff_data.shape[1]), dtype=np.int64)
+            #play_data_out[:, :self.score_data.shape[1]] = self.score_data[select]
+            #play_data_out[:, self.score_data.shape[1]:] = self.diff_data[select]
+
+            # From https://github.com/ppy/osu/blob/master/osu.Game.Rulesets.Osu/Objects/OsuHitObject.cs#L137
+            #play_data_out[:, PlayNpyData.CS] = (108.8 - 8.96*play_data_out[:, PlayNpyData.CS])/2
+            #play_data_out[:, PlayNpyData.AR] /= 100
+
+            self.num_data_points_label.setText(f'Num data points selected: {np.count_nonzero(select)}')
+            return self.score_data[select]
+        
+        
+        def reset_roi_selections(self):
+            '''
+            Resets ROI selections to fit the entire displayed data
+            '''
+            if type(self.score_data) == type(None):
+                return
+
+            data = np.zeros((self.score_data.shape[0], 2))
+
+            for id_y in range(self.num_selections):
+                for id_x in range(self.num_selections):
+                    if id_y == id_x:
+                        continue
+
+                    data[:, 0] = self.__id_to_data(id_x)
+                    data[:, 1] = self.__id_to_data(id_y)
+                
+                    inv_filter = ~(np.isnan(data).any(axis=1))
+                    filtered_data = data[inv_filter]
+
+                    if filtered_data.shape[0] == 0:
+                        continue
+
+                    x0, x1 = np.min(filtered_data[:, 0]), np.max(filtered_data[:, 0])
+                    y0, y1 = np.min(filtered_data[:, 1]), np.max(filtered_data[:, 1])
+
+                    # Have some margin around the ROI
+                    x0 -= 1; x1 += 1
+                    y0 -= 1; y1 += 1
+
+                    roi_id = self.__get_roi_id(id_x, id_y)
+                    roi_plot = self.roi_selections[roi_id]['roi']
+
+                    is_already_displayed = (roi_plot.scene() != None)
+                    if not is_already_displayed:
+                        self.plot_widget.addItem(roi_plot)
+
+                    roi_plot.blockSignals(True)
+                    roi_plot.setState({
+                        'closed' : True,
+                        'angle'  : 0.0,
+                        'size'   : [1, 1],
+                        'pos'    : [0, 0],
+                        'points' : [ [x0, y0], [x1, y0], [x1, y1], [x0, y1] ],
+                    })
+                    roi_plot.blockSignals(False)
+
+                    if not is_already_displayed:
+                        self.plot_widget.removeItem(roi_plot)
+
+                    self.__update_roi_selection(roi_id, data)
+
             self.__process_master_selection(emit_data=True)
 
 
-    def get_selected(self):
-        '''
-        Composes the selections in all planes together, and returns the resulting selected play data.
-        '''
-        if type(self.score_data) == type(None):
-            return
+    # __ROI_SELECTIONS_EN__
+    else:
 
-        # Calculate master selection across all multidimensional planes
-        select = np.ones((self.score_data.shape[0]), dtype=np.bool)
-        for roi_selection in self.roi_selections.values():
-            select &= roi_selection['select']
+        def get_selected(self):
+            '''
+            Gets mask representing all visible data (including NaNs)
+            '''
+            if type(self.score_data) == type(None):
+                return
 
-        #play_data_out = np.zeros((np.count_nonzero(select), self.score_data.shape[1] + self.diff_data.shape[1]), dtype=np.int64)
-        #play_data_out[:, :self.score_data.shape[1]] = self.score_data[select]
-        #play_data_out[:, self.score_data.shape[1]:] = self.diff_data[select]
-
-        # From https://github.com/ppy/osu/blob/master/osu.Game.Rulesets.Osu/Objects/OsuHitObject.cs#L137
-        #play_data_out[:, PlayNpyData.CS] = (108.8 - 8.96*play_data_out[:, PlayNpyData.CS])/2
-        #play_data_out[:, PlayNpyData.AR] /= 100
-
-        self.num_data_points_label.setText(f'Num data points selected: {np.count_nonzero(select)}')
-        return self.score_data[select]
-
-
-    def __get_roi_id(self, id_x, id_y):
-        '''
-        Used to generate a unique ID for a given pair of axes.
-        '''
-        return id_y*self.num_selections + id_x
-
-
-    def __update_roi_selection(self, roi_id, xy_data):
-        '''
-        Updates the cached selection mask
-        '''
-        if type(xy_data) == type(None):
-            return
-
-        roi_plot = self.roi_selections[roi_id]['roi']
-        inv_filter = ~(np.isnan(xy_data).any(axis=1))
-        
-        self.roi_selections[roi_id]['select'] = np.zeros((xy_data.shape[0]), dtype=np.bool)
-        self.roi_selections[roi_id]['select'][~inv_filter] = True
-        self.roi_selections[roi_id]['select'][ inv_filter] = self.__select_data_in_roi(roi_plot, xy_data[inv_filter])
-
-
-    def reset_roi_selections(self):
-        '''
-        Resets ROI selections to fit the entire displayed data
-        '''
-        if type(self.score_data) == type(None):
-            return
-
-        data = np.zeros((self.score_data.shape[0], 2))
-
-        for id_y in range(self.num_selections):
-            for id_x in range(self.num_selections):
-                if id_y == id_x:
-                    continue
-
-                data[:, 0] = self.__id_to_data(id_x)
-                data[:, 1] = self.__id_to_data(id_y)
+            select = np.ones((self.score_data.shape[0]), dtype=np.bool)
             
-                inv_filter = ~(np.isnan(data).any(axis=1))
-                filtered_data = data[inv_filter]
-
-                if filtered_data.shape[0] == 0:
-                    continue
-
-                x0, x1 = np.min(filtered_data[:, 0]), np.max(filtered_data[:, 0])
-                y0, y1 = np.min(filtered_data[:, 1]), np.max(filtered_data[:, 1])
-
-                # Have some margin around the ROI
-                x0 -= 1; x1 += 1
-                y0 -= 1; y1 += 1
-
-                roi_id = self.__get_roi_id(id_x, id_y)
-                roi_plot = self.roi_selections[roi_id]['roi']
-
-                is_already_displayed = (roi_plot.scene() != None)
-                if not is_already_displayed:
-                    self.plot_widget.addItem(roi_plot)
-
-                roi_plot.blockSignals(True)
-                roi_plot.setState({
-                    'closed' : True,
-                    'angle'  : 0.0,
-                    'size'   : [1, 1],
-                    'pos'    : [0, 0],
-                    'points' : [ [x0, y0], [x1, y0], [x1, y1], [x0, y1] ],
-                })
-                roi_plot.blockSignals(False)
-
-                if not is_already_displayed:
-                    self.plot_widget.removeItem(roi_plot)
-
-                self.__update_roi_selection(roi_id, data)
-
-        self.__process_master_selection(emit_data=True)
+            self.num_data_points_label.setText(f'Num data points selected: {np.count_nonzero(select)}')
+            return self.score_data[select]
 
 
-    def __roi_selection_event(self, emit_data):
-        '''
-        This function is called whenever the user interacts with the ROI.
-        The function updates the selection cache of the displayed data 
-        (the current multidimensional plane), then composes the selections
-        in all planes together, and emits the resulting selected play data.
-        '''
-        self.logger.debug('__roi_selection_event')
-
-        # Update selection mask for the current plane
-        roi_id_xy = self.__get_roi_id(self.__id_x, self.__id_y)
-        roi_plot_xy = self.roi_selections[roi_id_xy]['roi']
-        self.__update_roi_selection(roi_id_xy, self.xy_data)
-
-        roi_id_yx = self.__get_roi_id(self.__id_y, self.__id_x)
-        roi_plot_yx = self.roi_selections[roi_id_yx]['roi']
-
-        # Flip points for the counterpart (x,y) -> (y,x) ROI along xy-axis diagonal
-        state = roi_plot_xy.getState()
-        for i in range(len(state['points'])):
-            point = state['points'][i]
-            state['points'][i] = pyqtgraph.Point(point[1], point[0])
-        
-        pos = state['pos']
-        state['pos'] = pyqtgraph.Point(pos[1], pos[0])
-
-        # ROI plots don't like it when you set state while not being displayed
-        # because it makes calls to `self.scene()` to remove stuff being displayed
-        # As a workaround, the ROI is temporarily added to the plot, then removed
-        #
-        # Applies the mirroring to the displayed ROI's counterpart
-        self.plot_widget.addItem(roi_plot_yx)
-        roi_plot_yx.blockSignals(True)
-        roi_plot_yx.setState(state)
-        roi_plot_yx.blockSignals(False)
-        self.plot_widget.removeItem(roi_plot_yx)
-
-        self.__process_master_selection(emit_data)
+        def reset_roi_selections(self):
+            '''
+            Stub
+            '''
+            pass
         
 
-    def __process_master_selection(self, emit_data):
+    if __ROI_SELECTIONS_EN__:
+
+        def __get_roi_id(self, id_x, id_y):
+            '''
+            Used to generate a unique ID for a given pair of axes.
+            '''
+            return id_y*self.num_selections + id_x
+
+
+        def __update_roi_selection(self, roi_id, xy_data):
+            '''
+            Updates the cached selection mask
+            '''
+            if type(xy_data) == type(None):
+                return
+
+            roi_plot = self.roi_selections[roi_id]['roi']
+            inv_filter = ~(np.isnan(xy_data).any(axis=1))
+            
+            filtered_xy_data = np.zeros((xy_data.shape[0]), dtype=np.bool)
+            filtered_xy_data[~inv_filter] = True
+            filtered_xy_data[ inv_filter] = self.__select_data_in_roi(roi_plot, xy_data[inv_filter])
+
+            self.roi_selections[roi_id]['select'] = filtered_xy_data
+
+
+        def __roi_selection_event(self, emit_data):
+            '''
+            This function is called whenever the user interacts with the ROI.
+            The function updates the selection cache of the displayed data 
+            (the current multidimensional plane), then composes the selections
+            in all planes together, and emits the resulting selected play data.
+            '''
+            self.logger.debug('__roi_selection_event')
+
+            # Update selection mask for the current plane
+            roi_id_xy = self.__get_roi_id(self.__id_x, self.__id_y)
+            roi_plot_xy = self.roi_selections[roi_id_xy]['roi']
+            self.__update_roi_selection(roi_id_xy, self.xy_data)
+
+            roi_id_yx = self.__get_roi_id(self.__id_y, self.__id_x)
+            roi_plot_yx = self.roi_selections[roi_id_yx]['roi']
+
+            # Flip points for the counterpart (x,y) -> (y,x) ROI along xy-axis diagonal
+            state = roi_plot_xy.getState()
+            for i in range(len(state['points'])):
+                point = state['points'][i]
+                state['points'][i] = pyqtgraph.Point(point[1], point[0])
+            
+            pos = state['pos']
+            state['pos'] = pyqtgraph.Point(pos[1], pos[0])
+
+            # ROI plots don't like it when you set state while not being displayed
+            # because it makes calls to `self.scene()` to remove stuff being displayed
+            # As a workaround, the ROI is temporarily added to the plot, then removed
+            #
+            # Applies the mirroring to the displayed ROI's counterpart
+            self.plot_widget.addItem(roi_plot_yx)
+            roi_plot_yx.blockSignals(True)
+            roi_plot_yx.setState(state)
+            roi_plot_yx.blockSignals(False)
+            self.plot_widget.removeItem(roi_plot_yx)
+
+            self.emit_master_selection()
+        
+
+        def __select_data_in_roi(self, roi_plot, data):
+            '''
+            Returns a mask array selecting displayed data points that are 
+            located within the given ROI.
+
+            Invalid values (NaN and Inf) must not be passed to this function.
+
+            # Thanks https://stackoverflow.com/a/2922778
+            '''
+            handles = [ pyqtgraph.Point(h.pos()) + roi_plot.pos() for h in roi_plot.getHandles() ]
+
+            is_in_roi = np.zeros((data.shape[0]), dtype=np.bool)
+            iters = list(range(len(handles)))
+
+            for i in iters:
+                _i = iters[i]
+                _j = iters[i - 1]
+
+                test1 = ((handles[_i].y() > data[:, 1]) != (handles[_j].y() > data[:, 1]))
+
+                if handles[_j].y() == handles[_i].y():
+                    test2 = False
+                else:
+                    test2 = (data[:, 0] < (handles[_j].x() - handles[_i].x()) * (data[:, 1] - handles[_i].y()) / (handles[_j].y() - handles[_i].y()) + handles[_i].x())
+
+                select = test1 & test2
+                is_in_roi[select] = ~is_in_roi[select]
+
+            return is_in_roi
+
+
+    def emit_master_selection(self):
         '''
         Composes the selections in all planes together, and emits the resulting selected play data.
         '''
@@ -370,41 +438,9 @@ class CompositionViewer(QtGui.QWidget):
         if type(play_data_out) == type(None):
             return
 
-        if emit_data:
-            self.logger.debug('region_changed.emit ->')
-            self.region_changed.emit(play_data_out)
-            self.logger.debug('region_changed.emit <-')
-
-
-    def __select_data_in_roi(self, roi_plot, data):
-        '''
-        Returns a mask array selecting displayed data points that are 
-        located within the given ROI.
-
-        Invalid values (NaN and Inf) must not be passed to this function.
-
-        # Thanks https://stackoverflow.com/a/2922778
-        '''
-        handles = [ pyqtgraph.Point(h.pos()) + roi_plot.pos() for h in roi_plot.getHandles() ]
-
-        is_in_roi = np.zeros((data.shape[0]), dtype=np.bool)
-        iters = list(range(len(handles)))
-
-        for i in iters:
-            _i = iters[i]
-            _j = iters[i - 1]
-
-            test1 = ((handles[_i].y() > data[:, 1]) != (handles[_j].y() > data[:, 1]))
-
-            if handles[_j].y() == handles[_i].y():
-                test2 = False
-            else:
-                test2 = (data[:, 0] < (handles[_j].x() - handles[_i].x()) * (data[:, 1] - handles[_i].y()) / (handles[_j].y() - handles[_i].y()) + handles[_i].x())
-
-            select = test1 & test2
-            is_in_roi[select] = ~is_in_roi[select]
-
-        return is_in_roi
+        self.logger.debug('region_changed.emit ->')
+        self.region_changed.emit(play_data_out)
+        self.logger.debug('region_changed.emit <-')
 
 
     def __set_composition_data(self, id_x=None, id_y=None, force_update=False):
@@ -426,10 +462,12 @@ class CompositionViewer(QtGui.QWidget):
 
         if can_update_x:
             if prev_xy_exists:
-                self.plot_widget.removeItem(self.roi_selections[self.__get_roi_id(self.__id_x, self.__id_y)]['roi'])
+                if __ROI_SELECTIONS_EN__:
+                    self.plot_widget.removeItem(self.roi_selections[self.__get_roi_id(self.__id_x, self.__id_y)]['roi'])
             
             if self.__id_y != None:
-                self.plot_widget.addItem(self.roi_selections[self.__get_roi_id(id_x, self.__id_y)]['roi'])
+                if __ROI_SELECTIONS_EN__:
+                    self.plot_widget.addItem(self.roi_selections[self.__get_roi_id(id_x, self.__id_y)]['roi'])
                 update_x = True
 
             if self.__id_x != None:
@@ -440,10 +478,12 @@ class CompositionViewer(QtGui.QWidget):
 
         if can_update_y:
             if prev_xy_exists:
-                self.plot_widget.removeItem(self.roi_selections[self.__get_roi_id(self.__id_x, self.__id_y)]['roi'])
+                if __ROI_SELECTIONS_EN__:
+                    self.plot_widget.removeItem(self.roi_selections[self.__get_roi_id(self.__id_x, self.__id_y)]['roi'])
             
             if self.__id_x != None:
-                self.plot_widget.addItem(self.roi_selections[self.__get_roi_id(self.__id_x, id_y)]['roi'])
+                if __ROI_SELECTIONS_EN__:
+                    self.plot_widget.addItem(self.roi_selections[self.__get_roi_id(self.__id_x, id_y)]['roi'])
                 update_y = True
 
             if self.__id_y != None:
