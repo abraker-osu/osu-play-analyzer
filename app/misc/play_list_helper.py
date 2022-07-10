@@ -48,11 +48,6 @@ class PlayListHelper():
 
 
     @staticmethod
-    def map_num_data(score_data):
-        return score_data.shape[0]
-
-
-    @staticmethod
     def map_avg_bpm(score_data): 
         # TODO: This needs to be select by single timestamp
         data = 15000/score_data['DIFF_T_PRESS_DIFF'].values

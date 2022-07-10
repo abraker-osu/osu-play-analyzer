@@ -162,7 +162,7 @@ class PlayList(pyqtgraph.TableWidget):
                 PlayListHelper.map_name_str(entry[0]),
                 PlayListHelper.map_mods_str(entry[1]),
                 PlayListHelper.map_timestamp_str(entry[1]),
-                PlayListHelper.map_num_data(entry[1]),
+                entry[1].shape[0],
                 PlayListHelper.map_avg_bpm(entry[1]),
                 PlayListHelper.map_avg_lin_vel(entry[1]),
                 PlayListHelper.map_avg_ang_vel(entry[1]),
