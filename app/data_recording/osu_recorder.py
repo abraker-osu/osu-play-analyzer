@@ -1,8 +1,6 @@
 import time
 import os
 
-import numpy as np
-
 from PyQt5 import QtCore, QtWidgets
 
 from osu_analysis import BeatmapIO, ReplayIO, Gamemode
@@ -20,8 +18,7 @@ class _OsuRecorder(QtCore.QObject):
 
     logger = Logger.get_logger(__name__)
 
-    new_replay_event = QtCore.pyqtSignal(tuple, bool)
-    handle_new_replay = QtCore.pyqtSignal(str, bool, bool)
+    new_replay_event = QtCore.pyqtSignal(dict)
 
     def __init__(self):
         self.logger.debug('__init__ enter')
@@ -32,8 +29,7 @@ class _OsuRecorder(QtCore.QObject):
             return
 
         self.monitor = Monitor(AppConfig.cfg['osu_dir'])
-        self.monitor.create_replay_monitor('Replay Grapher', lambda replay_file_name: self.handle_new_replay.emit(replay_file_name, True, False))
-        self.handle_new_replay.connect(self.__handle_new_replay)
+        self.monitor.create_replay_monitor('Replay Grapher', self.__handle_new_replay)
 
         self.logger.debug('__init__ exit')
 
@@ -54,8 +50,6 @@ class _OsuRecorder(QtCore.QObject):
         except Exception as e:
             self.logger.error(Utils.get_traceback(e, 'Error opening replay'))
             return
-
-        QtWidgets.QApplication.processEvents()
 
         if score_data_obj.is_entry_exist(replay.beatmap_hash, replay.timestamp):
             self.logger.info(f'Replay already exists in data: md5={replay.beatmap_hash}  timestamp={replay.timestamp}')
@@ -78,11 +72,8 @@ class _OsuRecorder(QtCore.QObject):
         except FileNotFoundError:
             self.logger.warning(f'Map {map_file_name} not longer exists!')
             return
-            
-        QtWidgets.QApplication.processEvents()
 
         map_data, replay_data, score_data = ScoreNpy.compile_data(beatmap, replay)
-        QtWidgets.QApplication.processEvents()
 
         # Save data and emit to notify other components that there is a new replay
         diff_data = DiffNpy.get_data(score_data)
