@@ -65,76 +65,63 @@ class PlayList(pyqtgraph.TableWidget):
             self.logger.warning('load_play_md5 - empty `score_data_obj` encountered')
             return
 
-        # Get list of hashes and mods for loaded maps
-        map_hashes = np.asarray([ int(self.model().data(self.model().index(i, 0), role=QtCore.Qt.DisplayRole), 16) for i in range(self.rowCount()) ])
+        # Get list of hashes for loaded maps
+        map_hashes = [ self.model().data(self.model().index(i, 0), role=QtCore.Qt.DisplayRole) for i in range(self.rowCount()) ]
 
-        if map_md5_str in map_hashes:
-            # Check if only one map is selected
-            if len(self.selectionModel().selectedRows()) <= 1:
-                # Select to new map
-                matching_items = self.findItems(str(map_md5_str), QtCore.Qt.MatchContains)
-                if matching_items:
-                    self.setCurrentItem(matching_items[0])
+        # FIXME: Plays from same map but different mods do not load
+        # TODO: Check against md5 AND mods
+        if map_md5_str not in map_hashes:
+            self.logger.debug('load_play_md5 - Map hash not found in table data. Creating new item entry...')
 
-            if not is_import:
-                # Fire off the new map loaded event so the roi selection in composition viewer is reset
-                self.logger.debug('new_map_loaded.emit ->')
-                self.new_map_loaded.emit()
-                self.logger.debug('new_map_loaded.emit <-')
+            # Process data to produce stuff that will be shown
+            score_data = score_data_obj.data(map_md5_str)
 
-            # Fire off the list select event so the timeline in overview window is updated
-            if not is_import:
-                self.__list_select_event(None)
-            return
+            # Build data structure and add to table
+            self.appendData(
+                pd.DataFrame([
+                    [
+                        map_md5_str,
+                        PlayListHelper.map_name_str(map_md5_str),
+                        PlayListHelper.map_mods_str(score_data),
+                        PlayListHelper.map_timestamp_str(score_data),
+                        score_data.shape[0],
+                        PlayListHelper.map_avg_bpm(score_data),
+                        PlayListHelper.map_avg_lin_vel(score_data),
+                        PlayListHelper.map_avg_ang_vel(score_data),
+                    ]
+                ],
+                columns=['md5', 'Name', 'Mods', 'Time', 'Data', 'Avg BPM', 'Avg Lin Vel', 'Avg Ang Vel']
+            ).values)
 
-        # Build data structure and add to table
-        data = np.empty(
-            shape=(1, ),
-            dtype=[
-                ('md5',  object),         # Map hash (str, not shown)
-                ('Name', object),         # Name of the map 
-                ('Mods', object),         # Mods used on the map (string)
-                ('Time', object),         # Time of the play
-                ('Data', np.uint64),      # Number of points in the play
-                ('Avg BPM', object),      # Average BPM of the map
-                ('Avg Lin Vel', object),  # Average linear velocity of the map
-                ('Avg Ang Vel', object),  # Average angular velocity of the map
-            ]
-        )
+            self.__check_table_config()
+        else:
+            # TODO: Update timestamp column
+            pass
 
-        # Process data to get stuff that will be shown
-        score_data = score_data_obj.data(map_md5_str)
+        # Check if one or no map is selected. If multiple maps 
+        # are selected, it is likely undesirable to switch to
+        # any one specific map, so don't do it
+        is_not_multiple_selected = (len(self.selectionModel().selectedRows()) <= 1)
 
-        data['md5']  = map_md5_str
-        data['Name'] = PlayListHelper.map_name_str(map_md5_str)
-        data['Mods'] = PlayListHelper.map_mods_str(score_data)
-        data['Time'] = PlayListHelper.map_timestamp_str(score_data)
-        data['Data'] = score_data.shape[0]
-        data['Avg BPM'] = PlayListHelper.map_avg_bpm(score_data)
-        data['Avg Lin Vel'] = PlayListHelper.map_avg_lin_vel(score_data)
-        data['Avg Ang Vel'] = PlayListHelper.map_avg_ang_vel(score_data)
-        
-        self.appendData(data)
-        self.__check_table_config()
-        
-        # Check if only one map is selected
-        if len(self.selectionModel().selectedRows()) <= 1:
-            # Select to new map
+        if is_not_multiple_selected:
+            # If map already exists in listings, select it
             matching_items = self.findItems(str(map_md5_str), QtCore.Qt.MatchContains)
-            if matching_items:
-                self.setCurrentItem(matching_items[0])
+            if not matching_items:
+                self.logger.warning('Failed to find map item in table data')
+                return
 
-            if not is_import:
-                # Fire off the new map loaded event so the roi selection in composition viewer is reset
-                self.logger.debug(f'new_map_loaded.emit ->')
-                self.new_map_loaded.emit()
-                self.logger.debug(f'new_map_loaded.emit <-')
+            self.logger.debug('load_play_md5 - Found map item in table data. Setting it as selected...')
 
-        if not is_import:
-            # Fire off the list select event so the timeline in overview window is updated
-            self.__list_select_event(None)
+            # Blocks the `selectionChanged` signal
+            self.selectionModel().blockSignals(True)
+            self.setCurrentItem(matching_items[0])
+            self.selectionModel().blockSignals(False)
 
+            # Select first row
+            #if self.rowCount() > 0:
+            #    self.selectRow(0)
 
+            
     def reload_map_list(self):
         self.logger.debug('reload_map_list - enter')
 
