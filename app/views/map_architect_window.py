@@ -457,8 +457,8 @@ class MapArchitectWindow(QtGui.QMainWindow):
             'bpms'       : list([ int(self.__controls[btn]['bpm_txtbx'].text()) for btn in self.__controls ]),
             'num_notes'  : int(self.num_notes_txtbx.text()),
             'rotation'   : int(self.rotation_txtbx.text()),
-            'cs'         : int(self.cs_txtbx.text()),
-            'ar'         : int(self.ar_txtbx.text()),
+            'cs'         : float(self.cs_txtbx.text()),
+            'ar'         : float(self.ar_txtbx.text()),
             'name'       : self.name_txtbx.text(),
             'description': self.description_txtbx.toPlainText(),
             'is_bpm'     : self.__bpm_display
