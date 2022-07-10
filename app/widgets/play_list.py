@@ -47,10 +47,6 @@ class PlayList(pyqtgraph.TableWidget):
         self.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
         self.verticalHeader().setDefaultSectionSize(10)
 
-        # The only way I can think of to pass data between
-        # multiprocessing.queue and the Qt main thread
-        self.play_list_helper = PlayListHelper()
-
         self.__batch_processed.connect(self.__add_data)
         self.__table_is_configured = False
         self.reload_map_list()
@@ -60,7 +56,7 @@ class PlayList(pyqtgraph.TableWidget):
         self.logger.debug(f'__init__ - exit')
 
 
-    def load_latest_play(self, is_import, map_md5_str):
+    def load_play_md5(self, map_md5_str):
         if score_data_obj.is_empty():
             self.logger.warning('load_play_md5 - empty `score_data_obj` encountered')
             return

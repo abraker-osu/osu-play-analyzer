@@ -42,8 +42,6 @@ class DataOverviewWindow(QtGui.QWidget):
 
         QtGui.QWidget.__init__(self, parent)
 
-        self.selected_md5_strs = []
-
         self.setWindowTitle('Data overview')
         
         self.map_list = PlayList()
@@ -87,9 +85,10 @@ class DataOverviewWindow(QtGui.QWidget):
 
         # Connect signals
         self.map_list.map_selected.connect(self.__map_select_event)
-        self.map_list.new_map_loaded.connect(self.composition_viewer.reset_roi_selections)
 
-        self.play_graph.region_changed.connect(self.composition_viewer.set_composition_from_score_data)
+        self.play_graph.region_changed.connect(self.__timestamp_region_changed_event)
+        self.play_graph.data_loaded.connect(self.__timestamp_data_loaded_event)
+
         self.composition_viewer.region_changed.connect(self.region_changed)
         self.show_map_btn.clicked.connect(self.__show_map_event)
 
@@ -97,14 +96,46 @@ class DataOverviewWindow(QtGui.QWidget):
         
 
     def new_replay_event(self, is_import, md5_str):
-        self.logger.debug('new_replay_event')
-        self.map_list.load_latest_play(is_import, md5_str)
+        self.map_list.load_play_md5(md5_str)
+        self.play_graph.plot_plays([ md5_str ])
 
-    
+
     def __map_select_event(self, map_md5_strs):
         self.logger.debug('__map_select_event')
+
         self.selected_md5_strs = map_md5_strs
         self.play_graph.plot_plays(map_md5_strs)
+
+
+    def __timestamp_data_loaded_event(self, data):
+        self.composition_viewer.set_composition_from_score_data(
+            data['md5_strs'],
+            data['timestamps']
+        )
+
+        if self.map_list.get_num_selected() == 1:
+            self.logger.debug('__timestamp_data_loaded_event - Single map selected. Resetting composition data selection...')
+            self.composition_viewer.reset_roi_selections()
+
+        self.composition_viewer.emit_master_selection()
+
+        score_data = self.composition_viewer.get_selected()
+        self.show_map_event.emit(score_data, data['md5_strs'])
+    
+
+    def __timestamp_region_changed_event(self, data):
+        self.composition_viewer.set_composition_from_score_data(
+            data['md5_strs'], 
+            data['timestamps']
+        )
+
+        self.composition_viewer.emit_master_selection()
+
+        if len(data['timestamps']) == 1:
+            self.composition_viewer.reset_roi_selections()
+            score_data = self.composition_viewer.get_selected()
+
+            self.show_map_event.emit(score_data, data['md5_strs'])
 
 
     def __show_map_event(self):

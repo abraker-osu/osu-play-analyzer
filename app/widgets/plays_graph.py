@@ -1,3 +1,4 @@
+import multiprocessing
 import threading
 
 import pyqtgraph
@@ -9,12 +10,12 @@ from app.misc.Logger import Logger
 from app.file_managers import score_data_obj
 
 
-
 class PlaysGraph(pyqtgraph.PlotWidget):
 
     logger = Logger.get_logger(__name__)
 
-    region_changed = QtCore.pyqtSignal(list, object)
+    region_changed = QtCore.pyqtSignal(dict)
+    data_loaded    = QtCore.pyqtSignal(dict)
 
     __timestamps_load_done = QtCore.pyqtSignal(object)
 
@@ -41,7 +42,7 @@ class PlaysGraph(pyqtgraph.PlotWidget):
         self.addItem(self.__region_plot)
 
         self.__timestamps_mutex = threading.Lock()
-        self.__timestamps_load_done.connect(self.__plot_timestamps)
+        self.__timestamps_load_done.connect(self.__timestamps_load_done_event)
 
         self.logger.debug(f'__init__ exit')
 
@@ -64,25 +65,44 @@ class PlaysGraph(pyqtgraph.PlotWidget):
         self.__timestamps_mutex.acquire()
         self.map_md5_strs = map_md5_strs
 
-        # Thread gets list of timestamps
-        thread = threading.Thread(target=self.__load_timestamps)
+        # Thread gets list of timestamps. This is done in a separate thread
+        # because loading a large list of timestamps might take enough time
+        # to freeze the GUI for a bit.
+        self.logger.debug(f'plot_plays - starting `__load_timestamps` thread...')
+        thread = threading.Thread(target=self.__load_timestamps, args=(map_md5_strs, ))
         thread.start()
 
         self.logger.debug(f'plot_plays - exit')
             
 
-    def __load_timestamps(self):
+    def __load_timestamps(self, map_md5_strs):
         hit_timestamps = np.asarray([ 
-            idx[1] for idx, df in score_data_obj.data().groupby([ 'MD5', 'TIMESTAMP' ]) if idx[0] in self.map_md5_strs
+            idx[1] for idx, df in score_data_obj.data().groupby([ 'MD5', 'TIMESTAMP' ]) if idx[0] in map_md5_strs
         ], dtype=np.uint64)
 
-        # Calls __plot_timestamps
+        # Calls __timestamps_load_done_event
         self.logger.debug(f'__load_timestamps - __timestamps_load_done.emit ->')
         self.__timestamps_load_done.emit(hit_timestamps)
         self.logger.debug(f'__load_timestamps - __timestamps_load_done.emit <-')
 
 
+    def __timestamps_load_done_event(self, hit_timestamps):
+        self.__plot_timestamps(hit_timestamps)
+        self.__reset_plot_range(hit_timestamps)
+
+        self.__timestamps_mutex.release()
+        self.data_loaded.emit({
+            'md5_strs'   : self.map_md5_strs, 
+            'timestamps' : self.get_selected()
+        })
+
+
     def __plot_timestamps(self, hit_timestamps):
+        # Set plot data
+        self.plot.setData(hit_timestamps, np.zeros(len(hit_timestamps)), pen=None, symbol='o', symbolPen=None, symbolSize=4, symbolBrush='y')
+
+
+    def __reset_plot_range(self, hit_timestamps):
         # Calculate view
         xMin = min(hit_timestamps) - 1  # -1 minute
         xMax = max(hit_timestamps) + 1  # +1 minute
@@ -91,16 +111,13 @@ class PlaysGraph(pyqtgraph.PlotWidget):
         half_range  = xMax - view_center   # Space between center of view and max
 
         self.logger.debug(f'plot_plays - xMin: {xMin} xMax: {xMax} view_center: {view_center} half_range: {half_range}')
-
-        # Set plot data
-        self.plot.setData(hit_timestamps, np.zeros(len(hit_timestamps)), pen=None, symbol='o', symbolPen=None, symbolSize=4, symbolBrush='y')
     
         # Get current range
         xRange = self.graph.getViewBox().viewRange()[0]
         xRegion = self.__region_plot.getRegion()
 
         # If current view is not in range, set it
-        if xMin < xRange[0] or xRange[1] < xMax:
+        if (xMin < xRange[0]) or (xRange[1] < xMax):
             left_center  = view_center - 1.5*half_range
             right_center = view_center + 1.5*half_range
 
@@ -108,23 +125,23 @@ class PlaysGraph(pyqtgraph.PlotWidget):
             self.setRange(xRange=(left_center, right_center))
 
         # If current region is not in range, set it
-        if xMin < xRegion[0] or xRegion[1] < xMax:
+        if (xMin < xRegion[0]) or (xRegion[1] < xMax):
             left_center  = view_center - 1.1*half_range
             right_center = view_center + 1.1*half_range
 
-            # Calls __region_changed_event
-            self.__region_plot.setBounds([left_center, right_center])
-            self.__region_plot.setRegion([left_center, right_center])
-        else:
-            # Otherwise, still need to notify other components of the data change
-            self.__region_changed_event()
-
-        self.__timestamps_mutex.release()
+            # Blocks the `sigRegionChangeFinished` signal
+            self.__region_plot.blockSignals(True)
+            self.__region_plot.setBounds([ left_center, right_center ])
+            self.__region_plot.setRegion([ left_center, right_center ])
+            self.__region_plot.blockSignals(False)
 
 
-    def __region_changed_event(self):
+    def __region_changed_event(self, data):
         self.logger.debug('__region_changed_event')
-        self.region_changed.emit(self.map_md5_strs, self.get_selected())
+        self.region_changed.emit({
+            'md5_strs'   : self.map_md5_strs, 
+            'timestamps' : self.get_selected()
+        })
     
 
     def get_selected(self):

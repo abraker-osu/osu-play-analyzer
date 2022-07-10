@@ -80,19 +80,14 @@ class _OsuRecorder(QtCore.QObject):
         score_data = score_data.join(diff_data, on='IDXS')
         score_data_obj.append(score_data)
 
-        self.new_replay_event.emit(
-            (
-                map_data,
-                replay_data,
-                score_data,
-                #beatmap.difficulty.cs, 
-                #beatmap.difficulty.ar, 
-                #replay.mods.value,
-                beatmap.metadata.name + ' ' + replay.get_name(),
-                replay.beatmap_hash,
-            ), 
-            is_import
-        )
+        self.new_replay_event.emit({
+            'map_data'    : map_data,
+            'replay_data' : replay_data,
+            'score_data'  : score_data,
+            'play_name'   : beatmap.metadata.name + ' ' + replay.get_name(),
+            'md5_hash'    : replay.beatmap_hash,
+            'is_import'   : is_import
+        })
 
 
 OsuRecorder = _OsuRecorder()

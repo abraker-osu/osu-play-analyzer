@@ -193,28 +193,36 @@ class App(QtGui.QMainWindow):
         self.map_architect_window.hide()
 
 
-    def new_replay_event(self, data, is_import):
+    def new_replay_event(self, play_data):
         self.logger.debug('new_replay_event - enter')
 
-        map_data, replay_data, score_data, name, md5_str = data
-
-        cs   = score_data['CS'].values[0]
-        ar   = score_data['AR'].values[0]
-        mods = score_data['MODS'].values[0]
-
         # Broadcast the new replay event to the other windows
-        time_start = time.time()
-        self.data_overview_window.new_replay_event(is_import, md5_str)
-        self.logger.debug(f'data_overview_window load time: {time.time() - time_start}')
+        #time_start = time.time()
+        self.data_overview_window.new_replay_event(
+            play_data['is_import'], 
+            play_data['md5_hash']
+        )
+        #self.logger.debug(f'data_overview_window load time: {time.time() - time_start}')
 
-        if not is_import:
-            time_start = time.time()
-            self.data_graphs_window.new_replay_event(score_data)
-            self.logger.debug(f'data_graphs_window load time:: {time.time() - time_start}')
+        #if not is_import:
+        #    time_start = time.time()
+        #    self.data_graphs_window.new_replay_event(score_data)
+        #    self.logger.debug(f'data_graphs_window load time:: {time.time() - time_start}')
 
-            time_start = time.time()
-            self.map_display_window.new_replay_event(map_data, replay_data, cs, ar, mods, name)
-            self.logger.debug(f'map_display_window load time: {time.time() - time_start}')
+        #    if not 'score_data' in play_data:
+        #        self.logger.error('new_replay_event - missing "score_data" in play_data')
+        #        raise KeyError
+
+        #    score_data = play_data['score_data']
+
+        #    cs   = score_data['CS'].values[0]
+        #    ar   = score_data['AR'].values[0]
+        #    mods = score_data['MODS'].values[0]
+
+        #    time_start = time.time()
+        #    self.map_display_window.new_replay_event(map_data, replay_data, cs, ar, mods, name)
+        #    self.logger.debug(f'map_display_window load time: {time.time() - time_start}')
+
         self.logger.debug('new_replay_event - exit')
 
 
