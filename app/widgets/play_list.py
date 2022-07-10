@@ -172,7 +172,7 @@ class PlayList(pyqtgraph.TableWidget):
 
 
     def get_selected_md5s(self):
-        return [ int(self.model().data(self.model().index(i, 0), role=QtCore.Qt.DisplayRole), 16) for i in range(len(self.selectionModel().selectedRows())) ]
+        return [ self.model().data(self.model().index(i, 0), role=QtCore.Qt.DisplayRole) for i in range(len(self.selectionModel().selectedRows())) ]
 
     
     def __add_data(self, data):
