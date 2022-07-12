@@ -130,6 +130,7 @@ class HitOffsetGraph(QtGui.QWidget):
         data = data[miss_select]
 
         if data.shape[0] == 0:
+            self.__miss_plot.setData([])
             return
 
         hit_timings = data['T_HIT'].values
