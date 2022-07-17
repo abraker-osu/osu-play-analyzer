@@ -12,6 +12,7 @@ from app.graphs.replay.hit_offset_graph import HitOffsetGraph
 from app.graphs.replay.replay_hit_doffset_graph import ReplayHitDOffsetGraph
 from app.graphs.replay.replay_toffset_multimap import ReplayTOffsetMultimap
 from app.graphs.replay.hit_distr_graph import HitDistrGraph
+from app.graphs.replay.doffset_distr_graph import DoffsetsDistrGraph
 from app.graphs.replay.aim_graph import AimGraph
 
 from app.graphs.difficulty.graph_aim_difficulty import GraphAimDifficulty
@@ -28,6 +29,8 @@ from app.graphs.map.graph_toffset_velocity import GraphTOffsetVelocity
 from app.graphs.deviation.dev_graph_angle import DevGraphAngle
 from app.graphs.deviation.dev_graph_vel import DevGraphVel
 from app.graphs.deviation.dev_graph_rhythm import DevGraphRhythm
+from app.graphs.deviation.dev_doffsets import DevDOffsets
+from app.graphs.deviation.dev_offsets import DevOffsets
 
 from app.data_recording.data import ScoreNpyData
 from app.file_managers import score_data_obj
@@ -47,6 +50,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.replay_offset_multimap_graph = ReplayTOffsetMultimap()
         self.replay_hit_doffset_graph = ReplayHitDOffsetGraph()
         self.hit_distr_graph = HitDistrGraph()
+        self.doffset_distr_graph = DoffsetsDistrGraph()
         self.aim_display = AimGraph()
 
         self.aim_difficulty = GraphAimDifficulty()
@@ -63,12 +67,15 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.dev_graph_angle = DevGraphAngle()
         self.dev_graph_vel = DevGraphVel()
         self.dev_graph_rhythm = DevGraphRhythm()
+        self.dev_doffsets = DevDOffsets()
+        self.dev_offsets = DevOffsets()
 
         self.replay_tabs = QtGui.QTabWidget()
         self.replay_tabs.addTab(self.hit_offset_graph, 'Hit offsets')
         self.replay_tabs.addTab(self.replay_offset_multimap_graph, 'Replay offsets multimap')
         self.replay_tabs.addTab(self.replay_hit_doffset_graph, 'Replay hit doffsets')
         self.replay_tabs.addTab(self.hit_distr_graph, 'Hit distribution')
+        self.replay_tabs.addTab(self.doffset_distr_graph, 'Doffset distribution')
         self.replay_tabs.addTab(self.aim_display, 'Aim display')
 
         self.difficulty_tabs = QtGui.QTabWidget()
@@ -79,7 +86,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
         #self.map_tabs.addTab(self.timing_bpm_dec, 'Timing BPM dec')
         #self.map_tabs.addTab(self.timing_bpm_inc, 'Timing BPM inc')
         self.map_tabs.addTab(self.toffset_bpm_inc, 'T-offset vs BPM Inc')
-        self.map_tabs.addTab(self.toffset_bpm, 'T-offset vs BPM')
+        self.map_tabs.addTab(self.toffset_bpm, 'T-offset vs Note interval')
         #self.map_tabs.addTab(self.toffset_rhy_graph, 'T-offset vs Rhythm')
         #self.map_tabs.addTab(self.toffset_rhyd_graph, 'T-offset vs Rhythm delta')
         self.map_tabs.addTab(self.toffset_velocity, 'T-offset vs Velocity')
@@ -88,6 +95,8 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.play_data_tabs.addTab(self.dev_graph_angle, 'Dev vs Angle')
         self.play_data_tabs.addTab(self.dev_graph_vel, 'Dev vs Velocity')
         self.play_data_tabs.addTab(self.dev_graph_rhythm, 'Dev vs Rhythm')
+        self.play_data_tabs.addTab(self.dev_doffsets, 'Avg BPM vs Doffsets dev')
+        self.play_data_tabs.addTab(self.dev_offsets, 'Avg BPM vs Offsets dev')
         
         self.main_widget = QtGui.QTabWidget()
         self.main_widget.addTab(self.replay_tabs, 'Replay graphs')
@@ -108,6 +117,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.hit_offset_graph.plot_data(score_data)
         self.replay_hit_doffset_graph.plot_data(score_data)
         self.hit_distr_graph.plot_data(score_data)
+        self.doffset_distr_graph.plot_data(score_data)
         self.aim_display.plot_data(score_data)
 
         self.aim_difficulty.plot_data(score_data)
@@ -121,6 +131,9 @@ class DataGraphsWindow(QtGui.QMainWindow):
         #self.toffset_rhyd_graph.plot_data(score_data)
         #self.toffset_velocity.plot_data(score_data)
 
+        self.dev_doffsets.plot_data(score_data)
+        self.dev_offsets.plot_data(score_data)
+
 
     def overview_single_map_selection_event(self, score_data):
         """
@@ -132,6 +145,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.replay_offset_multimap_graph.plot_data(score_data)
         self.replay_hit_doffset_graph.plot_data(score_data)
         self.hit_distr_graph.plot_data(score_data)
+        self.doffset_distr_graph.plot_data(score_data)
         self.aim_display.plot_data(score_data)
 
         self.aim_difficulty.plot_data(score_data)
@@ -161,3 +175,5 @@ class DataGraphsWindow(QtGui.QMainWindow):
         #self.dev_graph_angle.plot_data(score_data)
         #self.dev_graph_vel.plot_data(score_data)
         #self.dev_graph_rhythm.plot_data(score_data)
+        self.dev_doffsets.plot_data(score_data)
+        self.dev_offsets.plot_data(score_data)
