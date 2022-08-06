@@ -83,25 +83,21 @@ class App(QtGui.QMainWindow):
 
         self.setWindowTitle('osu! performance analyzer')
 
-        self.generate_map_button = QtGui.QPushButton('Generate map')
-        self.generate_map_button.clicked.connect(self.generate_map_button_clicked)
-        self.generate_map_button.setToolTip('Figure settings to use to generate maps for data recording')
+        self.data_overview_button = QtGui.QPushButton('Data overview')
+        self.data_overview_button.clicked.connect(self.data_overview_button_clicked)
+        self.data_overview_button.setToolTip('Select maps and view their composition')
 
-        self.analyze_data_button = QtGui.QPushButton('Analyze data')
-        self.analyze_data_button.clicked.connect(self.analyze_data_button_clicked)
-        self.analyze_data_button.setToolTip('Analyze data gathered from data recording')
+        self.data_graphs_button = QtGui.QPushButton('Data graphs')
+        self.data_graphs_button.clicked.connect(self.data_graphs_button_clicked)
+        self.data_graphs_button.setToolTip('View map metrics and statistics')
 
-        self.record_data_button = QtGui.QPushButton('Record data')
-        self.record_data_button.clicked.connect(self.record_data_button_clicked)
-        self.record_data_button.setToolTip('Generate maps for player performance data recording')
+        self.map_architect_button = QtGui.QPushButton('Map architect')
+        self.map_architect_button.clicked.connect(self.map_architect_button_clicked)
+        self.map_architect_button.setToolTip('Generate maps for player performance data recording')
 
-        self.browse_plays_button = QtGui.QPushButton('Browse plays')
-        self.browse_plays_button.clicked.connect(self.browse_plays_button_clicked)
-        self.browse_plays_button.setToolTip('Look through data recordings made by you and other players')
-
-        self.train_skills_button = QtGui.QPushButton('Train skills')
-        self.train_skills_button.clicked.connect(self.train_skills_button_clicked)
-        self.train_skills_button.setToolTip('See your performance as you play maps')
+        self.map_display_button = QtGui.QPushButton('Map display')
+        self.map_display_button.clicked.connect(self.map_display_button_clicked)
+        self.map_display_button.setToolTip('Display selected and generated map')
 
         self.status_text = QtGui.QLabel()
         if not os.path.isdir(AppConfig.cfg['osu_dir']):
@@ -111,21 +107,19 @@ class App(QtGui.QMainWindow):
                 'Make sure to use double backslashes for osu! path (ex: "C:\\\\Games\\\\osu!")\n'
             )
 
-            self.generate_map_button.setEnabled(False)
-            self.analyze_data_button.setEnabled(False)
-            self.record_data_button.setEnabled(False)
-            self.browse_plays_button.setEnabled(False)
-            self.train_skills_button.setEnabled(False)
+            self.data_overview_button.setEnabled(False)
+            self.data_graphs_button.setEnabled(False)
+            self.map_architect_button.setEnabled(False)
+            self.map_display_button.setEnabled(False)
 
         self.main_widget = QtGui.QWidget()
         self.setCentralWidget(self.main_widget)
 
         self.layout = QtGui.QVBoxLayout(self.main_widget)
-        self.layout.addWidget(self.generate_map_button)
-        self.layout.addWidget(self.analyze_data_button)
-        self.layout.addWidget(self.record_data_button)
-        self.layout.addWidget(self.browse_plays_button)
-        self.layout.addWidget(self.train_skills_button)
+        self.layout.addWidget(self.data_overview_button)
+        self.layout.addWidget(self.data_graphs_button)
+        self.layout.addWidget(self.map_architect_button)
+        self.layout.addWidget(self.map_display_button)
         self.layout.addWidget(self.status_text)
 
         self.setFixedWidth(480)
@@ -139,7 +133,7 @@ class App(QtGui.QMainWindow):
 
         OsuRecorder.new_replay_event.connect(self.new_replay_event)
         
-        self.data_overview_window.show_map_event.connect(self.map_display_window.set_from_play_data)
+        #self.data_overview_window.show_map_event.connect(self.map_display_window.set_from_play_data)
         self.data_overview_window.show_map_event.connect(self.data_graphs_window.overview_single_map_selection_event)
         self.data_overview_window.region_changed.connect(self.data_graphs_window.set_from_play_data)
 
@@ -148,49 +142,24 @@ class App(QtGui.QMainWindow):
         self.logger.debug('Connecting signals end')
 
 
-    def generate_map_button_clicked(self):
-        self.logger.info_debug(App.debug, 'generate_map_button_clicked')
-
-        self.data_graphs_window.hide() 
+    def data_overview_button_clicked(self):
+        self.logger.info_debug(App.debug, 'data_overview_button_clicked')
         self.data_overview_window.show()
+
+
+    def data_graphs_button_clicked(self):
+        self.logger.info_debug(App.debug, 'data_graphs_button_clicked')
+        self.data_graphs_window.show()
+
+
+    def map_architect_button_clicked(self):
+        self.logger.info_debug(App.debug, 'map_architect_button_clicked')
         self.map_display_window.show()
-        self.map_architect_window.show()
 
 
-    def analyze_data_button_clicked(self):
-        self.logger.info_debug(App.debug, 'analyze_data_button_clicked')
-
-        self.data_graphs_window.show() 
-        self.data_overview_window.show()
-        self.map_display_window.hide()
-        self.map_architect_window.hide()
-
-
-    def record_data_button_clicked(self):
-        self.logger.info_debug(App.debug, 'record_data_button_clicked')
-
-        self.data_graphs_window.show() 
-        self.data_overview_window.hide()
-        self.map_display_window.hide()
-        self.map_architect_window.show()
-
-
-    def browse_plays_button_clicked(self):
-        self.logger.info_debug(App.debug, 'browse_plays_button_clicked')
-
-        self.data_graphs_window.hide() 
-        self.data_overview_window.show()
+    def map_display_button_clicked(self):
+        self.logger.info_debug(App.debug, 'map_display_button_clicked')
         self.map_display_window.show()
-        self.map_architect_window.hide()
-
-
-    def train_skills_button_clicked(self):
-        self.logger.info_debug(App.debug, 'train_skills_button_clicked')
-
-        self.data_graphs_window.show() 
-        self.data_overview_window.hide()
-        self.map_display_window.show()
-        self.map_architect_window.hide()
 
 
     def new_replay_event(self, play_data):
