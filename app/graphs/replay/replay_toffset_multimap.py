@@ -18,10 +18,7 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
 
-        self.cache_num_plays = 0
         self.cache_miss_count = 0
-        self.cache_avg_offsets = np.asarray([])
-        self.cache_deviations = np.asarray([])
 
         # Main graph
         self.__graph = pyqtgraph.PlotWidget(title='Hit offset graph')
@@ -70,16 +67,6 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
             self.__miss_plot.setData(x=data_blank, y=data_blank, top=data_blank, bottom=data_blank, pen=mkPen((200, 0, 0, 50), width=5))
             return
 
-        self.cache_unique_map_timestamps = np.unique(play_data.index.get_level_values(0))
-        if self.cache_unique_map_timestamps.shape[0] > 1:
-            self.__hit_metrics.setText('Data is displayed only when one map must be selected')
-
-            data_blank = np.asarray([])
-            self.__plot.setData(data_blank, data_blank, pen=None, symbol='o', symbolPen=None, symbolSize=2, symbolBrush=(100, 100, 255, 200))
-            self.__std_plot.setData(x=data_blank, y=data_blank, top=data_blank, bottom=data_blank, pen=(150, 150, 0, 100))
-            self.__miss_plot.setData(x=data_blank, y=data_blank, top=data_blank, bottom=data_blank, pen=mkPen((200, 0, 0, 50), width=5))
-            return
-
         unique_map_mods = np.unique(play_data['MODS'])
         if unique_map_mods.shape[0] > 1:
             self.__hit_metrics.setText('Data is displayed only when one mod combination is selected')
@@ -89,8 +76,6 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
             self.__std_plot.setData(x=data_blank, y=data_blank, top=data_blank, bottom=data_blank, pen=(150, 150, 0, 100))
             self.__miss_plot.setData(x=data_blank, y=data_blank, top=data_blank, bottom=data_blank, pen=mkPen((200, 0, 0, 50), width=5))
             return
-
-        self.cache_num_plays = self.cache_unique_map_timestamps.shape[0]
 
         self.__plot_misses(play_data)
         self.__plot_hit_offsets(play_data)
@@ -110,13 +95,13 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
             return
 
         # Extract timings and hit_offsets
-        hit_timings = data['T_HIT']
+        hit_timings = data['T_MAP']
         hit_offsets = data['T_HIT'] - data['T_MAP']
 
         # Process overlapping data points along x-axis
         hit_offsets_avg = np.asarray([ np.mean(hit_offsets[hit_timings == hit_timing]) for hit_timing in np.unique(hit_timings) ])
         hit_offsets_std = np.asarray([ 
-            np.std(hit_offsets[hit_timings == hit_timing], ddof=1) if hit_offsets[hit_timings == hit_timing].shape[0] > 1 else 200
+            2*np.std(hit_offsets[hit_timings == hit_timing], ddof=1) if hit_offsets[hit_timings == hit_timing].shape[0] > 1 else 200
             for hit_timing in np.unique(hit_timings) 
         ])
         hit_timings = np.unique(hit_timings)
@@ -132,9 +117,6 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
         self.__graph.setLimits(xMin=xMin - 100, xMax=xMax + 100)
         self.__graph.setRange(xRange=[ xMin - 100, xMax + 100 ])
 
-        self.cache_avg_offsets = hit_offsets_avg
-        self.cache_deviations = hit_offsets_std
-
 
     def __plot_misses(self, play_data):
         # Select press misses
@@ -149,7 +131,7 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
             return
 
         # Extract data and plot
-        hit_timings = data['T_HIT']
+        hit_timings = data['T_MAP']
         
         # Process overlapping data points along x-axis
         miss_count = np.asarray([ hit_timings[hit_timings == hit_timing].shape[0] for hit_timing in np.unique(hit_timings) ])
@@ -166,38 +148,57 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
 
 
     def __update_hit_stats(self, play_data):
-        # Determine what was the latest play
-        latest = np.max(self.cache_unique_map_timestamps)
-        play_data = play_data.loc[latest]
-            
-        slider_select = np.zeros(play_data.shape[0], dtype=bool)
-        slider_select[:-1] = \
-            (play_data['TYPE_MAP'].values[:-1] == StdScoreData.ACTION_PRESS) & (
-                (play_data['TYPE_MAP'].values[1:] == StdScoreData.ACTION_HOLD) | \
-                (play_data['TYPE_MAP'].values[1:] == StdScoreData.ACTION_RELEASE)
-            )
+        unique_map_timestamps = np.unique(play_data.index.get_level_values(1))
+        num_plays = unique_map_timestamps.shape[0]
 
-        num_sliders = np.sum(slider_select)
-            
+        # Extract hitcircle data
         data_filter = \
-            (play_data['TYPE_MAP'] == StdScoreData.ACTION_PRESS)
+            (play_data['TYPE_HIT'] == StdScoreData.TYPE_HITP)
 
-        num_presses = np.sum(data_filter)
-        slider_select = slider_select[data_filter]
+        hitcircles_data = play_data[1:][data_filter]
+        hit_timings = hitcircles_data['T_MAP'].values
+        hit_offsets = hitcircles_data['T_HIT'].values - hitcircles_data['T_MAP'].values
 
-        avgs = self.cache_avg_offsets
-        devs = self.cache_deviations
-        misses = self.cache_miss_count/self.cache_num_plays
+        # Stacks hits for each timestamp and calculates average and deviation
+        avgs = np.asarray([ np.mean(hit_offsets[hit_timings == hit_timing]) for hit_timing in np.unique(hit_timings) ])
+        devs = np.asarray([ 
+            2*np.std(hit_offsets[hit_timings == hit_timing], ddof=1) if hit_offsets[hit_timings == hit_timing].shape[0] > 1 else 200
+            for hit_timing in np.unique(hit_timings) 
+        ])
 
-        # Calculate worst possible accuracy
-        acc_window = 200  # 95% dev (ms)
+        # Determine what was the latest play
+        latest_timestamp = np.max(unique_map_timestamps)
+        num_sliders = None
+        num_circles = None
 
-        worst_offsets = np.copy(avgs)
-        worst_offsets[avgs < 0] = avgs[avgs < 0] - 2*devs[avgs < 0]
-        worst_offsets[avgs > 0] = avgs[avgs > 0] + 2*devs[avgs > 0]
+        # Determine number of sliders within the map
+        for entry in play_data.groupby(level=1):
+            if entry[0] != latest_timestamp:
+                continue
 
-        worst_acc_score = MathUtils.normal_distr(worst_offsets, 0, acc_window/2)/MathUtils.normal_distr(0, 0, acc_window/2)
-        worst_acc = worst_acc_score.sum() / (len(worst_acc_score) + misses)
+            data = entry[1]
+
+            # Extract slider data
+            data_select = np.zeros(data.shape[0], dtype=bool)
+            data_select[:-1] = \
+                (data['TYPE_MAP'].values[:-1] == StdScoreData.ACTION_PRESS) & (
+                    (data['TYPE_MAP'].values[1:] == StdScoreData.ACTION_HOLD) | \
+                    (data['TYPE_MAP'].values[1:] == StdScoreData.ACTION_RELEASE)
+                )
+            num_sliders = np.sum(data_select)
+
+            # Extract slider data
+            data_select[:-1] = \
+                (data['TYPE_MAP'].values[:-1] == StdScoreData.ACTION_PRESS) & ~(
+                    (data['TYPE_MAP'].values[1:] == StdScoreData.ACTION_HOLD) | \
+                    (data['TYPE_MAP'].values[1:] == StdScoreData.ACTION_RELEASE)
+                )
+            num_circles = np.sum(data_select)
+            
+            break
+        
+        if (num_sliders is None) or (num_circles is None):
+            return
 
         offset_OD4 = 55.5  # +/-ms window
         offset_OD5 = 49.5  # +/-ms window
@@ -207,62 +208,60 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
 
         # Calculate needed 300s for 99% accuracy
         num_50s_99  = 0
-        num_100s_99 = num_presses*0.01   # 1% of score presses
-        needed_num_300s_99 = math.ceil(.99*num_presses - (300*num_sliders + 100*num_50s_99 + 50*num_100s_99)/300)
+        num_100s_99 = num_circles*0.01   # 1% of score presses
+        needed_num_300s_99 = math.ceil(.99*(num_circles + num_sliders) - (300*num_sliders + 100*num_50s_99 + 50*num_100s_99)/300)
 
         # Calculate needed 300s for 97% accuracy
         num_50s_97  = 0
-        num_100s_97 = num_presses*0.04   # 4% of score presses
-        needed_num_300s_97 = math.ceil(.97*num_presses - (300*num_sliders + 100*num_50s_97 + 50*num_100s_97)/300)
+        num_100s_97 = num_circles*0.04   # 4% of score presses
+        needed_num_300s_97 = math.ceil(.97*(num_circles + num_sliders) - (300*num_sliders + 100*num_50s_97 + 50*num_100s_97)/300)
 
-        # Calculate needed 300s for 97% accuracy
-        num_50s_97  = num_presses*0.003  # 0.3% of score presses
-        num_100s_97 = num_presses*0.625  # 6.25% of score presses
-        needed_num_300s_95 = math.ceil(.97*num_presses - (300*num_sliders + 100*num_50s_97 + 50*num_100s_97)/300)
+        # Calculate needed 300s for 95% accuracy
+        num_50s_95  = num_circles*0.003  # 0.3% of score presses
+        num_100s_95 = num_circles*0.625  # 6.25% of score presses
+        needed_num_300s_95 = math.ceil(.95*(num_circles + num_sliders) - (300*num_sliders + 100*num_50s_95 + 50*num_100s_95)/300)
 
         # Need at least 2 plays for probability calc
-        if self.cache_num_plays < 2:
+        if num_plays < 2:
             self.__hit_metrics.setText(
-            f'''
-            worst acc: {100*worst_acc:.2f}%
+               f'''
+                Num hit circles: {num_circles} ({num_sliders} sliders excluded)
+                Num scores: {num_plays}
+                99% needed 300s: {needed_num_300s_99}      97% needed 300s: {needed_num_300s_97}      95% needed 300s: {needed_num_300s_95}
 
-            Num hit circles: {num_presses} ({num_sliders} sliders excluded)
-            Num scores: {self.cache_num_plays}
-            99% needed 300s: {needed_num_300s_99}      97% needed 300s: {needed_num_300s_97}      95% needed 300s: {needed_num_300s_95}
-
-            Probabilties unavailable for <2 plays
-            '''
-        )
+                Probabilities unavailable for <2 plays
+                '''
+            )
             return
 
         # For each score point, calculate probability it would be within OD window for one of the plays
-        dev_uncertainty = devs/math.sqrt(2*self.cache_num_plays - 2)
+        acc_window = 200   # 95% dev (ms)
 
         devs = np.copy(devs)
         devs[devs == 0] = acc_window
 
-        prob_greater_than_neg = scipy.stats.norm.cdf(-offset_OD4, loc=avgs, scale=(devs + dev_uncertainty))
-        prob_less_than_pos    = scipy.stats.norm.cdf(offset_OD4, loc=avgs, scale=(devs + dev_uncertainty))
+        prob_greater_than_neg = scipy.stats.norm.cdf(-offset_OD4, loc=avgs, scale=devs)
+        prob_less_than_pos    = scipy.stats.norm.cdf(offset_OD4, loc=avgs, scale=devs)
         prob_300_OD4s = np.sort(prob_less_than_pos - prob_greater_than_neg)
 
-        prob_greater_than_neg = scipy.stats.norm.cdf(-offset_OD5, loc=avgs, scale=(devs + dev_uncertainty))
-        prob_less_than_pos    = scipy.stats.norm.cdf(offset_OD5, loc=avgs, scale=(devs + dev_uncertainty))
+        prob_greater_than_neg = scipy.stats.norm.cdf(-offset_OD5, loc=avgs, scale=devs)
+        prob_less_than_pos    = scipy.stats.norm.cdf(offset_OD5, loc=avgs, scale=devs)
         prob_300_OD5s = np.sort(prob_less_than_pos - prob_greater_than_neg)
         
-        prob_greater_than_neg = scipy.stats.norm.cdf(-offset_OD6, loc=avgs, scale=(devs + dev_uncertainty))
-        prob_less_than_pos    = scipy.stats.norm.cdf(offset_OD6, loc=avgs, scale=(devs + dev_uncertainty))
+        prob_greater_than_neg = scipy.stats.norm.cdf(-offset_OD6, loc=avgs, scale=devs)
+        prob_less_than_pos    = scipy.stats.norm.cdf(offset_OD6, loc=avgs, scale=devs)
         prob_300_OD6s = np.sort(prob_less_than_pos - prob_greater_than_neg)
 
-        prob_greater_than_neg = scipy.stats.norm.cdf(-offset_OD7, loc=avgs, scale=(devs + dev_uncertainty))
-        prob_less_than_pos    = scipy.stats.norm.cdf(offset_OD7, loc=avgs, scale=(devs + dev_uncertainty))
+        prob_greater_than_neg = scipy.stats.norm.cdf(-offset_OD7, loc=avgs, scale=devs)
+        prob_less_than_pos    = scipy.stats.norm.cdf(offset_OD7, loc=avgs, scale=devs)
         prob_300_OD7s = np.sort(prob_less_than_pos - prob_greater_than_neg)
 
-        prob_greater_than_neg = scipy.stats.norm.cdf(-offset_OD8, loc=avgs, scale=(devs + dev_uncertainty))
-        prob_less_than_pos    = scipy.stats.norm.cdf(offset_OD8, loc=avgs, scale=(devs + dev_uncertainty))
+        prob_greater_than_neg = scipy.stats.norm.cdf(-offset_OD8, loc=avgs, scale=devs)
+        prob_less_than_pos    = scipy.stats.norm.cdf(offset_OD8, loc=avgs, scale=devs)
         prob_300_OD8s = np.sort(prob_less_than_pos - prob_greater_than_neg)
 
         # Calculate probabilities of achieving of accuracies based on probabilities of achieving 300s
-        # The highest probabilities are used for the calculation
+        # The highest probabilities are used for the calculation.
         prob_OD4_99 = np.prod(prob_300_OD4s[-needed_num_300s_99:])
         prob_OD5_99 = np.prod(prob_300_OD5s[-needed_num_300s_99:])
         prob_OD6_99 = np.prod(prob_300_OD6s[-needed_num_300s_99:])
@@ -285,21 +284,17 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
         # osu! doesn't process slider hit accuracy the same way for hitcircles
         # They are *kinda* excluded from probability calc by taking highest prob of 300s,
         #   but if there are sliders that have good accuracy, oh well, good for you
-        num_presses -= num_sliders
-
         self.__hit_metrics.setText(
             f'''
-            worst acc: {100*worst_acc:.2f}%
+            Num hit circles: {num_circles} ({num_sliders} sliders excluded)
+            Num scores: {num_plays}
+            99% needed 300s: {needed_num_300s_99 + num_sliders}      97% needed 300s: {needed_num_300s_97 + num_sliders}      95% needed 300s: {needed_num_300s_95 + num_sliders}
 
-            Num hit circles: {num_presses} ({num_sliders} sliders excluded)
-            Num scores: {self.cache_num_plays}
-            99% needed 300s: {needed_num_300s_99}      97% needed 300s: {needed_num_300s_97}      95% needed 300s: {needed_num_300s_95}
-
-            OD4 | prob 99% acc: {100*prob_OD4_99:.4f}%   prob 97% acc: {100*prob_OD4_97:.4f}%   prob 95% acc: {100*prob_OD4_95:.4f}%
-            OD5 | prob 99% acc: {100*prob_OD5_99:.4f}%   prob 97% acc: {100*prob_OD5_97:.4f}%   prob 95% acc: {100*prob_OD5_95:.4f}%
-            OD6 | prob 99% acc: {100*prob_OD6_99:.4f}%   prob 97% acc: {100*prob_OD6_97:.4f}%   prob 95% acc: {100*prob_OD6_95:.4f}%
-            OD7 | prob 99% acc: {100*prob_OD7_99:.4f}%   prob 97% acc: {100*prob_OD7_97:.4f}%   prob 95% acc: {100*prob_OD7_95:.4f}%
-            OD8 | prob 99% acc: {100*prob_OD8_99:.4f}%   prob 97% acc: {100*prob_OD8_97:.4f}%   prob 95% acc: {100*prob_OD8_95:.4f}%
+            OD4 | E[300's]: {np.sum(prob_300_OD4s):.0f}   prob 99% acc: {100*prob_OD4_99:.4f}%   prob 97% acc: {100*prob_OD4_97:.4f}%   prob 95% acc: {100*prob_OD4_95:.4f}%
+            OD5 | E[300's]: {np.sum(prob_300_OD5s):.0f}   prob 99% acc: {100*prob_OD5_99:.4f}%   prob 97% acc: {100*prob_OD5_97:.4f}%   prob 95% acc: {100*prob_OD5_95:.4f}%
+            OD6 | E[300's]: {np.sum(prob_300_OD6s):.0f}   prob 99% acc: {100*prob_OD6_99:.4f}%   prob 97% acc: {100*prob_OD6_97:.4f}%   prob 95% acc: {100*prob_OD6_95:.4f}%
+            OD7 | E[300's]: {np.sum(prob_300_OD7s):.0f}   prob 99% acc: {100*prob_OD7_99:.4f}%   prob 97% acc: {100*prob_OD7_97:.4f}%   prob 95% acc: {100*prob_OD7_95:.4f}%
+            OD8 | E[300's]: {np.sum(prob_300_OD8s):.0f}   prob 99% acc: {100*prob_OD8_99:.4f}%   prob 97% acc: {100*prob_OD8_97:.4f}%   prob 95% acc: {100*prob_OD8_95:.4f}%
             '''
         )
 
