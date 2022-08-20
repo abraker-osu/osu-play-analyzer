@@ -26,7 +26,7 @@ class _OsuRecorder(QtCore.QObject):
         QtCore.QObject.__init__(self)
 
         if not os.path.isdir(AppConfig.cfg['osu_dir']):
-            return
+            raise FileNotFoundError(f'Invalid osu! path: "{AppConfig.cfg["osu_dir"]}"')
 
         self.monitor = Monitor(AppConfig.cfg['osu_dir'])
         self.monitor.create_replay_monitor('Replay Grapher', self.__handle_new_replay)
