@@ -1,741 +1,601 @@
-"""
-Provides a way to generate maps for data collection. This is nowhere close to a beatmap editor and provides basic functionality
-to generate repeating patterns and alter maps.
-
-Features:
-- Inserts a repeating pattern given BPM, spacing and angle, number of notes, and rotation
-- Allows BPM, spacing and angle to be changed throughout generated pattern based on modulation
-- Allows to change map rate
-"""
+import keyword
 import os
-import json
-import time
-import datetime
-import shutil
-import hashlib
-import math
-import numpy as np
-import textwrap
+import re
+import subprocess
+import sys
 
-from pyqtgraph.Qt import QtCore, QtGui
+import pyqtgraph as pg
+from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
 
-from osu_analysis import BeatmapIO
-
-from app.misc.Logger import Logger
-from app.misc.osu_utils import OsuUtils
-
-from app.file_managers import AppConfig
+app = pg.mkQApp()
 
 
+class MainUI(QtWidgets.QWidget):
 
-class _ValueLineEdit(QtGui.QLineEdit):
+    def __init__(self):
+        QtWidgets.QWidget.__init__(self)
+        self.resize(846, 552)
 
-    broadcast_event = QtCore.pyqtSignal(int, object)
-    value_enter_event = QtCore.pyqtSignal()
+        self.gridLayout_2 = QtWidgets.QGridLayout(self)
 
-    APPLY_DELTA = 0
-    APPLY_VALUE = 1
+        self.splitter = QtWidgets.QSplitter(self)
+        self.splitter.setOrientation(QtCore.Qt.Horizontal)
 
-    def __init__(self, *args, **kwargs):
-        QtGui.QLineEdit.__init__(self, *args, **kwargs)
+        self.layoutWidget = QtWidgets.QWidget(self.splitter)
 
-        # Broadcast is a feature that allows the user to modify the value of other controls proportionally 
-        # to the one being actively modified while holding down the shift key. For example, if the user
-        # enters a value while holding down the shift key, the value will be applied to all other
-        # controls as well. If the user scrolls the mouse wheel while holding down the shift key,
-        # the respective values in other controls will be incremented/decremented as well.
+        self.gridLayout = QtWidgets.QGridLayout(self.layoutWidget)
+        self.gridLayout.setContentsMargins(0, 0, 0, 0)
+
+        self.code_selection = QtWidgets.QTreeWidget(self.layoutWidget)
+        self.code_selection.headerItem().setText(0, '1')
+        self.code_selection.header().setVisible(False)
+        self.gridLayout.addWidget(self.code_selection, 3, 0, 1, 2)
+
+        self.script_filter = QtWidgets.QLineEdit(self.layoutWidget)
+        self.gridLayout.addWidget(self.script_filter, 0, 0, 1, 2)
+
+        self.search_mode = QtWidgets.QComboBox(self.layoutWidget)
+        self.search_mode.addItem('')
+        self.search_mode.addItem('')
+        self.gridLayout.addWidget(self.search_mode, 1, 0, 1, 2)
+
+        self.layoutWidget1 = QtWidgets.QWidget(self.splitter)
+
+        self.verticalLayout = QtWidgets.QVBoxLayout(self.layoutWidget1)
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+
+        self.title_editor = QtWidgets.QLineEdit()
+
+        self.code_editor = QtWidgets.QPlainTextEdit(self.layoutWidget1)
+        font = QtGui.QFont()
+        font.setFamily('Courier New')
+        self.code_editor.setFont(font)
+
+        self.verticalLayout.addWidget(self.title_editor)
+        self.verticalLayout.addWidget(self.code_editor)
+
+        self.gridLayout_2.addWidget(self.splitter, 1, 0, 1, 1)
+
+        self.setWindowTitle('PyQtGraph')
+        self.script_filter.setPlaceholderText('Type to filter...')
+        self.search_mode.setItemText(0, 'Title Search')
+        self.search_mode.setItemText(1, 'Content Search')
+
+        QtCore.QMetaObject.connectSlotsByName(self)
+
+
+# based on https://github.com/art1415926535/PyQt5-syntax-highlighting
+
+
+def charFormat(color, style='', background=None):
+    """
+    Return a QTextCharFormat with the given attributes.
+    """
+    _color = QtGui.QColor()
+    
+    if type(color) is not str:
+        _color.setRgb(color[0], color[1], color[2])
+    else:
+        _color.setNamedColor(color)
+
+    _format = QtGui.QTextCharFormat()
+    _format.setForeground(_color)
+
+    if 'bold'   in style: _format.setFontWeight(QtGui.QFont.Weight.Bold)
+    if 'italic' in style: _format.setFontItalic(True)
+    if background is not None:
+        _format.setBackground(pg.mkColor(background))
+
+    return _format
+
+
+class DarkThemeColors:
+    Red        = '#F44336'
+    Pink       = '#F48FB1'
+    Purple     = '#CE93D8'
+    DeepPurple = '#B39DDB'
+    Indigo     = '#9FA8DA'
+    Blue       = '#90CAF9'
+    LightBlue  = '#81D4FA'
+    Cyan       = '#80DEEA'
+    Teal       = '#80CBC4'
+    Green      = '#A5D6A7'
+    LightGreen = '#C5E1A5'
+    Lime       = '#E6EE9C'
+    Yellow     = '#FFF59D'
+    Amber      = '#FFE082'
+    Orange     = '#FFCC80'
+    DeepOrange = '#FFAB91'
+    Brown      = '#BCAAA4'
+    Grey       = '#EEEEEE'
+    BlueGrey   = '#B0BEC5'
+
+DARK_STYLES = {
+    'keyword'  : charFormat(DarkThemeColors.Blue,   'bold'),
+    'operator' : charFormat(DarkThemeColors.Red,    'bold'),
+    'brace'    : charFormat(DarkThemeColors.Purple),
+    'defclass' : charFormat(DarkThemeColors.Indigo, 'bold'),
+    'string'   : charFormat(DarkThemeColors.Amber),
+    'string2'  : charFormat(DarkThemeColors.DeepPurple),
+    'comment'  : charFormat(DarkThemeColors.Green,  'italic'),
+    'self'     : charFormat(DarkThemeColors.Blue,   'bold'),
+    'numbers'  : charFormat(DarkThemeColors.Teal),
+}
+
+
+class PythonHighlighter(QtGui.QSyntaxHighlighter):
+    """
+    Syntax highlighter for the Python language.
+    """
+    # Python keywords
+    keywords = keyword.kwlist
+
+    # Python operators
+    operators = [
+        r'=',
+        # Comparison
+        r'==', r'!=', r'<', r'<=', r'>', r'>=',
+        # Arithmetic
+        r'\+', r'-', r'\*', r'/', r'//', r'%', r'\*\*',
+        # In-place
+        r'\+=', r'-=', r'\*=', r'/=', r'\%=',
+        # Bitwise
+        r'\^', r'\|', r'&', r'~', r'>>', r'<<',
+    ]
+
+    # Python braces
+    braces = [ r'\{', r'\}', r'\(', r'\)', r'\[', r'\]', ]
+
+    def __init__(self, document):
+        super().__init__(document)
+
+        # Multi-line strings (expression, flag, style)
+        self.tri_single = (QtCore.QRegularExpression("'''"), 1, 'string2')
+        self.tri_double = (QtCore.QRegularExpression('"""'), 2, 'string2')
+
+        self.rules = []
+
+        # Keyword, operator, and brace rules
+        self.rules += [ (r'\b%s\b' % w, 0, 'keyword') for w in PythonHighlighter.keywords ]
+        self.rules += [ (o, 0, 'operator') for o in PythonHighlighter.operators ]
+        self.rules += [ (b, 0, 'brace') for b in PythonHighlighter.braces ]
+
+        # All other rules
+        self.rules += [
+            # 'self'
+            (r'\bself\b', 0, 'self'),
+
+            # 'def' followed by an identifier
+            (r'\bdef\b\s*(\w+)', 1, 'defclass'),
+            # 'class' followed by an identifier
+            (r'\bclass\b\s*(\w+)', 1, 'defclass'),
+
+            # Numeric literals
+            (r'\b[+-]?[0-9]+[lL]?\b', 0, 'numbers'),
+            (r'\b[+-]?0[xX][0-9A-Fa-f]+[lL]?\b', 0, 'numbers'),
+            (r'\b[+-]?[0-9]+(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\b', 0, 'numbers'),
+
+            # Double-quoted string, possibly containing escape sequences
+            (r'"[^"\\]*(\\.[^"\\]*)*"', 0, 'string'),
+
+            # Single-quoted string, possibly containing escape sequences
+            (r"'[^'\\]*(\\.[^'\\]*)*'", 0, 'string'),
+
+            # From '#' until a newline
+            (r'#[^\n]*', 0, 'comment'),
+        ]
+
+        self.searchText = None
+
+
+    def highlightBlock(self, text):
+        """
+        Apply syntax highlighting to the given block of text.
+        """
+        # Do other syntax formatting
+        for expression, nth, format in self.rules.copy():
+            format = DARK_STYLES[format]
+
+            for n, match in enumerate(re.finditer(expression, text)):
+                if n < nth: continue
+                
+                start  = match.start()
+                length = match.end() - start
+                self.setFormat(start, length, format)
+
+        self.applySearchHighlight(text)
+        self.setCurrentBlockState(0)
+
+        # Do multi-line strings
+        in_multiline = self.match_multiline(text, *self.tri_single)
+        if not in_multiline:
+            in_multiline = self.match_multiline(text, *self.tri_double)
+
+
+    def match_multiline(self, text, delimiter, in_state, style):
+        """
+        Do highlighting of multi-line strings. 
         
+        =========== ==========================================================
+        delimiter   (QRegularExpression) for triple-single-quotes or 
+                    triple-double-quotes
+        in_state    (int) to represent the corresponding state changes when 
+                    inside those strings. Returns True if we're still inside a
+                    multi-line string when this function is finished.
+        style       (str) representation of the kind of style to use
+        =========== ==========================================================
+        """
+        # If inside triple-single quotes, start at 0
+        if self.previousBlockState() == in_state:
+            start = 0
+            add   = 0
+        # Otherwise, look for the delimiter on this line
+        else:
+            match = delimiter.match(text)
+            start = match.capturedStart()
 
-    def keyPressEvent(self, event):
-        if event.key() in [ QtCore.Qt.Key_Enter, QtCore.Qt.Key_Return]:
-            event.accept()
-            self.apply_value(apply=self.APPLY_VALUE)
+            # Move past this match
+            add = match.capturedLength()
 
-            shift_is_pressed = QtGui.QGuiApplication.queryKeyboardModifiers() & QtCore.Qt.ShiftModifier
-            if shift_is_pressed:
-                self.broadcast_event.emit(self.APPLY_VALUE, self.__get_val())
-
-            self.value_enter_event.emit()
-        
-        QtGui.QLineEdit.keyPressEvent(self, event)
-
-
-    def wheelEvent(self, event):
-        event.accept()
-
-        # Figure out if the value is an int or float
-        StrToVal = int if type(self.validator()) is QtGui.QIntValidator else float
-        
-        # Done through QGuiApplication instead of keyEvent to allow ctrl modifier to work when window is unfocused
-        ctrl_is_pressed = QtGui.QGuiApplication.queryKeyboardModifiers() & QtCore.Qt.ControlModifier
-        shift_is_pressed = QtGui.QGuiApplication.queryKeyboardModifiers() & QtCore.Qt.ShiftModifier
-
-        # Int -> +/- 1,  Float -> +/- 0.1
-        delta_mul = 10 if ctrl_is_pressed else 1
-        delta_mul *= 1 if StrToVal == int else 0.1
-
-        delta = 1*delta_mul if event.angleDelta().y() > 0 else -1*delta_mul
-
-        self.apply_value(apply=self.APPLY_DELTA, value=delta)
-
-        # If shift key is being held down, broadcast modification to other controls
-        if shift_is_pressed:
-            self.broadcast_event.emit(self.APPLY_DELTA, delta)
-
-        self.value_enter_event.emit()
-
-
-    def apply_value(self, apply, value=None):
-        if type(value) not in [ int, float, type(None) ]:
-            raise ValueError(f'Value must be a float or int, not {type(value)}')
-
-        if value != None:
-            if apply == self.APPLY_VALUE:
-                self.setText(str(value))
-            elif apply == self.APPLY_DELTA:
-                self.setText(str(round(self.__get_val() + value, 1)))
+        # As long as there's a delimiter match on this line...
+        while start >= 0:
+            # Look for the ending delimiter
+            match = delimiter.match(text, start + add)
+            end   = match.capturedEnd()
+            
+            # Ending delimiter on this line?
+            if end >= add:
+                length = end - start + add + match.capturedLength()
+                self.setCurrentBlockState(0)
+            # No; multi-line string
             else:
-                raise ValueError(f'Invalid apply value: {apply}')
+                self.setCurrentBlockState(in_state)
+                length = len(text) - start + add
+            
+            # Apply formatting
+            self.setFormat(start, length, DARK_STYLES[style])
+            
+            # Highlighting sits on top of this formatting
+            # Look for the next match
+            match = delimiter.match(text, start + length)
+            start = match.capturedStart()
 
-        old_value = self.__get_val()
-        new_value = self.__validate(old_value)
+        self.applySearchHighlight(text)
 
-        if old_value == new_value:
+        # Return True if still inside a multi-line string, False otherwise
+        return (self.currentBlockState() == in_state)
+
+
+    def applySearchHighlight(self, text):
+        if not self.searchText:
             return
-        
-        self.setText(str(new_value))
-        
+            
+        palette    = app.palette()
+        fgnd_color = palette.color(palette.ColorGroup.Current, palette.ColorRole.Text).name()
+        bgnd_color = palette.highlight().color().name()
+        style = charFormat(fgnd_color, background=bgnd_color)
 
-    def __validate(self, value):
-        validator = self.validator()
-        value = min(validator.top(), max(validator.bottom(), value))
-        return value
-
-
-    def __get_val(self):
-        StrToVal = int if type(self.validator()) is QtGui.QIntValidator else float
-        return StrToVal(self.text())
+        for match in re.finditer(f'(?i){self.searchText}', text):
+            start  = match.start()
+            length = match.end() - start
+            self.setFormat(start, length, style)
 
 
+def unnestedDict(exDict):
+    """
+    Converts a dict-of-dicts to a singly nested dict for non-recursive parsing
+    """
+    out = {}
+    for key, val in exDict.items():
+        if isinstance(val, dict):
+            out.update(unnestedDict(val))
+        else:
+            out[key] = val
 
-class MapArchitectWindow(QtGui.QMainWindow):
+    return out
 
-    logger = Logger.get_logger(__name__)
+
+
+class MapArchitectWindow(QtWidgets.QMainWindow):
+
+    FOLDER_LOCATION = 'map_gen_scripts'
 
     gen_map_event = QtCore.pyqtSignal(object, float, float)
 
-    def __init__(self, parent=None):
-        self.logger.debug('__init__ enter')
-
-        QtGui.QMainWindow.__init__(self, parent)
+    def __init__(self):
+        QtWidgets.QMainWindow.__init__(self)
         self.setWindowTitle('Map Architect')
-
-        self.OBJ_WIDTH   = 90
-        self.OBJ_HEIGHT  = 25
-        self.OBJ_MARGIN  = 11
-
-        self.OBJ_SPACING_SMALL = 5
-        self.OBJ_SPACING_LARGE = 22
-
-        self.__bpm_display = True
-
-        self.__controls = {}
-        self.__id = 0
-
-        self.__init_components()
-        self.__build_layout()
-        self.__configure_components()
-        self.__connect_signals()
-
-        self.__add_control()
         
-        self.logger.debug('__init__ exit')
-
-
-    def __init_components(self):
-        self.menu_bar  = QtGui.QMenuBar()
-        self.file_menu = QtGui.QMenu("&File")
-        self.view_menu = QtGui.QMenu("&View")
-
-        self.save_config_action = QtGui.QAction("&Save config", self.file_menu, triggered=lambda: self.__save_config_dialog())
-        self.open_config_action = QtGui.QAction("&Open config", self.file_menu, triggered=lambda: self.__open_config_dialog())
-        self.time_toggle_action = QtGui.QAction("&Change BPM to Time", self.view_menu, triggered=lambda: self.__toggle_time_display())
-
-        # Labels on the left side: https://i.imgur.com/ACZkQ2n.png
-        self.spacing_label = QtGui.QLabel('Spacings:')
-        self.angles_label  = QtGui.QLabel('Angles:')
-        self.bpm_label     = QtGui.QLabel('BPMs:')
-        self.label_layout  = QtGui.QVBoxLayout()
-
-        # Inputs on bottom: https://i.imgur.com/xvZnhHe.png
-        self.num_notes_txtbx  = _ValueLineEdit()
-        self.num_notes_label  = QtGui.QLabel('Num Notes')
-        self.num_notes_layout = QtGui.QVBoxLayout()
-
-        self.rotation_txtbx  = _ValueLineEdit()
-        self.rotation_label  = QtGui.QLabel('Rotation')
-        self.rotation_layout = QtGui.QVBoxLayout()
-
-        self.cs_txtbx  = _ValueLineEdit()
-        self.cs_label  = QtGui.QLabel('CS')
-        self.cs_layout = QtGui.QVBoxLayout()
-
-        self.ar_txtbx  = _ValueLineEdit()
-        self.ar_label  = QtGui.QLabel('AR')
-        self.ar_layout = QtGui.QVBoxLayout()
-
-        self.spacer = QtGui.QSpacerItem(0, 0, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-
-        # Control area: https://i.imgur.com/hxMYN8M.png
-        self.ctrl_area = QtGui.QWidget()
-        self.ctrl_scroll_area = QtGui.QScrollArea()
-        self.note_ctrl_layout = QtGui.QHBoxLayout()
-        self.map_ctrl_layout = QtGui.QHBoxLayout()
-
-        self.ctrl_layout = QtGui.QHBoxLayout()
-
-        # Buttons below input on bottom: https://i.imgur.com/dl3WtZH.png
-        self.btn_layout = QtGui.QHBoxLayout()
-        self.add_btn = QtGui.QPushButton('Add Control')
-        self.gen_btn = QtGui.QPushButton('Generate Map')
-
-        self.architect_widget = QtGui.QWidget()
-        self.architect_layout = QtGui.QVBoxLayout(self.architect_widget)
-
-        self.splitter = QtGui.QSplitter()
+        self.__ui = MainUI()
+        self.setCentralWidget(self.__ui)
         
-        self.name_label = QtGui.QLabel('Map Name:')
-        self.name_txtbx = QtGui.QLineEdit()
+        self.__btn_save_code = QtWidgets.QPushButton('Save script')
+        self.__btn_run_code  = QtWidgets.QPushButton('Run script')
+        self.__code_layout   = QtWidgets.QGridLayout()
+        self.__ui.code_editor.setLayout(self.__code_layout)
 
-        self.description_label = QtGui.QLabel('Map Description:')
-        self.description_txtbx = QtGui.QTextEdit()
-
-        self.name_layout = QtGui.QVBoxLayout()
-        self.description_layout = QtGui.QVBoxLayout()
-
-        self.metadata_widget = QtGui.QWidget()
-        self.metadata_layout = QtGui.QVBoxLayout(self.metadata_widget)
-
-        self.main_widget = QtGui.QWidget()
-        self.main_layout = QtGui.QVBoxLayout(self.main_widget)
-
-
-    def __build_layout(self):
-        self.menu_bar.addMenu(self.file_menu)
-        self.menu_bar.addMenu(self.view_menu)
-
-        self.file_menu.addAction(self.save_config_action)
-        self.file_menu.addAction(self.open_config_action)
-        self.view_menu.addAction(self.time_toggle_action)
-
-        self.label_layout.addWidget(self.spacing_label)
-        self.label_layout.addWidget(self.angles_label)
-        self.label_layout.addWidget(self.bpm_label)
-        self.label_layout.addStretch()
-
-        self.num_notes_layout.addWidget(self.num_notes_txtbx)
-        self.num_notes_layout.addWidget(self.num_notes_label)
-
-        self.rotation_layout.addWidget(self.rotation_txtbx)
-        self.rotation_layout.addWidget(self.rotation_label)
-
-        self.cs_layout.addWidget(self.cs_txtbx)
-        self.cs_layout.addWidget(self.cs_label)
+        self.__py_highlighter = PythonHighlighter(self.__ui.code_editor.document())
         
-        self.ar_layout.addWidget(self.ar_txtbx)
-        self.ar_layout.addWidget(self.ar_label)
+        app = QtWidgets.QApplication.instance()
+        app.paletteChanged.connect(self.__update_theme)
         
-        self.map_ctrl_layout.addLayout(self.num_notes_layout)
-        self.map_ctrl_layout.addLayout(self.rotation_layout)
-        self.map_ctrl_layout.addLayout(self.cs_layout)
-        self.map_ctrl_layout.addLayout(self.ar_layout)
+        policy = QtWidgets.QSizePolicy.Policy.Expanding
+        self.__code_layout.addItem(QtWidgets.QSpacerItem(100, 100, policy, policy), 0, 0)
+        self.__code_layout.addWidget(self.__btn_run_code, 2, 2)
+        self.__code_layout.addWidget(self.__btn_save_code, 2, 1)
         
-        self.ctrl_area.setLayout(self.note_ctrl_layout)
-        self.ctrl_scroll_area.setWidget(self.ctrl_area)
-
-        self.note_ctrl_layout.addItem(self.spacer)
-
-        self.ctrl_layout.addLayout(self.label_layout)
-        self.ctrl_layout.addWidget(self.ctrl_scroll_area)
+        self.__old_text = self.__ui.code_editor.toPlainText()
+        self.__cur_listener = None
         
-        self.btn_layout.addWidget(self.add_btn)
-        self.btn_layout.addWidget(self.gen_btn)
+        self.__item_cache  = []
+        self.__script_list = self.__get_script_list()
 
-        self.architect_layout.addLayout(self.ctrl_layout)
-        self.architect_layout.addLayout(self.map_ctrl_layout)
-        self.architect_layout.addLayout(self.btn_layout)
+        self.__setup_gui()
 
-        self.name_layout.addWidget(self.name_label)
-        self.name_layout.addWidget(self.name_txtbx)
 
-        self.description_layout.addWidget(self.description_label)
-        self.description_layout.addWidget(self.description_txtbx)
+    def __setup_gui(self):
+        self.__ui.code_selection.expandAll()
 
-        self.metadata_layout.addLayout(self.name_layout)
-        self.metadata_layout.addLayout(self.description_layout)
+        self.resize(1000, 500)
+        self.__ui.splitter.setSizes([ 250, 750 ])
 
-        self.splitter.addWidget(self.architect_widget)
-        self.splitter.addWidget(self.metadata_widget)
+        self.__ui.code_selection.currentItemChanged.connect(self.__show_file)
+        self.__ui.code_selection.itemDoubleClicked.connect(self.__load_file)
+        self.__ui.code_editor.textChanged.connect(self.__on_text_change)
+        self.__ui.search_mode.currentTextChanged.connect(self.__on_combo_changed)
+        self.__btn_run_code.clicked.connect(lambda: self.__load_file(edited=True))
+        self.__btn_save_code.clicked.connect(lambda: self.__save_file())
 
-        self.main_layout.addWidget(self.menu_bar)
-        self.main_layout.addWidget(self.splitter)
+        self.__ui.script_filter.setFocus()
+        self.__ui.code_selection.setCurrentIndex(self.__ui.code_selection.model().index(0, 0))
+        self.__on_combo_changed(self.__ui.search_mode.currentText())
 
-        self.setCentralWidget(self.main_widget)
-
-
-    def __configure_components(self):
-        self.num_notes_txtbx.setValidator(QtGui.QIntValidator(3, 500))
-        self.rotation_txtbx.setValidator(QtGui.QIntValidator(0, 180))
-        self.cs_txtbx.setValidator(QtGui.QDoubleValidator(0, 10, 1))
-        self.ar_txtbx.setValidator(QtGui.QDoubleValidator(0, 11, 1))
-
-        self.num_notes_txtbx.setText('60')
-        self.rotation_txtbx.setText('0')
-        self.cs_txtbx.setText('4')
-        self.ar_txtbx.setText('8')
-
-        self.num_notes_layout.setAlignment(self.num_notes_txtbx, QtCore.Qt.AlignHCenter)
-        self.num_notes_layout.setAlignment(self.num_notes_label, QtCore.Qt.AlignHCenter)
-
-        self.rotation_layout.setAlignment(self.rotation_txtbx, QtCore.Qt.AlignHCenter)
-        self.rotation_layout.setAlignment(self.rotation_label, QtCore.Qt.AlignHCenter)
-
-        self.cs_layout.setAlignment(self.cs_txtbx, QtCore.Qt.AlignHCenter)
-        self.cs_layout.setAlignment(self.cs_label, QtCore.Qt.AlignHCenter)
-
-        self.ar_layout.setAlignment(self.ar_txtbx, QtCore.Qt.AlignHCenter)
-        self.ar_layout.setAlignment(self.ar_label, QtCore.Qt.AlignHCenter)
-
-        self.num_notes_txtbx.setFixedSize(self.OBJ_WIDTH, self.OBJ_HEIGHT)
-        self.rotation_txtbx.setFixedSize(self.OBJ_WIDTH, self.OBJ_HEIGHT)
-        self.cs_txtbx.setFixedSize(self.OBJ_WIDTH, self.OBJ_HEIGHT)
-        self.ar_txtbx.setFixedSize(self.OBJ_WIDTH, self.OBJ_HEIGHT)
-
-        self.map_ctrl_layout.setSpacing(self.OBJ_SPACING_LARGE)
-        self.note_ctrl_layout.setSpacing(self.OBJ_SPACING_LARGE)
-
-        self.num_notes_layout.setSpacing(self.OBJ_SPACING_SMALL)
-        self.rotation_layout.setSpacing(self.OBJ_SPACING_SMALL)
-        self.cs_layout.setSpacing(self.OBJ_SPACING_SMALL)
-        self.ar_layout.setSpacing(self.OBJ_SPACING_SMALL)
-
-        self.label_layout.setContentsMargins(self.OBJ_MARGIN, self.OBJ_MARGIN, self.OBJ_MARGIN, self.OBJ_MARGIN)
-        self.label_layout.setSpacing(self.OBJ_HEIGHT + self.OBJ_MARGIN)
-        self.label_layout.setAlignment(self.spacing_label, QtCore.Qt.AlignTop | QtCore.Qt.AlignRight)
-        self.label_layout.setAlignment(self.angles_label, QtCore.Qt.AlignTop | QtCore.Qt.AlignRight)
-        self.label_layout.setAlignment(self.bpm_label, QtCore.Qt.AlignTop | QtCore.Qt.AlignRight)
-
-        self.ctrl_scroll_area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        self.ctrl_scroll_area.setWidgetResizable(True)
-        self.ctrl_scroll_area.setMinimumHeight((self.OBJ_HEIGHT + self.OBJ_SPACING_LARGE)*4 + self.OBJ_MARGIN*2)
-
-        self.map_ctrl_layout.setContentsMargins(100, self.OBJ_MARGIN, self.OBJ_MARGIN, self.OBJ_MARGIN)
-
-        self.name_layout.setContentsMargins(0, 0, 0, 0)
-        self.name_layout.setSpacing(self.OBJ_SPACING_SMALL)
-        self.name_layout.setSizeConstraint(QtGui.QLayout.SetNoConstraint)
-        
-        self.name_txtbx.setSizePolicy(QtGui.QSizePolicy.Ignored, QtGui.QSizePolicy.Fixed)
-        self.name_txtbx.setFixedHeight(self.OBJ_HEIGHT)
-        self.name_txtbx.setMaximumWidth(self.name_txtbx.parent().maximumSize().width())
-
-        self.description_layout.setContentsMargins(0, 0, 0, 0)
-        self.description_layout.setSpacing(self.OBJ_SPACING_SMALL)
-
-        self.metadata_layout.setContentsMargins(self.OBJ_MARGIN, 0, self.OBJ_MARGIN, self.OBJ_MARGIN)
-        self.metadata_layout.setSpacing(self.OBJ_SPACING_LARGE)
-
-        self.main_layout.setContentsMargins(0, 0, 0, 0)
-        self.setMaximumHeight(0)
-
-
-    def __connect_signals(self):
-        self.add_btn.clicked.connect(lambda: self.__add_control())
-        self.gen_btn.clicked.connect(self.__generate_map)
-
-        self.num_notes_txtbx.value_enter_event.connect(self.__update_gen_map)
-        self.rotation_txtbx.value_enter_event.connect(self.__update_gen_map)
-        self.cs_txtbx.value_enter_event.connect(self.__update_gen_map)
-        self.ar_txtbx.value_enter_event.connect(self.__update_gen_map)
-
-
-    def __toggle_time_display(self):
-        if self.__bpm_display == True:
-            self.bpm_label.setText('Times:')
-            self.time_toggle_action.setText('Change Time to BPM')
-        else:
-            self.bpm_label.setText('BPMs:')
-            self.time_toggle_action.setText('Change BPM to Time')
-
-        # Converts between time <-> bpm and vice-versa
-        for btn in self.__controls.keys():
-            bpm = int(self.__controls[btn]['bpm_txtbx'].text())
-            self.__controls[btn]['bpm_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=int(15000/bpm))
-
-            if self.__bpm_display == True:
-                self.__controls[btn]['bpm_txtbx'].setValidator(QtGui.QIntValidator(1, 100000))
-            else:
-                self.__controls[btn]['bpm_txtbx'].setValidator(QtGui.QIntValidator(1, 1000))
-
-        self.__bpm_display = not self.__bpm_display
-
-
-    def __save_config_dialog(self):
-        file_name, _ = QtGui.QFileDialog.getSaveFileName(self, 'Save Configuration', '', '*.json')
-        if not file_name:
-            return
-        
-        data = self.__get_data()
-        with open(file_name, 'w') as f:
-            json.dump(data, f)
-        
-
-    def __open_config_dialog(self):
-        file_name, _ = QtGui.QFileDialog.getOpenFileName(self, 'Open Configuration', '', '*.json')
-        if not file_name:
-            return
-        
-        with open(file_name, 'r') as f:
-            data = json.load(f)
-
-        if 0 in [ len(data['spacings']), len(data['angles']), len(data['bpms']) ]:
-            QtGui.QMessageBox.error('Invalid Configuration File', 'Bad configuration file! Number of spacings, angles, and times must must not be 0.')
-            return
-
-        if not (len(data['spacings']) == len(data['angles']) == len(data['bpms'])):
-            QtGui.QMessageBox.error(self, 'Error', 'Bad configuration file! Number of spacings, angles, and times must be equal.')
-            return
-
-        if 'is_bpm' in data:
-            if data['is_bpm'] != self.__bpm_display:
-                self.__toggle_time_display()
-        
-        if 'name' in data:
-            self.name_txtbx.setText(data['name'])
-        
-        if 'description' in data:
-            self.description_txtbx.setText(data['description'])
-
-        num_ctrls_now = len(list(self.__controls.keys()))
-        num_ctrls_req = len(data['spacings'])
-
-        num_to_rmv = max(0, num_ctrls_now - num_ctrls_req)
-        num_to_add = max(0, num_ctrls_req - num_ctrls_now)
-
-        for _ in range(num_to_rmv):
-            self.__remove_control(list(self.__controls)[-1])
-
-        for _ in range(num_to_add):
-            self.__add_control()
-
-        for spacing, angle, bpm, btn in zip(data['spacings'], data['angles'], data['bpms'], self.__controls.keys()):
-            self.__controls[btn]['spacing_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=spacing)
-            self.__controls[btn]['angles_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=angle)
-            self.__controls[btn]['bpm_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=bpm)
-
-        self.num_notes_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=data['num_notes'])
-        self.rotation_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=data['rotation'])
-        self.cs_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=data['cs'])
-        self.ar_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=data['ar'])
-
-
-    def __get_data(self):
-        # Validate the data before returning the values
-        for btn in self.__controls.keys():
-            self.__controls[btn]['spacing_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE)
-            self.__controls[btn]['angles_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE)
-            self.__controls[btn]['bpm_txtbx'].apply_value(apply=_ValueLineEdit.APPLY_VALUE)
-
-        self.num_notes_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE)
-        self.rotation_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE)
-        self.cs_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE)
-        self.ar_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE)
-
-        return {
-            'spacings'   : list([ int(self.__controls[btn]['spacing_txtbx'].text()) for btn in self.__controls ]),
-            'angles'     : list([ int(self.__controls[btn]['angles_txtbx'].text()) for btn in self.__controls ]),
-            'bpms'       : list([ int(self.__controls[btn]['bpm_txtbx'].text()) for btn in self.__controls ]),
-            'num_notes'  : int(self.num_notes_txtbx.text()),
-            'rotation'   : int(self.rotation_txtbx.text()),
-            'cs'         : float(self.cs_txtbx.text()),
-            'ar'         : float(self.ar_txtbx.text()),
-            'name'       : self.name_txtbx.text(),
-            'description': self.description_txtbx.toPlainText(),
-            'is_bpm'     : self.__bpm_display
-        }
-
-
-    def __add_control(self, spacing=None, angle=None, bpm=None):
-        spacing_txtbx = _ValueLineEdit()
-        angles_txtbx  = _ValueLineEdit()
-        bpm_txtbx     = _ValueLineEdit()
-        remove_btn    = QtGui.QPushButton('Remove')
-
-        spacing_txtbx.setValidator(QtGui.QIntValidator(0, 512))
-        angles_txtbx.setValidator(QtGui.QIntValidator(-180, 180))
-
-        if self.__bpm_display:
-            bpm_txtbx.setValidator(QtGui.QIntValidator(1, 1000))
-        else:
-            bpm_txtbx.setValidator(QtGui.QIntValidator(1, 100000))
-
-        if spacing is not None: spacing_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=spacing)
-        else:                   spacing_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=100)
-
-        if angle is not None:   angles_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=angle)
-        else:                   angles_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=90)
-
-        if bpm is not None:     bpm_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=bpm)
-        else:                   bpm_txtbx.apply_value(apply=_ValueLineEdit.APPLY_VALUE, value=60 if self.__bpm_display else 1000)
-
-        ctrl_layout = QtGui.QVBoxLayout()
-        ctrl_layout.addWidget(spacing_txtbx)
-        ctrl_layout.addWidget(angles_txtbx)
-        ctrl_layout.addWidget(bpm_txtbx)
-        ctrl_layout.addWidget(remove_btn)
-        ctrl_layout.addStretch()
-
-        ctrl_layout.setAlignment(spacing_txtbx, QtCore.Qt.AlignCenter)
-        ctrl_layout.setAlignment(angles_txtbx, QtCore.Qt.AlignCenter)
-        ctrl_layout.setAlignment(bpm_txtbx, QtCore.Qt.AlignCenter)
-        ctrl_layout.setAlignment(remove_btn, QtCore.Qt.AlignCenter)
-
-        spacing_txtbx.setFixedSize(self.OBJ_WIDTH, self.OBJ_HEIGHT)
-        angles_txtbx.setFixedSize(self.OBJ_WIDTH, self.OBJ_HEIGHT)
-        bpm_txtbx.setFixedSize(self.OBJ_WIDTH, self.OBJ_HEIGHT)
-        remove_btn.setFixedSize(self.OBJ_WIDTH, self.OBJ_HEIGHT)
-
-        self.note_ctrl_layout.removeItem(self.spacer)
-        self.note_ctrl_layout.addLayout(ctrl_layout)
-        self.note_ctrl_layout.addItem(self.spacer)
-        self.note_ctrl_layout.setAlignment(ctrl_layout, QtCore.Qt.AlignLeft)
-
-        remove_btn.clicked.connect(lambda _, btn=remove_btn: self.__remove_control(btn))
-
-        spacing_txtbx.value_enter_event.connect(self.__update_gen_map)
-        spacing_txtbx.broadcast_event.connect(lambda apply, value, txtbx=spacing_txtbx: self.__spacing_broadcast_event(apply, value, txtbx))
-
-        angles_txtbx.value_enter_event.connect(self.__update_gen_map)
-        angles_txtbx.broadcast_event.connect(lambda apply, value, txtbx=angles_txtbx: self.__angles_broadcast_event(apply, value, txtbx))
-
-        bpm_txtbx.value_enter_event.connect(self.__update_gen_map)
-        bpm_txtbx.broadcast_event.connect(lambda apply, value, txtbx=bpm_txtbx: self.__bpm_broadcast_event(apply, value, txtbx))
-
-        self.__controls[remove_btn] = {
-            'layout'        : ctrl_layout,
-            'spacing_txtbx' : spacing_txtbx,
-            'angles_txtbx'  : angles_txtbx,
-            'bpm_txtbx'     : bpm_txtbx,
-        }
-
-        self.__update_gen_map()
-        return remove_btn
-
-
-    def __remove_control(self, btn):
-        if len(self.__controls) == 1:
-            return
-
-        self.__controls[btn]['spacing_txtbx'].value_enter_event.disconnect()
-        self.__controls[btn]['spacing_txtbx'].broadcast_event.disconnect()
-
-        self.__controls[btn]['angles_txtbx'].value_enter_event.disconnect()
-        self.__controls[btn]['angles_txtbx'].broadcast_event.disconnect()
-
-        self.__controls[btn]['bpm_txtbx'].value_enter_event.disconnect()
-        self.__controls[btn]['bpm_txtbx'].broadcast_event.disconnect()
-
-        self.note_ctrl_layout.removeItem(self.__controls[btn]['layout'])
-        self.__del_layout(self.__controls[btn]['layout'])
-        del self.__controls[btn]
-
-        self.__update_gen_map()
-
-
-    def __del_layout(self, layout):
-        for i in reversed(range(layout.count())):
-            child = layout.itemAt(i)
-            layout.removeItem(child)
-
-            child_layout = child.layout()
-            child_widget = child.widget()
-
-            if child_layout is not None:
-                self.__del_layout(child_layout)
-                child_layout.deleteLater()
-
-            elif child_widget is not None:
-                child_widget.deleteLater()
-                
-                
-    def __spacing_broadcast_event(self, apply, value, txtbx):
-        self.logger.debug('__spacing_broadcast_event')
-
-        for btn in self.__controls:
-            if self.__controls[btn]['spacing_txtbx'] == txtbx:
-                continue
-            
-            self.__controls[btn]['spacing_txtbx'].apply_value(apply, value)
-
-
-    def __angles_broadcast_event(self, apply, value, txtbx):
-        self.logger.debug('__angles_broadcast_event')
-
-        for btn in self.__controls:
-            if self.__controls[btn]['angles_txtbx'] == txtbx:
-                continue
-            
-            self.__controls[btn]['angles_txtbx'].apply_value(apply, value)
-
-
-    def __bpm_broadcast_event(self, apply, value, txtbx):
-        self.logger.debug('__bpm_broadcast_event')
-
-        for btn in self.__controls:
-            if self.__controls[btn]['bpm_txtbx'] == txtbx:
-                continue
-            
-            self.__controls[btn]['bpm_txtbx'].apply_value(apply, value)
-
-
-    def __update_gen_map(self):
-        cs = float(self.cs_txtbx.text())
-        ar = float(self.ar_txtbx.text())
-
-        # Handle DT/NC vs nomod setting
-        rate_multiplier = 1.0 if (ar <= 10) else 1.5
-
-        spacings  = np.asarray([ int(self.__controls[btn]['spacing_txtbx'].text()) for btn in self.__controls ])
-        angles    = np.asarray([ int(self.__controls[btn]['angles_txtbx'].text()) for btn in self.__controls ])*math.pi/180
-        times     = np.asarray([ int(self.__controls[btn]['bpm_txtbx'].text()) for btn in self.__controls ])
-        num_notes = int(self.num_notes_txtbx.text())
-        rotation  = int(self.rotation_txtbx.text())*math.pi/180
-
-        if self.__bpm_display:
-            times = 15000/times*rate_multiplier
-        else:
-            times = times/rate_multiplier
-
-        gen_map, _ = OsuUtils.generate_pattern(rotation, spacings, times, angles, num_notes, 1)
-        self.gen_map_event.emit(gen_map, cs, ar)
+        self.__load_script_list(self.__ui.code_selection.invisibleRootItem(), self.__script_list)
 
     
-    def __generate_map(self):
-        cs        = float(self.cs_txtbx.text())
-        ar        = float(self.ar_txtbx.text())
+    def __on_combo_changed(self, search_type):
+        if self.__cur_listener is not None:
+            self.__cur_listener.disconnect()
 
-        # Handle DT/NC vs nomod setting
-        rate_multiplier = 1.0 if (ar <= 10) else 1.5
+        self.__cur_listener = self.__ui.script_filter.textChanged
 
-        spacings  = np.asarray([ int(self.__controls[btn]['spacing_txtbx'].text()) for btn in self.__controls ])
-        angles    = np.asarray([ int(self.__controls[btn]['angles_txtbx'].text()) for btn in self.__controls ])*math.pi/180
-        times     = np.asarray([ int(self.__controls[btn]['bpm_txtbx'].text()) for btn in self.__controls ])
-        num_notes = int(self.num_notes_txtbx.text())
-        rotation  = int(self.rotation_txtbx.text())*math.pi/180
-
-        if self.__bpm_display:
-            times = 15000/times*rate_multiplier
+        if search_type == 'Content Search':
+            self.__cur_listener.connect(self.__filter_by_content)
         else:
-            times = times/rate_multiplier
+            self.__py_highlighter.searchText = None
+            self.__cur_listener.connect(self.__filter_by_title)
 
-        gen_map, _ = OsuUtils.generate_pattern(rotation, spacings, times, angles, num_notes, 1)
-        ar = min(ar, 10) if (ar <= 10) else OsuUtils.ms_to_ar(OsuUtils.ar_to_ms(ar)*rate_multiplier)
-
-        date = datetime.datetime.now()
-
-        beatmap_data = textwrap.dedent(
-            f"""\
-            osu file format v14
-
-            [General]
-            AudioFilename: blank.mp3
-            AudioLeadIn: 0
-            PreviewTime: -1
-            Countdown: 0
-            SampleSet: Normal
-            StackLeniency: 0
-            Mode: 0
-            LetterboxInBreaks: 1
-            WidescreenStoryboard: 1
-
-            [Editor]
-            DistanceSpacing: 0.9
-            BeatDivisor: 1
-            GridSize: 32
-            TimelineZoom: 0.2000059
-
-            [Metadata]
-            Title:unknown
-            TitleUnicode:unknown
-            Artist:abraker
-            ArtistUnicode:abraker
-            Creator:abraker
-            Version:gen_{date.hour}:{date.minute}:{date.second}_{self.name_txtbx.text()}_{self.__id}
-            Source:
-            Tags:
-            BeatmapID:0
-            BeatmapSetID:0
-
-            [Difficulty]
-            HPDrainRate:8
-            CircleSize:{cs}
-            OverallDifficulty:10
-            ApproachRate:{ar}
-            SliderMultiplier:1.4
-            SliderTickRate:1
-
-            [Events]\
-            """
-        )
-
-        # Generate notes
-        audio_offset = -48  # ms
-
-        for note in gen_map:
-            beatmap_data += textwrap.dedent(
-                f"""
-                Sample,{int(note[0] + audio_offset*rate_multiplier)},3,"pluck.wav",100\
-                """
-            )
-
-        beatmap_data += textwrap.dedent(
-            f"""
-
-            [TimingPoints]
-            0,1000,4,1,1,100,1,0
-
-            [HitObjects]\
-            """
-        )
-
-        for note in gen_map:
-            beatmap_data += textwrap.dedent(
-                f"""
-                {int(note[1])},{int(note[2])},{int(note[0] + audio_offset*rate_multiplier)},1,0,0:0:0:0:\
-                """
-            )
-
-        # Remove leading whitespace
-        beatmap_data = beatmap_data.split('\n')
-        for i in range(len(beatmap_data)):
-            beatmap_data[i] = beatmap_data[i].strip()
-        self.beatmap_data = '\n'.join(beatmap_data)
-
-        map_path = f'{AppConfig.cfg["osu_dir"]}/Songs/osu_play_analyzer'
-
-        # Write to beatmap file
-        os.makedirs(map_path, exist_ok=True)
-        BeatmapIO.save_beatmap(self.beatmap_data, 'res/tmp.osu')
-        map_md5 = hashlib.md5(open('res/tmp.osu', 'rb').read()).hexdigest()
-
-        if not os.path.isfile(f'{map_path}/{map_md5}.osu'):
-            shutil.copy2('res/tmp.osu', f'{map_path}/{map_md5}.osu')
-        os.remove('res/tmp.osu')
-
-        if not os.path.isfile(f'{map_path}/pluck.wav'):
-            shutil.copy2('res/pluck.wav', f'{map_path}/pluck.wav')
-
-        if not os.path.isfile(f'{map_path}/normal-hitnormal.wav'):
-            shutil.copy2('res/blank.wav', f'{map_path}/normal-hitnormal.wav')
+        # Fire on current text, too
+        self.__cur_listener.emit(self.__ui.script_filter.text())
 
 
+    def __on_text_change(self):
+        """
+        textChanged fires when the highlighter is reassigned the same document.
+        Prevent this from showing "run edited code" by checking for actual
+        content change
+        """
+        new_text = self.__ui.code_editor.toPlainText()
+        if new_text != self.__old_text:
+            self.__old_text = new_text
+
+
+    def __filter_by_title(self, text):
+        self.__show_examples_by_title(self.__get_matching_titles(text))
+        self.__py_highlighter.setDocument(self.__ui.code_editor.document())
+
+
+    def __filter_by_content(self, text=None):
+        self.__py_highlighter.searchText = text
+        
+        # Need to reapply to current document
+        self.__py_highlighter.setDocument(self.__ui.code_editor.document())
+
+        text   = text.lower()
+        titles = []
+        
+        # Don't filter very short strings
+        for name, filepath in unnestedDict(self.__script_list).items():
+            contents = self.__get_code_content(f'{MapArchitectWindow.FOLDER_LOCATION}\\{filepath}').lower()
+            
+            if text in contents:
+                titles.append(name)
+        
+        self.__show_examples_by_title(titles)
+
+
+    def __get_matching_titles(self, text, exDict=None, acceptAll=False):
+        if exDict is None:
+            exDict = self.__script_list
+
+        text   = text.lower()
+        titles = []
+
+        for key, val in exDict.items():
+            matched = acceptAll or text in key.lower()
+
+            if isinstance(val, dict):
+                titles.extend(self.__get_matching_titles(text, val, acceptAll=matched))
+            elif matched:
+                titles.append(key)
+
+        return titles
+
+
+    def __show_examples_by_title(self, titles):
+        flag = QtWidgets.QTreeWidgetItemIterator.IteratorFlag.NoChildren
+        tree_iter = QtWidgets.QTreeWidgetItemIterator(self.__ui.code_selection, flag)
+        item = tree_iter.value()
+
+        while item is not None:
+            parent = item.parent()
+            item.setHidden(not (item.childCount() or item.text(0) in titles))
+
+            # If all children of a parent are gone, hide it
+            if parent:
+                hide_parent = True
+                for ii in range(parent.childCount()):
+                    if not parent.child(ii).isHidden():
+                        hide_parent = False
+                        break
+
+                parent.setHidden(hide_parent)
+
+            tree_iter += 1
+            item = tree_iter.value()
+
+
+    def __update_theme(self):
+        self.__py_highlighter = PythonHighlighter(self.__ui.code_editor.document())
+
+
+    def __get_script_list(self):
+        data = { }
+
+        results = os.walk(MapArchitectWindow.FOLDER_LOCATION, topdown=True, onerror=None, followlinks=False)
+        for dirpath, _, filenames in results:
+            dirpath = os.path.normpath(dirpath)
+
+            # Take out the root folder name
+            dirpath = dirpath.split('\\')
+            dirpath = '\\'.join(dirpath[1:])
+
+            data_nest = data
+            for dir in dirpath.split('\\'):
+                if not dir: continue
+                if not dir in data_nest:
+                    data_nest[dir] = { }
+
+                data_nest = data_nest[dir]
+                dirpath += '\\'
+
+            for filename in filenames:
+                data_nest[filename.split('.')[0]] = f'{dirpath}{filename}'
+
+        return data
+
+
+    def __load_script_list(self, root, scripts):
+        item  = self.__ui.code_selection.currentItem()
+        index = None
+
+        if item is not None:
+            index = self.__ui.code_selection.indexFromItem(item)
+            item  = None
+
+        for key, val in scripts.items():
+            item = QtWidgets.QTreeWidgetItem([ key ])
+
+            # PyQt 4.9.6 no longer keeps references to these wrappers,
+            # so we need to make an explicit reference or else the .file
+            # attribute will disappear.
+            self.__item_cache.append(item)
+           
+            if isinstance(val, dict):
+                self.__load_script_list(item, val)
+            else:
+                item.path = val
+
+            # Add only if the name does not exist
+            if not any([ root.child(i).text(0) == key for i in range(root.childCount()) ]):
+                root.addChild(item)
+
+        if index is not None:
+            item = self.__ui.code_selection.itemFromIndex(index)
+            self.__ui.code_selection.setCurrentItem(item)
+
+
+    def __current_filepath(self):
+        item = self.__ui.code_selection.currentItem()
+        return item.path
+
+ 
+    def __show_file(self):
+        script_pathname = self.__current_filepath()
+        file_pathname   = f'{MapArchitectWindow.FOLDER_LOCATION}\\{script_pathname}'
+        
+        self.__ui.code_editor.setPlainText(self.__get_code_content(file_pathname))
+        self.__ui.title_editor.setText(script_pathname)
+
+
+    def __save_file(self):
+        script_pathname = self.__ui.title_editor.text()
+        file_pathname   = f'{MapArchitectWindow.FOLDER_LOCATION}/{script_pathname}'
+        file_path       = os.path.dirname(file_pathname)
+
+        if not os.path.exists(file_path):
+            os.makedirs(file_path)
+
+        with open(file_pathname, 'w') as f:
+            f.write(self.__ui.code_editor.toPlainText())
+
+        self.__script_list = self.__get_script_list()
+        self.__load_script_list(self.__ui.code_selection.invisibleRootItem(), self.__script_list)
+
+
+    def __load_file(self, edited=False):
+        script_path = os.path.abspath(os.path.dirname(__file__))
+        path        = os.path.dirname(os.path.dirname(script_path))
+
+        env = dict(os.environ)
+        env['PYTHONPATH'] = f'{path}/map_generator'
+        
+        if edited:
+            proc = subprocess.Popen([ sys.executable, '-' ], stdin=subprocess.PIPE, cwd=MapArchitectWindow.FOLDER_LOCATION, env=env)
+            proc.stdin.write(self.__ui.code_editor.toPlainText().encode('UTF-8'))
+            proc.stdin.close()
+        else:
+            fn = self.__current_filepath()
+            if fn is None: return
+
+            subprocess.Popen([ sys.executable, fn ], cwd=MapArchitectWindow.FOLDER_LOCATION, env=env)
+
+
+    def __get_code_content(self, pathname):
+        if pathname is None:
+            self.__ui.code_editor.clear()
+            return
+
+        with open(pathname, 'r') as f:
+            text = f.read()
+
+        return text
+
+
+    def keyPressEvent(self, event):
+        ret = super().keyPressEvent(event)
+        if not QtCore.Qt.KeyboardModifier.ControlModifier & event.modifiers():
+            return ret
+        
+        key = event.key()
+        Key = QtCore.Qt.Key
+
+        # Allow quick navigate to search
+        if key == Key.Key_F:
+            self.__ui.script_filter.setFocus()
+            event.accept()
+            return
+
+        if key not in [ Key.Key_Plus, Key.Key_Minus, Key.Key_Underscore, Key.Key_Equal, Key.Key_0 ]:
+            return ret
+       
+        font = self.__ui.code_editor.font()
+        old_size = font.pointSize()
+        
+        if key == Key.Key_Plus or key == Key.Key_Equal:
+            font.setPointSize(int(old_size + max(old_size*.15, 1)))
+        elif key == Key.Key_Minus or key == Key.Key_Underscore:
+            newSize = old_size - max(old_size*.15, 1)
+            font.setPointSize(int(max(newSize, 1)))
+        elif key == Key.Key_0:
+            # Reset to original size
+            font.setPointSize(10)
+       
+        self.__ui.code_editor.setFont(font)
+
+        event.accept()
+
+
+if __name__ == '__main__':
+    window = MapArchitectWindow()
+    pg.exec()
