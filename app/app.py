@@ -154,7 +154,7 @@ class App(QtGui.QMainWindow):
 
     def map_architect_button_clicked(self):
         self.logger.info_debug(App.debug, 'map_architect_button_clicked')
-        self.map_display_window.show()
+        self.map_architect_window.show()
 
 
     def map_display_button_clicked(self):
