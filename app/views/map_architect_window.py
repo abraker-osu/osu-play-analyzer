@@ -300,7 +300,7 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
 
     FOLDER_LOCATION = 'map_gen_scripts'
 
-    gen_map_event = QtCore.pyqtSignal(object, float, float)
+    gen_map_event = QtCore.pyqtSignal(str)
 
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
@@ -340,10 +340,9 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
         self.__ui.splitter.setSizes([ 250, 750 ])
 
         self.__ui.code_selection.currentItemChanged.connect(self.__show_file)
-        self.__ui.code_selection.itemDoubleClicked.connect(self.__load_file)
         self.__ui.code_editor.textChanged.connect(self.__on_text_change)
         self.__ui.search_mode.currentTextChanged.connect(self.__on_combo_changed)
-        self.__btn_run_code.clicked.connect(lambda: self.__load_file(edited=True))
+        self.__btn_run_code.clicked.connect(lambda: self.__run_script())
         self.__btn_save_code.clicked.connect(lambda: self.__save_file())
 
         self.__ui.script_filter.setFocus()
@@ -533,22 +532,22 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
         self.__load_script_list(self.__ui.code_selection.invisibleRootItem(), self.__script_list)
 
 
-    def __load_file(self, edited=False):
+    def __run_script(self):
         script_path = os.path.abspath(os.path.dirname(__file__))
         path        = os.path.dirname(os.path.dirname(script_path))
 
         env = dict(os.environ)
         env['PYTHONPATH'] = f'{path}/map_generator'
         
-        if edited:
-            proc = subprocess.Popen([ sys.executable, '-' ], stdin=subprocess.PIPE, cwd=MapArchitectWindow.FOLDER_LOCATION, env=env)
-            proc.stdin.write(self.__ui.code_editor.toPlainText().encode('UTF-8'))
-            proc.stdin.close()
-        else:
-            fn = self.__current_filepath()
-            if fn is None: return
-
-            subprocess.Popen([ sys.executable, fn ], cwd=MapArchitectWindow.FOLDER_LOCATION, env=env)
+        proc = subprocess.run(
+            [ sys.executable, '-' ], 
+            input  = self.__ui.code_editor.toPlainText().encode('UTF-8'), 
+            stdout = subprocess.PIPE, 
+            cwd    = MapArchitectWindow.FOLDER_LOCATION, 
+            env    = env
+        )
+        osu_data = proc.stdout.decode('UTF-8')
+        self.gen_map_event.emit(osu_data)
 
 
     def __get_code_content(self, pathname):

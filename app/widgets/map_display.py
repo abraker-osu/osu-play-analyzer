@@ -278,7 +278,7 @@ class MapDisplay(QtGui.QWidget):
         # Draw approach circles
         presses = StdMapData.get_presses(self.map_data)
         ar_select = (self.t <= presses['time']) & (presses['time'] <= (self.t + self.ar_ms))
-        
+
         if ar_select.sum() == 0:
             # Nothing to draw
             self.plot_approach.setData([], [], symbolSize=[])
@@ -370,6 +370,36 @@ class MapDisplay(QtGui.QWidget):
             return
 
         self.__open_map_from_file_name(file_name)
+
+
+    def open_map_from_osu_data(self, osu_data):
+        try: beatmap = BeatmapIO.load_beatmap(osu_data)
+        except Exception as e:
+            print(Utils.get_traceback(e, 'Error opening map'))
+            return
+
+        if beatmap.gamemode != Gamemode.OSU:
+            print(f'{Gamemode(beatmap.gamemode)} gamemode is not supported')
+            return
+
+        try: map_data = StdMapData.get_map_data(beatmap)
+        except Exception as e:
+            print(Utils.get_traceback(e, 'Error reading map'))
+            return
+
+        map_data['time'] /= 1000
+        map_data['y'] = -map_data['y']
+
+        self.set_map_full(
+            map_data, 
+            beatmap.difficulty.cs, 
+            beatmap.difficulty.ar, 
+            beatmap.metadata.beatmap_md5
+        )
+
+        self.map_text = beatmap.metadata.name
+        viewing_text  = self.map_text + ' ' + self.replay_text
+        self.status_label.setText(f'Viewing: {viewing_text}')
 
 
     def __open_map_from_file_name(self, file_name, mods=0):

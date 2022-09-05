@@ -16,7 +16,7 @@ Different tabs available:
 
       Map viewed here is same as in the selected tab.
 """
-import numpy as np
+import io
 import pandas as pd
 
 from pyqtgraph.Qt import QtGui, QtCore
@@ -26,6 +26,7 @@ from osu_analysis import StdMapData
 from app.misc.Logger import Logger
 from app.misc.osu_utils import OsuUtils
 from app.widgets.map_display import MapDisplay
+
 
 class MapDisplayWindow(QtGui.QMainWindow):
 
@@ -79,7 +80,11 @@ class MapDisplayWindow(QtGui.QMainWindow):
         self.selected_map_display.new_replay_event(map_data, replay_data, cs, ar, mods, name)
 
 
-    def set_from_generated(self, gen_data, cs, ar):
+    def set_from_generated(self, osu_data):
+        self.generated_map_display.open_map_from_osu_data(osu_data)
+
+
+    def set_from_generated_old(self, gen_data, cs, ar):
         map_data = [ 
             pd.DataFrame(
             [
