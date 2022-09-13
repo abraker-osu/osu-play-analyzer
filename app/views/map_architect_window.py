@@ -3,9 +3,13 @@ import os
 import re
 import subprocess
 import sys
+import json
+import base64
 
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
+
+from app.misc.proc_data import ProcData
 
 app = pg.mkQApp()
 
@@ -537,7 +541,7 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
         path        = os.path.dirname(os.path.dirname(script_path))
 
         env = dict(os.environ)
-        env['PYTHONPATH'] = f'{path}/map_generator'
+        env['PYTHONPATH'] = f'{path}/map_generator;{path}/app/misc'
         
         proc = subprocess.run(
             [ sys.executable, '-' ], 
@@ -546,8 +550,14 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
             cwd    = MapArchitectWindow.FOLDER_LOCATION, 
             env    = env
         )
-        osu_data = proc.stdout.decode('UTF-8')
-        self.gen_map_event.emit(osu_data)
+
+        try:
+            proc_data = ProcData()
+            proc_data.recieve(proc.stdout)
+            proc_data.print()
+            self.gen_map_event.emit(proc_data.data('map_data'))
+        except json.decoder.JSONDecodeError as e:
+            print('Unable to decode script output:', e)
 
 
     def __get_code_content(self, pathname):
