@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import traceback
@@ -68,9 +69,38 @@ class App(QtGui.QMainWindow):
         MapsDB.check_db()
 
         self.__contruct_gui()
-        self.__connect_signals()
 
-        OsuRecorder.start_monitor()
+        if not os.path.isdir(AppConfig.cfg['osu_dir']):
+            msg = QtGui.QMessageBox()
+            msg.setIcon(QtGui.QMessageBox.Information)
+            msg.setWindowTitle('osu! folder config')
+            msg.setText('Locate your osu! folder')
+            msg.setStandardButtons(QtGui.QMessageBox.Ok)
+            msg.exec_()
+
+            osu_dir = str(QtGui.QFileDialog.getExistingDirectory(self, 'Select osu! folder'))
+            if len(osu_dir) == 0:
+                self.status_text.setText(
+                    'Invalid osu! path! Alternatively find config.json in app folder and edit it.\n' + \
+                    'Then restart the app.\n' + \
+                    'Make sure to use double backslashes for osu! path (ex: "C:\\\\Games\\\\osu!")\n'
+                )
+
+                self.data_overview_button.setEnabled(False)
+                self.data_graphs_button.setEnabled(False)
+                self.map_architect_button.setEnabled(False)
+                self.map_display_button.setEnabled(False)
+
+                return
+
+            AppConfig.cfg['osu_dir'] = osu_dir
+            with open('config.json', 'w') as f:
+                json.dump(AppConfig.cfg, f, indent=4)
+
+        self.__osu_recorder = OsuRecorder()
+        self.__osu_recorder.start_monitor()
+        
+        self.__connect_signals()
 
 
     def __contruct_gui(self):
@@ -100,18 +130,6 @@ class App(QtGui.QMainWindow):
         self.map_display_button.setToolTip('Display selected and generated map')
 
         self.status_text = QtGui.QLabel()
-        if not os.path.isdir(AppConfig.cfg['osu_dir']):
-            self.status_text.setText(
-                'Invalid osu! path! Find config.json in app folder and edit it.\n' + \
-                'Then restart the app.\n' + \
-                'Make sure to use double backslashes for osu! path (ex: "C:\\\\Games\\\\osu!")\n'
-            )
-
-            self.data_overview_button.setEnabled(False)
-            self.data_graphs_button.setEnabled(False)
-            self.map_architect_button.setEnabled(False)
-            self.map_display_button.setEnabled(False)
-
         self.main_widget = QtGui.QWidget()
         self.setCentralWidget(self.main_widget)
 
@@ -131,7 +149,7 @@ class App(QtGui.QMainWindow):
     def __connect_signals(self):
         self.logger.debug('Connecting signals start')
 
-        OsuRecorder.new_replay_event.connect(self.new_replay_event)
+        self.__osu_recorder.new_replay_event.connect(self.new_replay_event)
         
         #self.data_overview_window.show_map_event.connect(self.map_display_window.set_from_play_data)
         self.data_overview_window.show_map_event.connect(self.data_graphs_window.overview_single_map_selection_event)

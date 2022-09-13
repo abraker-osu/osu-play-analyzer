@@ -15,7 +15,7 @@ class _AppConfig():
         try:
             with open('config.json') as f:
                 _AppConfig.cfg = json.load(f)
-        except FileNotFoundError:
+        except (FileNotFoundError, json.decoder.JSONDecodeError):
             # Write default
             with open('config.json', 'w') as f:
                 json.dump(_AppConfig.cfg, f, indent=4)

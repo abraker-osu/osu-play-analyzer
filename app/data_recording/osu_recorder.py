@@ -14,7 +14,7 @@ from app.data_recording.monitor import Monitor
 from app.file_managers import AppConfig, MapsDB, score_data_obj
 
 
-class _OsuRecorder(QtCore.QObject):
+class OsuRecorder(QtCore.QObject):
 
     logger = Logger.get_logger(__name__)
 
@@ -88,6 +88,3 @@ class _OsuRecorder(QtCore.QObject):
             'md5_hash'    : replay.beatmap_hash,
             'is_import'   : is_import
         })
-
-
-OsuRecorder = _OsuRecorder()
