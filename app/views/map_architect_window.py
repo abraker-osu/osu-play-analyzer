@@ -577,28 +577,31 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
             return ret
         
         key = event.key()
-        Key = QtCore.Qt.Key
 
         # Allow quick navigate to search
-        if key == Key.Key_F:
+        if key == QtCore.Qt.Key.Key_F:
             self.__ui.script_filter.setFocus()
             event.accept()
             return
 
-        if key not in [ Key.Key_Plus, Key.Key_Minus, Key.Key_Underscore, Key.Key_Equal, Key.Key_0 ]:
-            return ret
+        if key == QtCore.Qt.Key.Key_S:
+            self.__save_file()
+            event.accept()
+            return
        
         font = self.__ui.code_editor.font()
         old_size = font.pointSize()
         
-        if key == Key.Key_Plus or key == Key.Key_Equal:
+        if key == QtCore.Qt.Key.Key_Plus or key == QtCore.Qt.Key.Key_Equal:
             font.setPointSize(int(old_size + max(old_size*.15, 1)))
-        elif key == Key.Key_Minus or key == Key.Key_Underscore:
+        elif key == QtCore.Qt.Key.Key_Minus or key == QtCore.Qt.Key.Key_Underscore:
             newSize = old_size - max(old_size*.15, 1)
             font.setPointSize(int(max(newSize, 1)))
-        elif key == Key.Key_0:
+        elif key == QtCore.Qt.Key.Key_0:
             # Reset to original size
             font.setPointSize(10)
+        else:
+            return ret
        
         self.__ui.code_editor.setFont(font)
 
