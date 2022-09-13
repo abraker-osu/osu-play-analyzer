@@ -65,7 +65,7 @@ QPushButton:hover {
 QPushButton {
     min-height: 24px;
     max-height: 24px;
-    background: #2e2e36;
+    background: #232329;
 }
 
 QPushButton:pressed {
@@ -85,8 +85,8 @@ QLabel[hoverable=true]:hover {
 }
 
 QLineEdit {
-    max-width: 32px;
-    background: #353646;
+    /*max-width: 32px;*/
+    background: #2e2e36;
 }
 
 QLineEdit[Error=true] {
@@ -98,7 +98,11 @@ QLineEdit[Unsaved=true] {
 }
 
 QTextEdit {
-    background: #353646;
+    background: #2e2e36;
+}
+
+QPlainTextEdit {
+    background: #2e2e36;
 }
 
 QSpinBox 
