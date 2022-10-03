@@ -11,14 +11,14 @@ import pyqtgraph
 from pyqtgraph.Qt import QtGui, QtCore
 
 from osu_analysis import BeatmapIO, ReplayIO, StdMapData, StdReplayData, StdScoreData, Gamemode, Mod
+from osu_db import MapsDB
 
 from app.misc.utils import Utils
 from app.misc.osu_utils import OsuUtils
 from app.widgets.hitobject_plot import HitobjectPlot
 from app.widgets.timing_plot import TimingPlot
 
-from app.data_recording.data import PlayNpyData
-from app.file_managers import AppConfig, MapsDB
+from app.file_managers import AppConfig
 
 
 class MapDisplay(QtGui.QWidget):
@@ -39,6 +39,8 @@ class MapDisplay(QtGui.QWidget):
 
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
+
+        self.__maps_db = MapsDB(AppConfig.cfg['osu_dir'])
 
         self.timing_data = np.asarray([])
         self.map_data    = {}
@@ -252,7 +254,7 @@ class MapDisplay(QtGui.QWidget):
             print('Warning: multiple maps are selected. Taking just the first one...')
 
         # In the event multiple md5 strings were passed, take just the first one
-        map_file_name, _ = MapsDB.get_map_file_name(md5_strs[0])
+        map_file_name, _ = self.__maps_db.get_map_file_name(md5_strs[0])
 
         if map_file_name is None:
             print('Map display: map file not found')

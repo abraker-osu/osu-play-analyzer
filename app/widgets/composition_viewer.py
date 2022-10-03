@@ -4,11 +4,9 @@ from pyqtgraph import QtGui, QtCore
 import numpy as np
 import pandas as pd
 
-from osu_analysis import StdScoreData
-
 from app.misc.Logger import Logger
 from app.data_recording.data import DiffNpyData, ScoreNpyData
-from app.file_managers import MapsDB, score_data_obj
+from app.file_managers import score_data_obj
 
 
 __ROI_SELECTIONS_EN__ = False

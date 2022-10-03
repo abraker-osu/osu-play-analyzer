@@ -25,7 +25,6 @@ from app.widgets.plays_graph import PlaysGraph
 from app.widgets.composition_viewer import CompositionViewer
 
 from app.data_recording.diff_npy import DiffNpy
-from app.data_recording.osu_recorder import OsuRecorder
 
 from app.file_managers import AppConfig, score_data_obj
 
@@ -34,6 +33,7 @@ class DataOverviewWindow(QtGui.QWidget):
 
     logger = Logger.get_logger(__name__)
 
+    replay_open_event = QtCore.pyqtSignal(str)
     show_map_event = QtCore.pyqtSignal(object, list)
     region_changed = QtCore.pyqtSignal(object)
 
@@ -178,7 +178,7 @@ class DataOverviewWindow(QtGui.QWidget):
         num_files = len(file_names)
 
         for file_name, i in zip(file_names, range(num_files)):
-            OsuRecorder.handle_new_replay.emit(file_name, False, True)
+            self.replay_open_event.emit(file_name)
 
             self.progress_bar.setValue(100 * i / num_files)
             QtGui.QApplication.processEvents()

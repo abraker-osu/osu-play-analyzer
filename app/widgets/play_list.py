@@ -14,19 +14,94 @@ The is a selection menu on the side that allows the user to select which player'
 Design note: Maybe have a scatter plot instead. Really depends on how much data there is and how laggy it will get.
 """
 import time
-import queue
 import threading
 import pyqtgraph
 from pyqtgraph.Qt import QtGui, QtCore
 
-
 import numpy as np
 import pandas as pd
+from app.file_managers.config_mgr import AppConfig
+
+from osu_analysis import Mod
 
 from app.misc.Logger import Logger
-from app.misc.play_list_helper import PlayListHelper
 
 from app.file_managers import score_data_obj
+from osu_db.osu_db.maps_db import MapsDB
+
+
+class PlayListHelper():
+
+    @staticmethod
+    def map_name_str(maps_db, md5_str):
+        result = maps_db.get_map_file_name(md5_str)
+        if result is None:
+            return md5_str
+
+        return result.replace('\\', '/').split('/')[-1]
+
+
+    @staticmethod
+    def map_mods_str(score_data):
+        mods = score_data['MODS'].values[0]
+        mods_text = Mod(int(mods)).get_mods_txt()
+        mods_text = f' +{mods_text}' if len(mods_text) != 0 else ''
+
+
+    @staticmethod
+    def map_timestamp_str(score_data):
+        timestamp_start = min(score_data.index.get_level_values(1))
+        timestamp_end   = max(score_data.index.get_level_values(1))
+
+        try:
+            if timestamp_start == timestamp_end:
+                play_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp_start))
+
+                time_str = f'{play_time}'
+            else:
+                play_start = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp_start))
+                play_end   = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp_end))
+
+                time_str = f'{play_start} - {play_end}'
+        except IndexError:
+            play_start = 'N/A'
+            play_end   = 'N/A'
+
+        return time_str
+
+
+    @staticmethod
+    def map_avg_bpm(score_data): 
+        # TODO: This needs to be select by single timestamp
+        data = 15000/score_data['DIFF_T_PRESS_DIFF'].values
+        data = data[~np.isnan(data)]
+
+        return f'{np.mean(data):.2f}'
+
+
+    @staticmethod
+    def map_avg_lin_vel(score_data):  
+        # TODO: This needs to be select by single timestamp
+        data = score_data['DIFF_XY_LIN_VEL'].values
+        data = data[~np.isnan(data)]
+
+        return f'{np.mean(data):.2f}'
+
+
+    @staticmethod
+    def map_avg_ang_vel(score_data):    
+        # TODO: This needs to be select by single timestamp
+        data = score_data['DIFF_XY_ANG_VEL'].values
+        data = data[~np.isnan(data)]
+
+        return f'{np.mean(data):.2f}'
+
+
+    @staticmethod
+    def do_get_timestamps(map_md5_str):
+        score_data = score_data_obj.data(map_md5_str)
+        return np.unique(score_data.index.get_level_values(0))
+
 
 
 class PlayList(pyqtgraph.TableWidget):
@@ -46,6 +121,8 @@ class PlayList(pyqtgraph.TableWidget):
         self.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
         self.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
         self.verticalHeader().setDefaultSectionSize(10)
+
+        self.__maps_db = MapsDB(AppConfig.cfg['osu_dir'])
 
         self.__batch_processed.connect(self.__add_data)
         self.__table_is_configured = False
@@ -77,7 +154,7 @@ class PlayList(pyqtgraph.TableWidget):
                 pd.DataFrame([
                     [
                         map_md5_str,
-                        PlayListHelper.map_name_str(map_md5_str),
+                        PlayListHelper.map_name_str(self.__maps_db, map_md5_str),
                         PlayListHelper.map_mods_str(score_data),
                         PlayListHelper.map_timestamp_str(score_data),
                         score_data.shape[0],
@@ -142,7 +219,7 @@ class PlayList(pyqtgraph.TableWidget):
         for i, entry in enumerate(entries):
             data.append([
                 entry[0],
-                PlayListHelper.map_name_str(entry[0]),
+                PlayListHelper.map_name_str(self.__maps_db, entry[0]),
                 PlayListHelper.map_mods_str(entry[1]),
                 PlayListHelper.map_timestamp_str(entry[1]),
                 entry[1].shape[0],
