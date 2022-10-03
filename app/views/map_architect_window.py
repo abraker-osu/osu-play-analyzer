@@ -543,13 +543,23 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
         env = dict(os.environ)
         env['PYTHONPATH'] = f'{path}/map_generator;{path}/app/misc'
         
-        proc = subprocess.run(
-            [ sys.executable, '-' ], 
-            input  = self.__ui.code_editor.toPlainText().encode('UTF-8'), 
-            stdout = subprocess.PIPE, 
-            cwd    = MapArchitectWindow.FOLDER_LOCATION, 
-            env    = env
-        )
+        try:
+            proc = subprocess.run(
+                [ sys.executable, '-' ],
+                input   = self.__ui.code_editor.toPlainText().encode('UTF-8'), 
+                stdout  = subprocess.PIPE, 
+                cwd     = MapArchitectWindow.FOLDER_LOCATION, 
+                env     = env,
+                timeout = 10  # seconds
+            )
+        except subprocess.TimeoutExpired:
+            msg = QtGui.QMessageBox()
+            msg.setIcon(QtGui.QMessageBox.Warning)
+            msg.setWindowTitle('Warning')
+            msg.setText('Script timed out')
+            msg.setStandardButtons(QtGui.QMessageBox.Ok)
+            msg.exec_()
+            return
 
         try:
             proc_data = ProcData()
