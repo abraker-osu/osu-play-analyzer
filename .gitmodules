@@ -6,10 +6,10 @@
 	url = https://github.com/abraker-osu/osu_interfaces.git
 [submodule "map_generator"]
 	path = map_generator
-	url = git@github.com:abraker-osu/map_generator.git
+	url = https://github.com/abraker-osu/map_generator.git
 [submodule "osu_recorder"]
 	path = osu_recorder
-	url = git@github.com:abraker-osu/osu_recorder.git
+	url = https://github.com/abraker-osu/osu_recorder.git
 [submodule "osu_db"]
 	path = osu_db
-	url = git@github.com:abraker-osu/osu_db.git
+	url = https://github.com/abraker-osu/osu_db.git
