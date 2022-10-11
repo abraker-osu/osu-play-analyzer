@@ -113,7 +113,7 @@ class App(PyQt5.QtWidgets.QMainWindow):
         Stage 1 Constructs the initial main selection 
         window that's visible at the start.
         """
-        self.logger.debug('Constructing GUI start')
+        self.logger.debug('__construct_gui_state1 start')
 
         self.setWindowTitle('osu! performance analyzer')
 
@@ -147,7 +147,7 @@ class App(PyQt5.QtWidgets.QMainWindow):
         self.setFixedWidth(480)
         self.show()
 
-        self.logger.debug('Constructing GUI end')
+        self.logger.debug('__construct_gui_state1 end')
 
 
     def __construct_gui_state2(self):
@@ -159,10 +159,14 @@ class App(PyQt5.QtWidgets.QMainWindow):
         on `osu_path` being valid, and to ensure that is true, stage 2
         is conditionally run only if it is valid.
         """
+        self.logger.debug('__construct_gui_state2 start')
+
         self.data_graphs_window   = DataGraphsWindow()
         self.data_overview_window = DataOverviewWindow()
         self.map_display_window   = MapDisplayWindow()
         self.map_architect_window = MapArchitectWindow()
+
+        self.logger.debug('__construct_gui_state2 end')
 
 
     def __connect_signals(self):
