@@ -3,7 +3,6 @@ import logging
 import traceback
 
 from app.misc.debug import log_debug
-from app.misc.utils import Utils
 
 
 class Logger(logging.getLoggerClass()):
@@ -12,7 +11,7 @@ class Logger(logging.getLoggerClass()):
 
     def __init__(self, name, level=logging.NOTSET):
         super().__init__(name, level=logging.DEBUG)
-        formatter = logging.Formatter('%(levelname)s  %(asctime)s   [ %(name)s ] %(message)s')
+        formatter = logging.Formatter('%(levelname)s  %(asctime)s   [ %(name)s : %(threadName)s ] %(message)s')
         
         self.name = name
 
