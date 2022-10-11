@@ -1,5 +1,5 @@
+import PyQt5
 import pyqtgraph
-from pyqtgraph import QtGui, QtCore
 
 import numpy as np
 import pandas as pd
@@ -13,13 +13,13 @@ __ROI_SELECTIONS_EN__ = False
 
 
 
-class CompositionViewer(QtGui.QWidget):
+class CompositionViewer(PyQt5.QtWidgets.QWidget):
 
     logger = Logger.get_logger(__name__)
-    region_changed = QtCore.pyqtSignal(object)
+    region_changed = PyQt5.QtCore.pyqtSignal(object)
 
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
+        PyQt5.QtWidgets.QWidget.__init__(self, parent)
 
         # Displayed xy scatter plot data
         self.xy_data = np.zeros((0, 2))
@@ -29,7 +29,7 @@ class CompositionViewer(QtGui.QWidget):
         self.score_data = np.empty((0, ScoreNpyData.NUM_COLS))
         self.diff_data = np.empty((0, DiffNpyData.NUM_COLS))
 
-        self.main_layout = QtGui.QHBoxLayout(self)
+        self.main_layout = PyQt5.QtWidgets.QHBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
 
         self.plot_widget = pyqtgraph.PlotWidget(plotItem=pyqtgraph.PlotItem())
@@ -51,19 +51,19 @@ class CompositionViewer(QtGui.QWidget):
         self.plot_widget.addItem(self.grid_plot_item)
         self.plot_widget.addItem(self.data_plot)
 
-        self.data_type_selection = QtGui.QListWidget()
-        self.data_type_selection.setSelectionMode(QtGui.QAbstractItemView.NoSelection)
+        self.data_type_selection = PyQt5.QtWidgets.QListWidget()
+        self.data_type_selection.setSelectionMode(PyQt5.QtWidgets.QAbstractItemView.NoSelection)
 
-        self.num_data_points_label = QtGui.QLabel('Num data points selected: 0')
+        self.num_data_points_label = PyQt5.QtWidgets.QLabel('Num data points selected: 0')
 
         if __ROI_SELECTIONS_EN__:
-            self.reset_roi_selections_button = QtGui.QPushButton('Reset selections')
+            self.reset_roi_selections_button = PyQt5.QtWidgets.QPushButton('Reset selections')
             self.reset_roi_selections_button.setToolTip('Resets selections to select all data')
 
-        self.x_axis_selection = QtGui.QButtonGroup()
+        self.x_axis_selection = PyQt5.QtWidgets.QButtonGroup()
         self.x_axis_selection.setExclusive(True)
 
-        self.y_axis_selection = QtGui.QButtonGroup()
+        self.y_axis_selection = PyQt5.QtWidgets.QButtonGroup()
         self.y_axis_selection.setExclusive(True)
 
         # MUST BE CONTIGUOUS
@@ -127,12 +127,12 @@ class CompositionViewer(QtGui.QWidget):
         self.data_type_selection.addItem('x-axis                                 y-axis')
 
         for select_text, select_id in selections.items():
-            widget = QtGui.QWidget()
-            layout = QtGui.QHBoxLayout(widget)
+            widget = PyQt5.QtWidgets.QWidget()
+            layout = PyQt5.QtWidgets.QHBoxLayout(widget)
             layout.setContentsMargins(0, 0, 0, 0)
 
-            x_axis_radio = QtGui.QRadioButton(select_text)
-            y_axis_radio = QtGui.QRadioButton(select_text)
+            x_axis_radio = PyQt5.QtWidgets.QRadioButton(select_text)
+            y_axis_radio = PyQt5.QtWidgets.QRadioButton(select_text)
 
             self.x_axis_selection.addButton(x_axis_radio, id=select_id)
             self.y_axis_selection.addButton(y_axis_radio, id=select_id)
@@ -140,13 +140,13 @@ class CompositionViewer(QtGui.QWidget):
             layout.addWidget(x_axis_radio)
             layout.addWidget(y_axis_radio)
 
-            widget_item = QtGui.QListWidgetItem()
+            widget_item = PyQt5.QtWidgets.QListWidgetItem()
             widget_item.setSizeHint(widget.sizeHint())    
 
             self.data_type_selection.addItem(widget_item)
             self.data_type_selection.setItemWidget(widget_item, widget)
 
-        self.right_side_layout = QtGui.QVBoxLayout()
+        self.right_side_layout = PyQt5.QtWidgets.QVBoxLayout()
         self.right_side_layout.setContentsMargins(0, 0, 0, 0)
         self.right_side_layout.addWidget(self.data_type_selection)
         self.right_side_layout.addWidget(self.num_data_points_label)
@@ -260,53 +260,86 @@ class CompositionViewer(QtGui.QWidget):
             if type(self.score_data) == type(None):
                 return
 
+            self.logger.debug('reset_roi_selections')
+
             data = np.zeros((self.score_data.shape[0], 2))
+            roi_datas = {}
+
+            for roi_id, roi_selection in self.roi_selections.items():
+                roi_selection['roi'].blockSignals(True)
+                roi_datas[roi_id] = {}
+
+            self.logger.debug(f'reset_roi_selections - 1')
 
             for id_y in range(self.num_selections):
                 for id_x in range(self.num_selections):
                     if id_y == id_x:
                         continue
 
-                    data[:, 0] = self.__id_to_data(id_x)
-                    data[:, 1] = self.__id_to_data(id_y)
+                    roi_id = self.__get_roi_id(id_x, id_y)                
+                    data_x = self.__id_to_data(id_x)
+                    data_y = self.__id_to_data(id_y)
                 
                     inv_filter = ~(np.isnan(data).any(axis=1))
-                    filtered_data = data[inv_filter]
-
-                    if filtered_data.shape[0] == 0:
+                    if data[inv_filter].shape[0] == 0:
+                        roi_datas[roi_id]['data_x'] = []
+                        roi_datas[roi_id]['data_y'] = []
+                        roi_datas[roi_id]['roi_points'] = [ [-1, -1], [1, -1], [1, 1], [-1, 1] ]
                         continue
 
-                    x0, x1 = np.min(filtered_data[:, 0]), np.max(filtered_data[:, 0])
-                    y0, y1 = np.min(filtered_data[:, 1]), np.max(filtered_data[:, 1])
+                    x0, x1 = np.nanmin(data_x), np.nanmax(data_x)
+                    y0, y1 = np.nanmin(data_y), np.nanmax(data_y)
 
                     # Have some margin around the ROI
                     x0 -= 1; x1 += 1
                     y0 -= 1; y1 += 1
 
-                    roi_id = self.__get_roi_id(id_x, id_y)
-                    roi_plot = self.roi_selections[roi_id]['roi']
+                    roi_datas[roi_id]['data_x'] = data_x
+                    roi_datas[roi_id]['data_y'] = data_y
+                    roi_datas[roi_id]['roi_points'] = [ [x0, y0], [x1, y0], [x1, y1], [x0, y1] ]
 
-                    is_already_displayed = (roi_plot.scene() != None)
-                    if not is_already_displayed:
-                        self.plot_widget.addItem(roi_plot)
+            self.logger.debug(f'reset_roi_selections - 2')
 
-                    roi_plot.blockSignals(True)
-                    roi_plot.setState({
-                        'closed' : True,
-                        'angle'  : 0.0,
-                        'size'   : [1, 1],
-                        'pos'    : [0, 0],
-                        'points' : [ [x0, y0], [x1, y0], [x1, y1], [x0, y1] ],
-                    })
-                    roi_plot.blockSignals(False)
+            for roi_id, roi_data in roi_datas.items():
+                roi_plot = self.roi_selections[roi_id]['roi']
 
-                    if not is_already_displayed:
-                        self.plot_widget.removeItem(roi_plot)
+                #is_already_displayed = (roi_plot.scene() != None)
+                #if not is_already_displayed:
+                #    self.plot_widget.addItem(roi_plot)
+                
+                pyqtgraph.ROI.setPos(roi_plot, [0, 0], update=False)
+                pyqtgraph.ROI.setSize(roi_plot, [1, 1], update=False)
+                pyqtgraph.ROI.setAngle(roi_plot, 0.0, update=False)
 
-                    self.__update_roi_selection(roi_id, data)
+                roi_plot.closed = True
 
-            self.__process_master_selection(emit_data=True)
+                while len(roi_plot.handles) > 4:
+                    roi_plot.removeHandle(roi_plot.handles[0]['item'])
+                    
+                while len(roi_plot.handles) < 4:
+                    roi_plot.addFreeHandle([0, 0])
 
+                #for i, point in enumerate(roi_data['roi_points']):
+                #    roi_plot.handles[i]['item'].setPos(point[0], point[1])
+                
+                #for i in range(-1, len(roi_plot.handles) - 1):
+                #    roi_plot.addSegment(roi_plot.handles[i]['item'], roi_plot.handles[i + 1]['item'])
+
+                #roi_plot.stateChanged()
+
+
+                #if not is_already_displayed:
+                #    self.plot_widget.removeItem(roi_plot)
+
+                data[:, 0] = roi_data['data_x']
+                data[:, 1] = roi_data['data_y']
+        
+                self.__update_roi_selection(roi_id, data)
+                roi_selection['roi'].blockSignals(False)
+
+            
+            self.logger.debug(f'reset_roi_selections - 3')
+            self.emit_master_selection()
 
     # __ROI_SELECTIONS_EN__
     else:

@@ -1,20 +1,18 @@
 '''
 The purpose of this graph is 
 '''
-
+import PyQt5
 import pyqtgraph
-from pyqtgraph.Qt import QtGui
 
 import numpy as np
 
 from osu_analysis import StdScoreData
-from app.data_recording.data import ScoreNpyData
 
 
-class DevOffsets(QtGui.QWidget):
+class DevOffsets(PyQt5.QtWidgets.QWidget):
 
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
+        PyQt5.QtWidgets.QWidget.__init__(self, parent)
 
         # Main graph
         self.__graph = pyqtgraph.PlotWidget(title='Avg BPM vs offset deviation')
@@ -34,7 +32,7 @@ class DevOffsets(QtGui.QWidget):
         self.__text = self.__graph.getPlotItem().legend.getLabel(self.__label_style)
    
         # Put it all together
-        self.__layout = QtGui.QHBoxLayout(self)
+        self.__layout = PyQt5.QtWidgets.QHBoxLayout(self)
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(2)
         self.__layout.addWidget(self.__graph)
@@ -68,7 +66,7 @@ class DevOffsets(QtGui.QWidget):
             data_y[i] = np.std(hit_offsets)
 
         # Average along similiar x-axis value
-        if False:
+        if True:
             data_y = np.asarray([ np.sort(data_y[data_x == x]).mean() for x in np.unique(data_x) ])
             unique_data_x = np.unique(data_x)
 

@@ -1,7 +1,7 @@
 import numpy as np
 
+import PyQt5
 import pyqtgraph
-from pyqtgraph.Qt import QtGui
 from pyqtgraph.functions import mkPen
 
 from osu_analysis import StdScoreData
@@ -11,7 +11,7 @@ from app.data_recording.data import PlayNpyData
 from app.widgets.miss_plot import MissPlotItem
 
 
-class ReplayHitDOffsetGraph(QtGui.QWidget):
+class ReplayHitDOffsetGraph(PyQt5.QtWidgets.QWidget):
     '''
     Hit delta-offset graph
 
@@ -29,7 +29,7 @@ class ReplayHitDOffsetGraph(QtGui.QWidget):
     '''
 
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
+        PyQt5.QtWidgets.QWidget.__init__(self, parent)
 
         # Main graph
         self.__graph = pyqtgraph.PlotWidget(title='Hit d-offset graph')
@@ -54,7 +54,7 @@ class ReplayHitDOffsetGraph(QtGui.QWidget):
         self.__graph.addItem(self.hit_metrics)
 
         # Put it all together
-        self.__layout = QtGui.QHBoxLayout(self)
+        self.__layout = PyQt5.QtWidgets.QHBoxLayout(self)
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(2)
         self.__layout.addWidget(self.__graph)

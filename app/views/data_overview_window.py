@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 
 import time
-from pyqtgraph.Qt import QtGui, QtCore
+import PyQt5
 
 from app.misc.Logger import Logger
 from app.widgets.play_list import PlayList
@@ -29,18 +29,18 @@ from app.data_recording.diff_npy import DiffNpy
 from app.file_managers import AppConfig, score_data_obj
 
 
-class DataOverviewWindow(QtGui.QWidget):
+class DataOverviewWindow(PyQt5.QtWidgets.QWidget):
 
     logger = Logger.get_logger(__name__)
 
-    replay_open_event = QtCore.pyqtSignal(str)
-    show_map_event = QtCore.pyqtSignal(object, list)
-    region_changed = QtCore.pyqtSignal(object)
+    replay_open_event = PyQt5.QtCore.pyqtSignal(str)
+    show_map_event = PyQt5.QtCore.pyqtSignal(object, list)
+    region_changed = PyQt5.QtCore.pyqtSignal(object)
 
     def __init__(self, parent=None):
         self.logger.debug('__init__ enter')
 
-        QtGui.QWidget.__init__(self, parent)
+        PyQt5.QtWidgets.QWidget.__init__(self, parent)
 
         self.setWindowTitle('Data overview')
         
@@ -48,12 +48,12 @@ class DataOverviewWindow(QtGui.QWidget):
         self.composition_viewer = CompositionViewer()
         self.play_graph = PlaysGraph()
 
-        self.show_map_btn = QtGui.QPushButton('Show map')
-        self.status_label = QtGui.QLabel('')
-        self.progress_bar = QtGui.QProgressBar()
+        self.show_map_btn = PyQt5.QtWidgets.QPushButton('Show map')
+        self.status_label = PyQt5.QtWidgets.QLabel('')
+        self.progress_bar = PyQt5.QtWidgets.QProgressBar()
         
-        self.overview = QtGui.QWidget()
-        self.overview_layout = QtGui.QVBoxLayout(self.overview)
+        self.overview = PyQt5.QtWidgets.QWidget()
+        self.overview_layout = PyQt5.QtWidgets.QVBoxLayout(self.overview)
         self.overview_layout.setContentsMargins(0, 0, 0, 0)
         self.overview_layout.addWidget(self.composition_viewer)
         self.overview_layout.addWidget(self.play_graph)
@@ -61,22 +61,22 @@ class DataOverviewWindow(QtGui.QWidget):
         self.overview_layout.addWidget(self.status_label)
         self.overview_layout.addWidget(self.progress_bar)
 
-        self.splitter = QtGui.QSplitter()
+        self.splitter = PyQt5.QtWidgets.QSplitter()
         self.splitter.addWidget(self.overview)
         self.splitter.addWidget(self.map_list)
 
-        self.file_menu = QtGui.QMenu("&File")
+        self.file_menu = PyQt5.QtWidgets.QMenu("&File")
 
-        self.open_replay_action = QtGui.QAction("&Open *.osr", triggered=lambda: self.__open_replay_dialog())
+        self.open_replay_action = PyQt5.QtWidgets.QAction("&Open *.osr", triggered=lambda: self.__open_replay_dialog())
         self.file_menu.addAction(self.open_replay_action)
 
-        self.recalc_difficulties = QtGui.QAction("&Recalculate difficulties", triggered=lambda: self.__recalc_difficulties())
+        self.recalc_difficulties = PyQt5.QtWidgets.QAction("&Recalculate difficulties", triggered=lambda: self.__recalc_difficulties())
         self.file_menu.addAction(self.recalc_difficulties)
 
-        self.menu_bar = QtGui.QMenuBar()
+        self.menu_bar = PyQt5.QtWidgets.QMenuBar()
         self.menu_bar.addMenu(self.file_menu)
 
-        self.main_layout = QtGui.QHBoxLayout(self)
+        self.main_layout = PyQt5.QtWidgets.QHBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.addWidget(self.splitter)
         self.main_layout.setMenuBar(self.menu_bar)
@@ -171,7 +171,7 @@ class DataOverviewWindow(QtGui.QWidget):
         self.status_label.hide()
         self.progress_bar.show()
 
-        file_names = QtGui.QFileDialog.getOpenFileNames(self, 'Open replay',  f'{AppConfig.cfg["osu_dir"]}', name_filter)[0]
+        file_names = PyQt5.QtWidgets.QFileDialog.getOpenFileNames(self, 'Open replay',  f'{AppConfig.cfg["osu_dir"]}', name_filter)[0]
         if len(file_names) == 0:
             return
 
@@ -181,7 +181,7 @@ class DataOverviewWindow(QtGui.QWidget):
             self.replay_open_event.emit(file_name)
 
             self.progress_bar.setValue(100 * i / num_files)
-            QtGui.QApplication.processEvents()
+            PyQt5.QtWidgets.QApplication.processEvents()
 
         self.progress_bar.hide()
         self.status_label.show()
@@ -222,7 +222,7 @@ class DataOverviewWindow(QtGui.QWidget):
             score_data_obj.rewrite(map_md5, data)
 
             self.progress_bar.setValue(100 * i / len(map_md5s))
-            QtGui.QApplication.processEvents()
+            PyQt5.QtWidgets.QApplication.processEvents()
 
         self.progress_bar.hide()
         self.status_label.show()

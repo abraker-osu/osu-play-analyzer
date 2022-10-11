@@ -19,7 +19,7 @@ Different tabs available:
 import io
 import pandas as pd
 
-from pyqtgraph.Qt import QtGui, QtCore
+import PyQt5
 
 from osu_analysis import StdMapData
 
@@ -28,20 +28,20 @@ from app.misc.osu_utils import OsuUtils
 from app.widgets.map_display import MapDisplay
 
 
-class MapDisplayWindow(QtGui.QMainWindow):
+class MapDisplayWindow(PyQt5.QtWidgets.QMainWindow):
 
     logger = Logger.get_logger(__name__)
 
     def __init__(self, parent=None):
         self.logger.debug('__init__ enter')
 
-        QtGui.QMainWindow.__init__(self, parent)
+        PyQt5.QtWidgets.QMainWindow.__init__(self, parent)
         self.setWindowTitle('Map Display')
 
         self.selected_map_display = MapDisplay()
         self.generated_map_display = MapDisplay()
         self.processed_map_display = MapDisplay()
-        self.map_tabs = QtGui.QTabWidget()
+        self.map_tabs = PyQt5.QtWidgets.QTabWidget()
 
         self.map_tabs.addTab(self.selected_map_display, 'Selected')
         self.map_tabs.addTab(self.generated_map_display, 'Generated')

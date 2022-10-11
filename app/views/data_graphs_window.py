@@ -3,8 +3,7 @@ Window displaying various graphs pertaining to the data selected in the data_ove
 A menubar on the top allows the user to select which graph to display.
 """
 import time
-
-from pyqtgraph.Qt import QtGui
+import PyQt5
 
 from app.misc.Logger import Logger
 
@@ -36,14 +35,14 @@ from app.data_recording.data import ScoreNpyData
 from app.file_managers import score_data_obj
 
 
-class DataGraphsWindow(QtGui.QMainWindow):
+class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
 
     logger = Logger.get_logger(__name__)
 
     def __init__(self, parent=None):
         self.logger.debug('__init__ enter')
 
-        QtGui.QMainWindow.__init__(self, parent)
+        PyQt5.QtWidgets.QMainWindow.__init__(self, parent)
         self.setWindowTitle('Data graphs')
     
         self.hit_offset_graph = HitOffsetGraph()
@@ -70,7 +69,7 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.dev_doffsets = DevDOffsets()
         self.dev_offsets = DevOffsets()
 
-        self.replay_tabs = QtGui.QTabWidget()
+        self.replay_tabs = PyQt5.QtWidgets.QTabWidget()
         self.replay_tabs.addTab(self.hit_offset_graph, 'Hit offsets')
         self.replay_tabs.addTab(self.replay_offset_multimap_graph, 'Replay offsets multimap')
         self.replay_tabs.addTab(self.replay_hit_doffset_graph, 'Replay hit doffsets')
@@ -78,11 +77,11 @@ class DataGraphsWindow(QtGui.QMainWindow):
         self.replay_tabs.addTab(self.doffset_distr_graph, 'Doffset distribution')
         self.replay_tabs.addTab(self.aim_display, 'Aim display')
 
-        self.difficulty_tabs = QtGui.QTabWidget()
+        self.difficulty_tabs = PyQt5.QtWidgets.QTabWidget()
         self.difficulty_tabs.addTab(self.aim_difficulty, 'Aim difficulty')
         self.difficulty_tabs.addTab(self.tap_difficulty, 'Tap difficulty')
 
-        self.map_tabs = QtGui.QTabWidget()
+        self.map_tabs = PyQt5.QtWidgets.QTabWidget()
         #self.map_tabs.addTab(self.timing_bpm_dec, 'Timing BPM dec')
         #self.map_tabs.addTab(self.timing_bpm_inc, 'Timing BPM inc')
         self.map_tabs.addTab(self.toffset_bpm_inc, 'T-offset vs BPM Inc')
@@ -91,14 +90,14 @@ class DataGraphsWindow(QtGui.QMainWindow):
         #self.map_tabs.addTab(self.toffset_rhyd_graph, 'T-offset vs Rhythm delta')
         self.map_tabs.addTab(self.toffset_velocity, 'T-offset vs Velocity')
 
-        self.play_data_tabs = QtGui.QTabWidget()
+        self.play_data_tabs = PyQt5.QtWidgets.QTabWidget()
         self.play_data_tabs.addTab(self.dev_graph_angle, 'Dev vs Angle')
         self.play_data_tabs.addTab(self.dev_graph_vel, 'Dev vs Velocity')
         self.play_data_tabs.addTab(self.dev_graph_rhythm, 'Dev vs Rhythm')
         self.play_data_tabs.addTab(self.dev_doffsets, 'Avg BPM vs Doffsets dev')
         self.play_data_tabs.addTab(self.dev_offsets, 'Avg BPM vs Offsets dev')
         
-        self.main_widget = QtGui.QTabWidget()
+        self.main_widget = PyQt5.QtWidgets.QTabWidget()
         self.main_widget.addTab(self.replay_tabs, 'Replay graphs')
         self.main_widget.addTab(self.difficulty_tabs, 'Diff graphs')
         self.main_widget.addTab(self.map_tabs, 'Map graphs')

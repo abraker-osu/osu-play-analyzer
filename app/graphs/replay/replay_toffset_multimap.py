@@ -2,8 +2,8 @@ import math
 import scipy
 import numpy as np
 
+import PyQt5
 import pyqtgraph
-from pyqtgraph.Qt import QtGui
 from pyqtgraph.functions import mkPen
 
 from osu_analysis import StdScoreData
@@ -13,10 +13,10 @@ from app.data_recording.data import PlayNpyData
 
 
 
-class ReplayTOffsetMultimap(QtGui.QWidget):
+class ReplayTOffsetMultimap(PyQt5.QtWidgets.QWidget):
 
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
+        PyQt5.QtWidgets.QWidget.__init__(self, parent)
 
         self.cache_miss_count = 0
 
@@ -48,7 +48,7 @@ class ReplayTOffsetMultimap(QtGui.QWidget):
         self.__hit_metrics.setText('Select a map to display data')
 
         # Put it all together
-        self.__layout = QtGui.QHBoxLayout(self)
+        self.__layout = PyQt5.QtWidgets.QHBoxLayout(self)
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(2)
         self.__layout.addWidget(self.__graph)

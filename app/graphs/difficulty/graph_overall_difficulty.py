@@ -11,7 +11,7 @@ from osu_analysis import StdScoreData
 from app.data_recording.data import ScoreNpyData
 
 
-class GraphTapDifficulty(PyQt5.QtWidgets.QWidget):
+class GraphOverallDifficulty(PyQt5.QtWidgets.QWidget):
 
     __calc_data_event = PyQt5.QtCore.pyqtSignal(object, object, object)
 
@@ -19,14 +19,14 @@ class GraphTapDifficulty(PyQt5.QtWidgets.QWidget):
         PyQt5.QtWidgets.QWidget.__init__(self, parent)
 
         # Main graph
-        self.__graph = pyqtgraph.PlotWidget(title='Tap difficulty graph')
+        self.__graph = pyqtgraph.PlotWidget(title='Overall difficulty graph')
         self.__graph.getPlotItem().getAxis('left').enableAutoSIPrefix(False)
         self.__graph.getPlotItem().getAxis('bottom').enableAutoSIPrefix(False)
         self.__graph.enableAutoRange(axis='x', enable=False)
         self.__graph.enableAutoRange(axis='y', enable=False)
         self.__graph.setLimits(yMin=-1, yMax=12)
         self.__graph.setRange(xRange=[-0.1, 1.1], yRange=[-1, 5])
-        self.__graph.setLabel('left', 'Tap factor', units='', unitPrefix='')
+        self.__graph.setLabel('left', 'Σ factor', units='', unitPrefix='')
         self.__graph.setLabel('bottom', 'Factors', units='%', unitPrefix='')
         self.__graph.addLegend()
 
@@ -59,20 +59,20 @@ class GraphTapDifficulty(PyQt5.QtWidgets.QWidget):
         if play_data.shape[0] == 0:
             return
 
-        thread = threading.Thread(target=self.__plot_tap_factors, args=(play_data, ))
+        thread = threading.Thread(target=self.__plot_overall_factors, args=(play_data, ))
         thread.start()
 
 
-    def __plot_tap_factors(self, play_data):
+    def __plot_overall_factors(self, play_data):
         # Determine what was the latest play
-        #data_filter = \
-        #    (play_data[:, ScoreNpyData.TIMESTAMP] == max(play_data[:, ScoreNpyData.TIMESTAMP]))
-        #play_data = play_data[data_filter]
+        data_filter = \
+            (play_data[:, ScoreNpyData.TIMESTAMP] == max(play_data[:, ScoreNpyData.TIMESTAMP]))
+        play_data = play_data[data_filter]
 
         # Filter out sliders holds and releases
         data_filter = (
-            (play_data['TYPE_MAP'].values != StdScoreData.ACTION_HOLD) & \
-            (play_data['TYPE_MAP'].values != StdScoreData.ACTION_RELEASE)
+            (play_data[:, ScoreNpyData.TYPE_MAP] != StdScoreData.ACTION_HOLD) & \
+            (play_data[:, ScoreNpyData.TYPE_MAP] != StdScoreData.ACTION_RELEASE)
         )
         play_data = play_data[data_filter]
 
@@ -83,17 +83,12 @@ class GraphTapDifficulty(PyQt5.QtWidgets.QWidget):
             return
 
         # Calculate data
-        timings = play_data['T_MAP'].values
-        toffsets = play_data['T_HIT'].values - timings
-        bpm_inc = play_data['DIFF_T_PRESS_DEC'].values
-        bpm_dec = play_data['DIFF_T_PRESS_INC'].values
-        rhym = play_data['DIFF_T_PRESS_RHM'].values
+        toffsets = play_data[:, ScoreNpyData.T_HIT] - play_data[:, ScoreNpyData.T_MAP]
+        timings = play_data[:, ScoreNpyData.T_MAP]
+        is_miss = (play_data[:, ScoreNpyData.TYPE_HIT] == StdScoreData.TYPE_MISS)
+        #bpm_inc = play_data[:, ScoreNpyData.DT_DEC]
+        #bpm_dec = play_data[:, ScoreNpyData.DT_INC]
 
-        is_miss = (
-            (play_data['TYPE_HIT'].values == StdScoreData.TYPE_MISS) & (
-                (play_data['TYPE_MAP'].values == StdScoreData.ACTION_PRESS)
-            )
-        )
         score_mask = np.zeros((timings.shape[0] - 2, 3), dtype=np.bool)
         score_mask[:, 0] = is_miss[2:]
         score_mask[:, 1] = np.abs(toffsets[2:] <= 32)
@@ -101,18 +96,13 @@ class GraphTapDifficulty(PyQt5.QtWidgets.QWidget):
 
         rates = 1000/(timings[2:] - timings[:-2])
 
-        stamina = np.zeros(rates.shape[0])
-        stamina_select = (bpm_dec[2:] > bpm_inc[2:])
-        stamina[stamina_select]  = 0.1*(np.log(bpm_inc[2:][stamina_select]/1000 + 1) + 1)
-        stamina[~stamina_select] = 0.1
-
-        #vec_rhym_cplx_func = np.vectorize(self.__rhym_cplx_func)
-        #rhyhm_cplx = vec_rhym_cplx_func(rhym/100)
-        #print(rhym/100)
-        #print(rhyhm_cplx)
+        #stamina = np.zeros(rates.shape[0])
+        #stamina_select = (bpm_dec[2:] > bpm_inc[2:])
+        #stamina[stamina_select] = 0.1*(np.log(bpm_inc[2:][stamina_select]/1000 + 1) + 1)
         
         data_x = np.linspace(0, 1, rates.shape[0])
-        data_y = rates*stamina*3
+        #data_y = rates*stamina*3
+        data_y = rates*3
 
         sort_idx = np.argsort(data_y)
         data_y = data_y[sort_idx]
@@ -167,8 +157,3 @@ class GraphTapDifficulty(PyQt5.QtWidgets.QWidget):
         margin_y = 0.001*(view.top() - view.bottom())
 
         self.__graph_text.setPos(pos_x + margin_x, pos_y + margin_y)
-
-
-    def __rhym_cplx_func(self, x):
-        n = np.arange(1, 8)
-        return np.sum(np.abs(np.sin(2*(2**n)*math.pi*x)))

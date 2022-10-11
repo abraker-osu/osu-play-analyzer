@@ -7,8 +7,8 @@ Maps being made in the map_architect_window are also displayed here
 import numpy as np
 import pandas as pd
 
+import PyQt5
 import pyqtgraph
-from pyqtgraph.Qt import QtGui, QtCore
 
 from osu_analysis import BeatmapIO, ReplayIO, StdMapData, StdReplayData, StdScoreData, Gamemode, Mod
 from osu_db import MapsDB
@@ -21,9 +21,9 @@ from app.widgets.timing_plot import TimingPlot
 from app.file_managers import AppConfig
 
 
-class MapDisplay(QtGui.QWidget):
+class MapDisplay(PyQt5.QtWidgets.QWidget):
 
-    data_loaded = QtCore.pyqtSignal()
+    data_loaded = PyQt5.QtCore.pyqtSignal()
 
     MAP_T = 0
     MAP_X = 1
@@ -38,7 +38,7 @@ class MapDisplay(QtGui.QWidget):
     REPLAY_M2 = 6
 
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
+        PyQt5.QtWidgets.QWidget.__init__(self, parent)
 
         self.__maps_db = MapsDB(AppConfig.cfg['osu_dir'])
 
@@ -58,13 +58,13 @@ class MapDisplay(QtGui.QWidget):
 
 
     def __init_gui(self):
-        self.menu_bar  = QtGui.QMenuBar()
-        self.file_menu = QtGui.QMenu("&File")
+        self.menu_bar  = PyQt5.QtWidgets.QMenuBar()
+        self.file_menu = PyQt5.QtWidgets.QMenu("&File")
 
-        self.open_map_action    = QtGui.QAction("&Open *.osu", self.file_menu, triggered=lambda: self.__open_map_dialog())
-        self.open_replay_action = QtGui.QAction("&Open *.osr", self.file_menu, triggered=lambda: self.__open_replay_dialog())
+        self.open_map_action    = PyQt5.QtWidgets.QAction("&Open *.osu", self.file_menu, triggered=lambda: self.__open_map_dialog())
+        self.open_replay_action = PyQt5.QtWidgets.QAction("&Open *.osr", self.file_menu, triggered=lambda: self.__open_replay_dialog())
 
-        self.layout = QtGui.QVBoxLayout(self)
+        self.layout = PyQt5.QtWidgets.QVBoxLayout(self)
 
         # Pattern Visualization
         self.visual = pyqtgraph.PlotWidget(title='Pattern visualization')
@@ -82,7 +82,7 @@ class MapDisplay(QtGui.QWidget):
         self.m1_timing_plot = TimingPlot()
         self.m2_timing_plot = TimingPlot()
 
-        self.status_label = QtGui.QLabel()
+        self.status_label = PyQt5.QtWidgets.QLabel()
 
 
     def __build_layout(self):
@@ -365,7 +365,7 @@ class MapDisplay(QtGui.QWidget):
 
 
     def __open_map_dialog(self):
-        file_name = QtGui.QFileDialog.getOpenFileName(self, 'Open file',  f'{AppConfig.cfg["osu_dir"]}/Songs', 'osu! map files (*.osu)')
+        file_name = PyQt5.QtWidgets.QFileDialog.getOpenFileName(self, 'Open file',  f'{AppConfig.cfg["osu_dir"]}/Songs', 'osu! map files (*.osu)')
         file_name = file_name[0]
 
         if len(file_name) == 0:
@@ -453,7 +453,7 @@ class MapDisplay(QtGui.QWidget):
     def __open_replay_dialog(self):
         name_filter = 'osu! replay files (*.osr)' if self.map_md5 == None else f'osu! replay files ({self.map_md5}-*.osr)\nosu! replay files (*.osr)'
 
-        file_name = QtGui.QFileDialog.getOpenFileName(self, 'Open replay',  f'{AppConfig.cfg["osu_dir"]}/Data/r', name_filter)
+        file_name = PyQt5.QtWidgets.QFileDialog.getOpenFileName(self, 'Open replay',  f'{AppConfig.cfg["osu_dir"]}/Data/r', name_filter)
         file_name = file_name[0]
 
         if len(file_name) == 0:

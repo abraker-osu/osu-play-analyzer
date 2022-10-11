@@ -16,7 +16,7 @@ Design note: Maybe have a scatter plot instead. Really depends on how much data 
 import time
 import threading
 import pyqtgraph
-from pyqtgraph.Qt import QtGui, QtCore
+import PyQt5
 
 import numpy as np
 import pandas as pd
@@ -108,18 +108,18 @@ class PlayList(pyqtgraph.TableWidget):
 
     logger = Logger.get_logger(__name__)
 
-    map_selected = QtCore.pyqtSignal(object)
-    new_map_loaded = QtCore.pyqtSignal()
+    map_selected = PyQt5.QtCore.pyqtSignal(object)
+    new_map_loaded = PyQt5.QtCore.pyqtSignal()
 
-    __batch_processed = QtCore.pyqtSignal(object)
+    __batch_processed = PyQt5.QtCore.pyqtSignal(object)
 
     def __init__(self):
         self.logger.debug(f'__init__ - enter')
 
         pyqtgraph.TableWidget.__init__(self)
 
-        self.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-        self.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+        self.setSelectionBehavior(PyQt5.QtWidgets.QAbstractItemView.SelectRows)
+        self.setSelectionMode(PyQt5.QtWidgets.QAbstractItemView.ExtendedSelection)
         self.verticalHeader().setDefaultSectionSize(10)
 
         self.__maps_db = MapsDB(AppConfig.cfg['osu_dir'])
@@ -139,7 +139,7 @@ class PlayList(pyqtgraph.TableWidget):
             return
 
         # Get list of hashes for loaded maps
-        map_hashes = [ self.model().data(self.model().index(i, 0), role=QtCore.Qt.DisplayRole) for i in range(self.rowCount()) ]
+        map_hashes = [ self.model().data(self.model().index(i, 0), role=PyQt5.QtCore.Qt.DisplayRole) for i in range(self.rowCount()) ]
 
         # FIXME: Plays from same map but different mods do not load
         # TODO: Check against md5 AND mods
@@ -178,7 +178,7 @@ class PlayList(pyqtgraph.TableWidget):
 
         if is_not_multiple_selected:
             # If map already exists in listings, select it
-            matching_items = self.findItems(str(map_md5_str), QtCore.Qt.MatchContains)
+            matching_items = self.findItems(str(map_md5_str), PyQt5.QtCore.Qt.MatchContains)
             if not matching_items:
                 self.logger.warning('Failed to find map item in table data')
                 return
@@ -245,7 +245,7 @@ class PlayList(pyqtgraph.TableWidget):
 
 
     def get_selected_md5s(self):
-        return [ self.model().data(self.model().index(i, 0), role=QtCore.Qt.DisplayRole) for i in range(len(self.selectionModel().selectedRows())) ]
+        return [ self.model().data(self.model().index(i, 0), role=PyQt5.QtCore.Qt.DisplayRole) for i in range(len(self.selectionModel().selectedRows())) ]
 
     
     def __add_data(self, data):
@@ -272,7 +272,7 @@ class PlayList(pyqtgraph.TableWidget):
 
     def __list_select_event(self, _):
         selected_rows = self.selectionModel().selectedRows(column=0)
-        md5_strs = [ selected_row.data(role=QtCore.Qt.DisplayRole) for selected_row in selected_rows ]
+        md5_strs = [ selected_row.data(role=PyQt5.QtCore.Qt.DisplayRole) for selected_row in selected_rows ]
 
         self.logger.debug('__list_select_event - map_selected.emit ->')
         self.map_selected.emit(md5_strs)

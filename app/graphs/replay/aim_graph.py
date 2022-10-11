@@ -2,32 +2,31 @@ import scipy.special
 import numpy as np
 import math
 
+import PyQt5
 import pyqtgraph
-from pyqtgraph.Qt import QtGui
-from pyqtgraph.Qt import QtCore
 
 from osu_analysis import StdScoreData, Mod
 from app.data_recording.data import PlayNpyData
 
 
-class AimGraph(QtGui.QWidget):
+class AimGraph(PyQt5.QtWidgets.QWidget):
 
     SCALE = 3.0
     SIZE = 140*SCALE
     DEV_WIDTH = 64 + 4*SCALE
 
     # Construct a unit radius circle for a graph
-    class HitCircle(QtGui.QGraphicsObject):
+    class HitCircle(PyQt5.QtWidgets.QGraphicsObject):
         def __init__(self, center=(0.0, 0.0), radius=1.0, pen=pyqtgraph.mkPen(color=(255, 255, 255, 255), width=0.5)):
-            QtGui.QGraphicsObject.__init__(self)
+            PyQt5.QtWidgets.QGraphicsObject.__init__(self)
             self.center = center
             self.radius = radius
             self.pen = pen
 
 
         def boundingRect(self):
-            rect = QtCore.QRectF(0, 0, 2*self.radius, 2*self.radius)
-            rect.moveCenter(QtCore.QPointF(*self.center))
+            rect = PyQt5.QtCore.QRectF(0, 0, 2*self.radius, 2*self.radius)
+            rect.moveCenter(PyQt5.QtCore.QPointF(*self.center))
             return rect
 
 
@@ -37,13 +36,13 @@ class AimGraph(QtGui.QWidget):
 
 
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
+        PyQt5.QtWidgets.QWidget.__init__(self, parent)
         
         self.setWindowTitle('Aim visualization')
         #self.setSizePolicy(QtGui.QSizePolicy.Policy.Minimum, QtGui.QSizePolicy.Policy.Minimum)
-        self.setMaximumSize(QtCore.QSize(int(AimGraph.SIZE + AimGraph.DEV_WIDTH + 1), int(AimGraph.SIZE + AimGraph.DEV_WIDTH + 32 + 1)))
+        self.setMaximumSize(PyQt5.QtCore.QSize(int(AimGraph.SIZE + AimGraph.DEV_WIDTH + 1), int(AimGraph.SIZE + AimGraph.DEV_WIDTH + 32 + 1)))
 
-        self.main_layout = QtGui.QGridLayout(self)
+        self.main_layout = PyQt5.QtWidgets.QGridLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(1)
         
@@ -207,7 +206,7 @@ class AimGraph(QtGui.QWidget):
         y, x = np.histogram(scaled_aim_y_offsets, bins=np.linspace(-AimGraph.SIZE/2, AimGraph.SIZE/2, int(AimGraph.SIZE/5)))
         self.dev_y.clearPlots()
         plot = self.dev_y.plot(x, y, stepMode='center', fillLevel=0, fillOutline=True, brush=(0, 0, 255, 150))
-        plot.rotate(90)
+        plot.setRotation(90)
 
         '''
         # Update metrics

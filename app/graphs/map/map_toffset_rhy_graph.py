@@ -1,5 +1,5 @@
+import PyQt5
 import pyqtgraph
-from pyqtgraph.Qt import QtCore, QtGui
 
 import numpy as np
 import threading
@@ -8,12 +8,12 @@ from osu_analysis import StdScoreData
 from app.data_recording.data import ScoreNpyData
 
 
-class MapToffsetRhyGraph(QtGui.QWidget):
+class MapToffsetRhyGraph(PyQt5.QtWidgets.QWidget):
 
-    __calc_data_event = QtCore.pyqtSignal(object, object)
+    __calc_data_event = PyQt5.QtCore.pyqtSignal(object, object)
 
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
+        PyQt5.QtWidgets.QWidget.__init__(self, parent)
 
         self.__avg_data_points = True
 
@@ -35,7 +35,7 @@ class MapToffsetRhyGraph(QtGui.QWidget):
         self.__text = self.__graph.getPlotItem().legend.getLabel(self.__label_style)
    
         # Put it all together
-        self.__layout = QtGui.QHBoxLayout(self)
+        self.__layout = PyQt5.QtWidgets.QHBoxLayout(self)
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(2)
         self.__layout.addWidget(self.__graph)

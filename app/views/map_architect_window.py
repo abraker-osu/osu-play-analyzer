@@ -6,52 +6,52 @@ import sys
 import json
 import base64
 
+import PyQt5
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
 
 from app.misc.proc_data import ProcData
 
 app = pg.mkQApp()
 
 
-class MainUI(QtWidgets.QWidget):
+class MainUI(PyQt5.QtWidgets.QWidget):
 
     def __init__(self):
-        QtWidgets.QWidget.__init__(self)
+        PyQt5.QtWidgets.QWidget.__init__(self)
         self.resize(846, 552)
 
-        self.gridLayout_2 = QtWidgets.QGridLayout(self)
+        self.gridLayout_2 = PyQt5.QtWidgets.QGridLayout(self)
 
-        self.splitter = QtWidgets.QSplitter(self)
-        self.splitter.setOrientation(QtCore.Qt.Horizontal)
+        self.splitter = PyQt5.QtWidgets.QSplitter(self)
+        self.splitter.setOrientation(PyQt5.QtCore.Qt.Horizontal)
 
-        self.layoutWidget = QtWidgets.QWidget(self.splitter)
+        self.layoutWidget = PyQt5.QtWidgets.QWidget(self.splitter)
 
-        self.gridLayout = QtWidgets.QGridLayout(self.layoutWidget)
+        self.gridLayout = PyQt5.QtWidgets.QGridLayout(self.layoutWidget)
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
 
-        self.code_selection = QtWidgets.QTreeWidget(self.layoutWidget)
+        self.code_selection = PyQt5.QtWidgets.QTreeWidget(self.layoutWidget)
         self.code_selection.headerItem().setText(0, '1')
         self.code_selection.header().setVisible(False)
         self.gridLayout.addWidget(self.code_selection, 3, 0, 1, 2)
 
-        self.script_filter = QtWidgets.QLineEdit(self.layoutWidget)
+        self.script_filter = PyQt5.QtWidgets.QLineEdit(self.layoutWidget)
         self.gridLayout.addWidget(self.script_filter, 0, 0, 1, 2)
 
-        self.search_mode = QtWidgets.QComboBox(self.layoutWidget)
+        self.search_mode = PyQt5.QtWidgets.QComboBox(self.layoutWidget)
         self.search_mode.addItem('')
         self.search_mode.addItem('')
         self.gridLayout.addWidget(self.search_mode, 1, 0, 1, 2)
 
-        self.layoutWidget1 = QtWidgets.QWidget(self.splitter)
+        self.layoutWidget1 = PyQt5.QtWidgets.QWidget(self.splitter)
 
-        self.verticalLayout = QtWidgets.QVBoxLayout(self.layoutWidget1)
+        self.verticalLayout = PyQt5.QtWidgets.QVBoxLayout(self.layoutWidget1)
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
 
-        self.title_editor = QtWidgets.QLineEdit()
+        self.title_editor = PyQt5.QtWidgets.QLineEdit()
 
-        self.code_editor = QtWidgets.QPlainTextEdit(self.layoutWidget1)
-        font = QtGui.QFont()
+        self.code_editor = PyQt5.QtWidgets.QPlainTextEdit(self.layoutWidget1)
+        font = PyQt5.QtGui.QFont()
         font.setFamily('Courier New')
         self.code_editor.setFont(font)
 
@@ -65,7 +65,7 @@ class MainUI(QtWidgets.QWidget):
         self.search_mode.setItemText(0, 'Title Search')
         self.search_mode.setItemText(1, 'Content Search')
 
-        QtCore.QMetaObject.connectSlotsByName(self)
+        PyQt5.QtCore.QMetaObject.connectSlotsByName(self)
 
 
 # based on https://github.com/art1415926535/PyQt5-syntax-highlighting
@@ -75,17 +75,17 @@ def charFormat(color, style='', background=None):
     """
     Return a QTextCharFormat with the given attributes.
     """
-    _color = QtGui.QColor()
+    _color = PyQt5.QtGui.QColor()
     
     if type(color) is not str:
         _color.setRgb(color[0], color[1], color[2])
     else:
         _color.setNamedColor(color)
 
-    _format = QtGui.QTextCharFormat()
+    _format = PyQt5.QtGui.QTextCharFormat()
     _format.setForeground(_color)
 
-    if 'bold'   in style: _format.setFontWeight(QtGui.QFont.Weight.Bold)
+    if 'bold'   in style: _format.setFontWeight(PyQt5.QtGui.QFont.Weight.Bold)
     if 'italic' in style: _format.setFontItalic(True)
     if background is not None:
         _format.setBackground(pg.mkColor(background))
@@ -127,7 +127,7 @@ DARK_STYLES = {
 }
 
 
-class PythonHighlighter(QtGui.QSyntaxHighlighter):
+class PythonHighlighter(PyQt5.QtGui.QSyntaxHighlighter):
     """
     Syntax highlighter for the Python language.
     """
@@ -154,8 +154,8 @@ class PythonHighlighter(QtGui.QSyntaxHighlighter):
         super().__init__(document)
 
         # Multi-line strings (expression, flag, style)
-        self.tri_single = (QtCore.QRegularExpression("'''"), 1, 'string2')
-        self.tri_double = (QtCore.QRegularExpression('"""'), 2, 'string2')
+        self.tri_single = (PyQt5.QtCore.QRegularExpression("'''"), 1, 'string2')
+        self.tri_double = (PyQt5.QtCore.QRegularExpression('"""'), 2, 'string2')
 
         self.rules = []
 
@@ -300,31 +300,31 @@ def unnestedDict(exDict):
 
 
 
-class MapArchitectWindow(QtWidgets.QMainWindow):
+class MapArchitectWindow(PyQt5.QtWidgets.QMainWindow):
 
     FOLDER_LOCATION = 'map_gen_scripts'
 
-    gen_map_event = QtCore.pyqtSignal(str)
+    gen_map_event = PyQt5.QtCore.pyqtSignal(str)
 
     def __init__(self):
-        QtWidgets.QMainWindow.__init__(self)
+        PyQt5.QtWidgets.QMainWindow.__init__(self)
         self.setWindowTitle('Map Architect')
         
         self.__ui = MainUI()
         self.setCentralWidget(self.__ui)
         
-        self.__btn_save_code = QtWidgets.QPushButton('Save script')
-        self.__btn_run_code  = QtWidgets.QPushButton('Run script')
-        self.__code_layout   = QtWidgets.QGridLayout()
+        self.__btn_save_code = PyQt5.QtWidgets.QPushButton('Save script')
+        self.__btn_run_code  = PyQt5.QtWidgets.QPushButton('Run script')
+        self.__code_layout   = PyQt5.QtWidgets.QGridLayout()
         self.__ui.code_editor.setLayout(self.__code_layout)
 
         self.__py_highlighter = PythonHighlighter(self.__ui.code_editor.document())
         
-        app = QtWidgets.QApplication.instance()
+        app = PyQt5.QtWidgets.QApplication.instance()
         app.paletteChanged.connect(self.__update_theme)
         
-        policy = QtWidgets.QSizePolicy.Policy.Expanding
-        self.__code_layout.addItem(QtWidgets.QSpacerItem(100, 100, policy, policy), 0, 0)
+        policy = PyQt5.QtWidgets.QSizePolicy.Policy.Expanding
+        self.__code_layout.addItem(PyQt5.QtWidgets.QSpacerItem(100, 100, policy, policy), 0, 0)
         self.__code_layout.addWidget(self.__btn_run_code, 2, 2)
         self.__code_layout.addWidget(self.__btn_save_code, 2, 1)
         
@@ -426,8 +426,8 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
 
 
     def __show_examples_by_title(self, titles):
-        flag = QtWidgets.QTreeWidgetItemIterator.IteratorFlag.NoChildren
-        tree_iter = QtWidgets.QTreeWidgetItemIterator(self.__ui.code_selection, flag)
+        flag = PyQt5.QtWidgets.QTreeWidgetItemIterator.IteratorFlag.NoChildren
+        tree_iter = PyQt5.QtWidgets.QTreeWidgetItemIterator(self.__ui.code_selection, flag)
         item = tree_iter.value()
 
         while item is not None:
@@ -487,7 +487,7 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
             item  = None
 
         for key, val in scripts.items():
-            item = QtWidgets.QTreeWidgetItem([ key ])
+            item = PyQt5.QtWidgets.QTreeWidgetItem([ key ])
 
             # PyQt 4.9.6 no longer keeps references to these wrappers,
             # so we need to make an explicit reference or else the .file
@@ -510,12 +510,20 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
 
     def __current_filepath(self):
         item = self.__ui.code_selection.currentItem()
-        return item.path
+
+        try: return item.path
+        except AttributeError:
+            # This happens if the user clicks on a folder in the QTreeWidget
+            return None
 
  
     def __show_file(self):
         script_pathname = self.__current_filepath()
-        file_pathname   = f'{MapArchitectWindow.FOLDER_LOCATION}\\{script_pathname}'
+        if script_pathname is None:
+            # This happens if the user clicks on a folder in the QTreeWidget
+            return
+
+        file_pathname = f'{MapArchitectWindow.FOLDER_LOCATION}\\{script_pathname}'
         
         self.__ui.code_editor.setPlainText(self.__get_code_content(file_pathname))
         self.__ui.title_editor.setText(script_pathname)
@@ -553,11 +561,11 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
                 timeout = 10  # seconds
             )
         except subprocess.TimeoutExpired:
-            msg = QtGui.QMessageBox()
-            msg.setIcon(QtGui.QMessageBox.Warning)
+            msg = PyQt5.QtWidgets.QMessageBox()
+            msg.setIcon(PyQt5.QtWidgets.QMessageBox.Warning)
             msg.setWindowTitle('Warning')
             msg.setText('Script timed out')
-            msg.setStandardButtons(QtGui.QMessageBox.Ok)
+            msg.setStandardButtons(PyQt5.QtWidgets.QMessageBox.Ok)
             msg.exec_()
             return
 
@@ -583,18 +591,18 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
 
     def keyPressEvent(self, event):
         ret = super().keyPressEvent(event)
-        if not QtCore.Qt.KeyboardModifier.ControlModifier & event.modifiers():
+        if not PyQt5.QtCore.Qt.KeyboardModifier.ControlModifier & event.modifiers():
             return ret
         
         key = event.key()
 
         # Allow quick navigate to search
-        if key == QtCore.Qt.Key.Key_F:
+        if key == PyQt5.QtCore.Qt.Key.Key_F:
             self.__ui.script_filter.setFocus()
             event.accept()
             return
 
-        if key == QtCore.Qt.Key.Key_S:
+        if key == PyQt5.QtCore.Qt.Key.Key_S:
             self.__save_file()
             event.accept()
             return
@@ -602,12 +610,12 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
         font = self.__ui.code_editor.font()
         old_size = font.pointSize()
         
-        if key == QtCore.Qt.Key.Key_Plus or key == QtCore.Qt.Key.Key_Equal:
+        if key == PyQt5.QtCore.Qt.Key.Key_Plus or key == PyQt5.QtCore.Qt.Key.Key_Equal:
             font.setPointSize(int(old_size + max(old_size*.15, 1)))
-        elif key == QtCore.Qt.Key.Key_Minus or key == QtCore.Qt.Key.Key_Underscore:
+        elif key == PyQt5.QtCore.Qt.Key.Key_Minus or key == PyQt5.QtCore.Qt.Key.Key_Underscore:
             newSize = old_size - max(old_size*.15, 1)
             font.setPointSize(int(max(newSize, 1)))
-        elif key == QtCore.Qt.Key.Key_0:
+        elif key == PyQt5.QtCore.Qt.Key.Key_0:
             # Reset to original size
             font.setPointSize(10)
         else:

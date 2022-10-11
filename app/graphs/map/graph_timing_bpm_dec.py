@@ -1,5 +1,5 @@
+import PyQt5
 import pyqtgraph
-from pyqtgraph.Qt import QtGui
 
 import numpy as np
 
@@ -7,10 +7,10 @@ from osu_analysis import StdScoreData
 from app.data_recording.data import ScoreNpyData
 
 
-class GraphTimingBPMDec(QtGui.QWidget):
+class GraphTimingBPMDec(PyQt5.QtWidgets.QWidget):
 
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
+        PyQt5.QtWidgets.QWidget.__init__(self, parent)
 
         # Main graph
         self.__graph = pyqtgraph.PlotWidget(title='Time vs Time since BPM Decrease')
@@ -30,7 +30,7 @@ class GraphTimingBPMDec(QtGui.QWidget):
         self.__text = self.__graph.getPlotItem().legend.getLabel(self.__label_style)
    
         # Put it all together
-        self.__layout = QtGui.QHBoxLayout(self)
+        self.__layout = PyQt5.QtWidgets.QHBoxLayout(self)
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(2)
         self.__layout.addWidget(self.__graph)
