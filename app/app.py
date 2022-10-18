@@ -75,6 +75,8 @@ Main app class
 """
 class App(PyQt5.QtWidgets.QMainWindow):
 
+    __play_handler_signal = PyQt5.QtCore.pyqtSignal(object, object)
+
     logger = Logger.get_logger(__name__)
     debug = True
 
@@ -110,10 +112,10 @@ class App(PyQt5.QtWidgets.QMainWindow):
             with open('config.json', 'w') as f:
                 json.dump(AppConfig.cfg, f, indent=4)
 
-        self.__osu_recorder = OsuRecorder(AppConfig.cfg['osu_dir'], callback=self.__play_handler)
+        self.__osu_recorder = OsuRecorder(AppConfig.cfg['osu_dir'], callback=self.__play_handler_signal.emit)
 
         if __AUTO_RECORDER_EN__:
-            self.__osu_recorder.start(self.__play_handler)
+            self.__osu_recorder.start(self.__play_handler_signal.emit)
         
         self.__construct_gui_state2()
         self.__connect_signals()
@@ -196,6 +198,8 @@ class App(PyQt5.QtWidgets.QMainWindow):
             if __MAP_DISPLAY_EN__:
                 self.map_architect_window.gen_map_event.connect(self.map_display_window.set_from_generated)
 
+        self.__play_handler_signal.connect(self.__play_handler)
+
         self.logger.debug('Connecting signals end')
 
 
@@ -234,9 +238,7 @@ class App(PyQt5.QtWidgets.QMainWindow):
         # Needed sleep to wait for osu! to finish writing the replay file
         time.sleep(2)
 
-        loaded_data = self.data_overview_window.get_loaded_data()
-
-        if loaded_data.is_entry_exist(replay.beatmap_hash, replay.timestamp):
+        if self.data_overview_window.is_exist(replay.beatmap_hash, replay.timestamp):
             self.logger.info(f'Replay already exists in data: md5={replay.beatmap_hash}  timestamp={replay.timestamp}')
             return
 
@@ -264,6 +266,7 @@ class App(PyQt5.QtWidgets.QMainWindow):
                 return
 
         self.data_overview_window.append_to_data(beatmap, replay)
+        self.data_overview_window.show_map()
 
         #self.logger.debug(f'data_overview_window load time: {time.time() - time_start}')
 
