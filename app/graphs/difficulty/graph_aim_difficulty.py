@@ -53,28 +53,28 @@ class GraphAimDifficulty(PyQt5.QtWidgets.QWidget):
         self.__on_view_range_changed()
 
 
-    def plot_data(self, play_data):
-        if play_data.shape[0] == 0:
+    def plot_data(self, score_data, diff_data):
+        if 0 in [ score_data.shape[0], diff_data.shape[0] ]:
             return
 
-        thread = threading.Thread(target=self.__plot_aim_factors, args=(play_data, ))
+        thread = threading.Thread(target=self.__plot_aim_factors, args=(score_data, diff_data))
         thread.start()
 
 
-    def __plot_aim_factors(self, play_data):
+    def __plot_aim_factors(self, score_data, diff_data):
         # Check if there is any data to operate on
-        if play_data.shape[0] < 3:
+        if score_data.shape[0] < 3:
             data_stub = np.asarray([])
             self.__calc_data_event.emit(data_stub, data_stub, data_stub)
             return
 
-        type_map = play_data['TYPE_MAP'].values
+        type_map = score_data['TYPE_MAP'].values
 
         # Selects release points for short sliders. These kind of sliders
         # do not have any consequences for not aiming the slider end. As a
         # result, it is not a significant aiming challenge if they go very 
         # fast. Sliders are considered short when they have no hold scorepoints.
-        short_slider_rel_select = np.zeros(play_data.shape[0], dtype=bool)
+        short_slider_rel_select = np.zeros(score_data.shape[0], dtype=bool)
         short_slider_rel_select[1:] = (
             (type_map[:-1] == StdScoreData.ACTION_PRESS) & 
             (type_map[1:] == StdScoreData.ACTION_RELEASE)
@@ -89,18 +89,20 @@ class GraphAimDifficulty(PyQt5.QtWidgets.QWidget):
         #
         # TODO: How to determine if slider path is oriented in the direction of jump?
         # TODO: What if slider path goes into opposite direction of jump?
-        short_slider_prs_select = np.zeros(play_data.shape[0], dtype=bool)
+        short_slider_prs_select = np.zeros(score_data.shape[0], dtype=bool)
         short_slider_prs_select[:-1] = (
             (type_map[:-1] == StdScoreData.ACTION_PRESS) & 
             (type_map[1:] == StdScoreData.ACTION_RELEASE)
         )
 
-        play_data = play_data[~short_slider_rel_select]
+        score_data = score_data[~short_slider_rel_select]
+        diff_data  = diff_data[~short_slider_rel_select]
+
         short_slider_prs_select = short_slider_prs_select[~short_slider_rel_select]
         type_map = type_map[~short_slider_rel_select]
 
-        cs_px = OsuUtils.cs_to_px(play_data['CS'].values[0])
-        dists = play_data['DIFF_XY_DIST'].values
+        cs_px = OsuUtils.cs_to_px(score_data['CS'].values[0])
+        dists = diff_data['DIFF_XY_DIST'].values
 
         # Small distance do not require to reposition the cursor to aim the next
         # note. As a result patters like double taps can have very short timing
@@ -116,14 +118,14 @@ class GraphAimDifficulty(PyQt5.QtWidgets.QWidget):
 
 
         # Calculate data (x2 is considered current score point, x1 and x0 are previous score points)
-        x_map  = play_data['X_MAP'].values
-        y_map  = play_data['Y_MAP'].values
-        t_map  = play_data['T_MAP'].values
-        vels   = play_data['DIFF_XY_LIN_VEL'].values
-        angles = play_data['DIFF_XY_ANGLE'].values
+        x_map  = score_data['X_MAP'].values
+        y_map  = score_data['Y_MAP'].values
+        t_map  = score_data['T_MAP'].values
+        vels   = diff_data['DIFF_XY_LIN_VEL'].values
+        angles = diff_data['DIFF_XY_ANGLE'].values
 
         is_miss = (
-            (play_data['TYPE_HIT'].values == StdScoreData.TYPE_MISS) & (
+            (score_data['TYPE_HIT'].values == StdScoreData.TYPE_MISS) & (
                 (type_map == StdScoreData.ACTION_HOLD) |
                 (type_map == StdScoreData.ACTION_PRESS)
             )
@@ -137,8 +139,8 @@ class GraphAimDifficulty(PyQt5.QtWidgets.QWidget):
                 pos_x: {x_map[1:-1][detected_zeros]} {x_map[2:][detected_zeros]}
                 pos_y: {y_map[1:-1][detected_zeros]} {y_map[2:][detected_zeros]}
                 timing: {t_map[1:-1][detected_zeros]} {t_map[2:][detected_zeros]}
-                hit_type: {play_data[:, PlayNpyData.TYPE_HIT][1:-1][detected_zeros]} {play_data[:, PlayNpyData.TYPE_MAP][2:][detected_zeros]}
-                action_type: {play_data[:, PlayNpyData.TYPE_MAP][1:-1][detected_zeros]} {play_data[:, PlayNpyData.TYPE_HIT][2:][detected_zeros]}
+                hit_type: {score_data[:, PlayNpyData.TYPE_HIT][1:-1][detected_zeros]} {score_data[:, PlayNpyData.TYPE_MAP][2:][detected_zeros]}
+                action_type: {score_data[:, PlayNpyData.TYPE_MAP][1:-1][detected_zeros]} {score_data[:, PlayNpyData.TYPE_HIT][2:][detected_zeros]}
                 """
             )
 

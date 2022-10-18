@@ -583,7 +583,10 @@ class DiffNpy():
         # NOTE: Must start with "DIFF_" so that difficulty specific
         # columns can be recognized and recalculated upon request
         df = pd.DataFrame()
-        df['IDXS']              = np.arange(score_data.shape[0])
+        df['MD5']               = score_data.index.get_level_values(0)
+        df['TIMESTAMP']         = score_data.index.get_level_values(1)
+        df['MODS']              = score_data.index.get_level_values(2)
+        df['IDXS']              = score_data.index.get_level_values(3)
         df['DIFF_T_PRESS_DIFF'] = t_press_diff
         df['DIFF_T_PRESS_RATE'] = t_press_rate
         df['DIFF_T_PRESS_INC']  = t_press_inc
@@ -596,5 +599,18 @@ class DiffNpy():
         df['DIFF_XY_ANG_VEL']   = xy_ang_vel
         df['DIFF_VIS_VISIBLE']  = vis_visible
 
-        df.set_index(['IDXS'], inplace=True)
+        df.set_index(['MD5', 'TIMESTAMP', 'MODS', 'IDXS'], inplace=True)
+        return df
+
+
+    @staticmethod
+    def get_blank_data():
+        df = pd.DataFrame(columns=[
+            'MD5', 'TIMESTAMP', 'MODS', 'IDXS', 
+            'DIFF_T_PRESS_DIFF', 'DIFF_T_PRESS_RATE', 'DIFF_T_PRESS_INC', 'DIFF_T_PRESS_DEC', 'DIFF_T_PRESS_RHM', 'DIFF_T_HOLD_DUR', 
+            'DIFF_XY_DIST', 'DIFF_XY_ANGLE', 'DIFF_XY_LIN_VEL', 'DIFF_XY_ANG_VEL', 
+            'DIFF_VIS_VISIBLE'
+        ])
+
+        df.set_index(['MD5', 'TIMESTAMP', 'MODS', 'IDXS'], inplace=True)
         return df

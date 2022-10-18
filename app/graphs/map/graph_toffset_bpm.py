@@ -47,19 +47,21 @@ class GraphTOffsetBPM(PyQt5.QtWidgets.QWidget):
         self.__calc_data_event.connect(self.__display_data)
         
 
-    def plot_data(self, play_data):
+    def plot_data(self, score_data, diff_data):
         # Clear plots for redraw
         self.__graph.clearPlots()
         self.__text.setText(f'')
 
-        if play_data.shape[0] == 0:
+        if 0 in [ score_data.shape[0], diff_data.shape[0] ]:
             return
-
-        thread = threading.Thread(target=self.__proc_data, args=(play_data, ))
+        thread = threading.Thread(target=self.__proc_data, args=(score_data, diff_data))
         thread.start()
 
-    def __proc_data(self, play_data):
-        data = play_data[['DIFF_T_PRESS_RATE', 'T_HIT', 'T_MAP']].values
+    def __proc_data(self, score_data, diff_data):
+        data = np.zeros((score_data.shape[0], 3))
+        data[:, 0:2] = score_data[['T_HIT', 'T_MAP']].values
+        data[:, 2]   = diff_data['DIFF_T_PRESS_RATE'].values
+
         data = data[~(np.isnan(data).any(axis=1))]
 
         x_data = data[:, 0]

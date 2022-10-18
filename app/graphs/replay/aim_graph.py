@@ -142,7 +142,7 @@ class AimGraph(PyQt5.QtWidgets.QWidget):
 
         cs = play_data['CS'].values[0]
         
-        mods = Mod(int(play_data['MODS'].values[0]))
+        mods = Mod(int(play_data.index.get_level_values(2)[0]))
         if mods.has_mod(Mod.HardRock): cs *= 1.3
         if mods.has_mod(Mod.Easy):     cs *= 0.5
 

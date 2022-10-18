@@ -26,7 +26,6 @@ from osu_analysis import Mod
 
 from app.misc.Logger import Logger
 
-from app.file_managers import score_data_obj
 from osu_db.osu_db.maps_db import MapsDB
 
 
@@ -43,7 +42,7 @@ class PlayListHelper():
 
     @staticmethod
     def map_mods_str(score_data):
-        mods = score_data['MODS'].values[0]
+        mods = score_data.index.get_level_values(2)[0]
         mods_text = Mod(int(mods)).get_mods_txt()
         mods_text = f' +{mods_text}' if len(mods_text) != 0 else ''
 
@@ -98,9 +97,8 @@ class PlayListHelper():
 
 
     @staticmethod
-    def do_get_timestamps(map_md5_str):
-        score_data = score_data_obj.data(map_md5_str)
-        return np.unique(score_data.index.get_level_values(0))
+    def do_get_timestamps(score_data):
+        return np.unique(score_data.index.get_level_values(1))
 
 
 
@@ -126,41 +124,34 @@ class PlayList(pyqtgraph.TableWidget):
 
         self.__batch_processed.connect(self.__add_data)
         self.__table_is_configured = False
-        self.reload_map_list()
             
         self.selectionModel().selectionChanged.connect(self.__list_select_event)
 
         self.logger.debug(f'__init__ - exit')
 
 
-    def load_play_md5(self, map_md5_str):
-        if score_data_obj.is_empty():
-            self.logger.warning('load_play_md5 - empty `score_data_obj` encountered')
-            return
-
+    def load_play(self, diff_data):
         # Get list of hashes for loaded maps
         map_hashes = [ self.model().data(self.model().index(i, 0), role=PyQt5.QtCore.Qt.DisplayRole) for i in range(self.rowCount()) ]
+        diff_data_md5 = diff_data.index.get_level_values(0)[0]
 
         # FIXME: Plays from same map but different mods do not load
         # TODO: Check against md5 AND mods
-        if map_md5_str not in map_hashes:
+        if diff_data_md5 not in map_hashes:
             self.logger.debug('load_play_md5 - Map hash not found in table data. Creating new item entry...')
-
-            # Process data to produce stuff that will be shown
-            score_data = score_data_obj.data(map_md5_str)
 
             # Build data structure and add to table
             self.appendData(
                 pd.DataFrame([
                     [
-                        map_md5_str,
-                        PlayListHelper.map_name_str(self.__maps_db, map_md5_str),
-                        PlayListHelper.map_mods_str(score_data),
-                        PlayListHelper.map_timestamp_str(score_data),
-                        score_data.shape[0],
-                        PlayListHelper.map_avg_bpm(score_data),
-                        PlayListHelper.map_avg_lin_vel(score_data),
-                        PlayListHelper.map_avg_ang_vel(score_data),
+                        diff_data_md5,
+                        PlayListHelper.map_name_str(self.__maps_db, diff_data_md5),
+                        PlayListHelper.map_mods_str(diff_data),
+                        PlayListHelper.map_timestamp_str(diff_data),
+                        diff_data.shape[0],
+                        PlayListHelper.map_avg_bpm(diff_data),
+                        PlayListHelper.map_avg_lin_vel(diff_data),
+                        PlayListHelper.map_avg_ang_vel(diff_data),
                     ]
                 ],
                 columns=['md5', 'Name', 'Mods', 'Time', 'Data', 'Avg BPM', 'Avg Lin Vel', 'Avg Ang Vel']
@@ -178,7 +169,7 @@ class PlayList(pyqtgraph.TableWidget):
 
         if is_not_multiple_selected:
             # If map already exists in listings, select it
-            matching_items = self.findItems(str(map_md5_str), PyQt5.QtCore.Qt.MatchContains)
+            matching_items = self.findItems(str(diff_data_md5), PyQt5.QtCore.Qt.MatchContains)
             if not matching_items:
                 self.logger.warning('Failed to find map item in table data')
                 return
@@ -195,19 +186,18 @@ class PlayList(pyqtgraph.TableWidget):
             #    self.selectRow(0)
 
             
-    def reload_map_list(self):
+    def reload_map_list(self, score_data):
         self.logger.debug('reload_map_list - enter')
 
         # Clearing table resets table config
         self.clear()
         self.__table_is_configured = False
 
-        thread = threading.Thread(target=self.__reload_map_list_thread)
+        thread = threading.Thread(target=self.__reload_map_list_thread, args=(score_data, ))
         thread.start()
 
 
-    def __reload_map_list_thread(self):
-        score_data = score_data_obj.data()
+    def __reload_map_list_thread(self, score_data):
         if score_data is None:
             return
 
@@ -244,8 +234,17 @@ class PlayList(pyqtgraph.TableWidget):
         return len(self.selectionModel().selectedRows())
 
 
-    def get_selected_md5s(self):
-        return [ self.model().data(self.model().index(i, 0), role=PyQt5.QtCore.Qt.DisplayRole) for i in range(len(self.selectionModel().selectedRows())) ]
+    def get_selected(self):
+        #print([ row.data() for row in self.selectionModel().selectedRows() ])
+        #print([ row.row() for row in self.selectionModel().selectedRows() ])
+
+        return [ 
+            (
+                self.model().data(self.model().index(selection.row(), 0), role=PyQt5.QtCore.Qt.DisplayRole)#,  # MD5
+                #self.model().data(self.model().index(selection.row(), 2), role=PyQt5.QtCore.Qt.DisplayRole)   # MOD
+            )
+            for selection in self.selectionModel().selectedRows()
+        ]
 
     
     def __add_data(self, data):

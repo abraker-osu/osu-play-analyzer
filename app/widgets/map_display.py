@@ -13,6 +13,7 @@ import pyqtgraph
 from osu_analysis import BeatmapIO, ReplayIO, StdMapData, StdReplayData, StdScoreData, Gamemode, Mod
 from osu_db import MapsDB
 
+from app.misc.Logger import Logger
 from app.misc.utils import Utils
 from app.misc.osu_utils import OsuUtils
 from app.widgets.hitobject_plot import HitobjectPlot
@@ -22,6 +23,8 @@ from app.file_managers import AppConfig
 
 
 class MapDisplay(PyQt5.QtWidgets.QWidget):
+
+    __logger = Logger.get_logger(__name__)
 
     data_loaded = PyQt5.QtCore.pyqtSignal()
 
@@ -40,6 +43,8 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
     def __init__(self, parent=None):
         PyQt5.QtWidgets.QWidget.__init__(self, parent)
 
+        MapDisplay.__logger.debug('MapDisplay.__init__ enter')
+
         self.__maps_db = MapsDB(AppConfig.cfg['osu_dir'])
 
         self.timing_data = np.asarray([])
@@ -55,6 +60,8 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
 
         self.__init_gui()
         self.__build_layout()
+
+        MapDisplay.__logger.debug('MapDisplay.__init__ exit')
 
 
     def __init_gui(self):

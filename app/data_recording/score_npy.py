@@ -1,3 +1,4 @@
+import statistics
 import numpy as np
 import pandas as pd
 
@@ -11,6 +12,11 @@ from app.misc.osu_utils import OsuUtils
 class ScoreNpy():
 
     logger = Logger.get_logger(__name__)
+
+    COLUMNS = [
+        'MD5', 'TIMESTAMP', 'MODS', 'IDXS', 
+        'CS', 'AR', 'T_MAP', 'X_MAP', 'Y_MAP', 'T_HIT', 'X_HIT', 'Y_HIT', 'TYPE_MAP', 'TYPE_HIT'
+    ]
 
     @staticmethod
     def __get_map_data_from_file(file_name):
@@ -72,9 +78,9 @@ class ScoreNpy():
             # Do nothing
             pass
             
-    
+
     @staticmethod
-    def __get_score_data(map_data, replay_data, cs, ar):
+    def __get_data(map_data, replay_data, map_md5, timestamp, mods, cs, ar):
         # Process score data
         settings = StdScoreData.Settings()
         settings.ar_ms = OsuUtils.ar_to_ms(ar)
@@ -85,21 +91,15 @@ class ScoreNpy():
         settings.neg_hit_miss_range = 100   # ms point of early miss window
 
         score_data = StdScoreData.get_score_data(replay_data, map_data, settings)
-        
-        return score_data
-
-
-    @staticmethod
-    def __get_data(score_data, timestamp, score_id, mods, map_md5, cs, ar):
         size = score_data.shape[0]
 
         df = pd.DataFrame()
         df['MD5']         = [ map_md5 ] * size
         df['TIMESTAMP']   = np.full(size, int(timestamp))
         df['MODS']        = np.full(size, mods)
+        df['IDXS']        = np.arange(size)
         df['CS']          = np.full(size, cs)
         df['AR']          = np.full(size, ar)
-        df['IDXS']        = np.arange(size)
         df['T_MAP']       = score_data['map_t']
         df['X_MAP']       = score_data['map_x']
         df['Y_MAP']       = score_data['map_y']
@@ -109,7 +109,14 @@ class ScoreNpy():
         df['TYPE_MAP']    = score_data['action']
         df['TYPE_HIT']    = score_data['type']
 
-        df.set_index(['MD5', 'TIMESTAMP', 'IDXS'], inplace=True)
+        df.set_index(['MD5', 'TIMESTAMP', 'MODS', 'IDXS'], inplace=True)
+        return df
+
+
+    @staticmethod
+    def get_blank_data():
+        df = pd.DataFrame(columns=ScoreNpy.COLUMNS)
+        df.set_index(['MD5', 'TIMESTAMP', 'MODS', 'IDXS'], inplace=True)
         return df
 
 
@@ -132,20 +139,13 @@ class ScoreNpy():
         except OSError:
             timestamp = 0
 
-        score_data = ScoreNpy.__get_score_data(
-            map_data, 
-            replay_data, 
-            beatmap.difficulty.cs, 
-            beatmap.difficulty.ar
-        )
-        
         return map_data, replay_data, ScoreNpy.__get_data(
-            score_data, 
-            timestamp,
-            replay.score_id, 
-            replay.mods.value, 
+            map_data,
+            replay_data,
             beatmap.metadata.beatmap_md5, 
-            beatmap.difficulty.cs, 
+            timestamp,
+            replay.mods.value, 
+            beatmap.difficulty.cs,
             beatmap.difficulty.ar
         )
 

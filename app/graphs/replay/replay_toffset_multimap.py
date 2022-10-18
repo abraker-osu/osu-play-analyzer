@@ -67,7 +67,7 @@ class ReplayTOffsetMultimap(PyQt5.QtWidgets.QWidget):
             self.__miss_plot.setData(x=data_blank, y=data_blank, top=data_blank, bottom=data_blank, pen=mkPen((200, 0, 0, 50), width=5))
             return
 
-        unique_map_mods = np.unique(play_data['MODS'])
+        unique_map_mods = np.unique(play_data.index.get_level_values(2))
         if unique_map_mods.shape[0] > 1:
             self.__hit_metrics.setText('Data is displayed only when one mod combination is selected')
 

@@ -31,9 +31,6 @@ from app.graphs.deviation.dev_graph_rhythm import DevGraphRhythm
 from app.graphs.deviation.dev_doffsets import DevDOffsets
 from app.graphs.deviation.dev_offsets import DevOffsets
 
-from app.data_recording.data import ScoreNpyData
-from app.file_managers import score_data_obj
-
 
 class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
 
@@ -107,7 +104,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.logger.debug('__init__ exit')
 
 
-    def new_replay_event(self, score_data):
+    def new_replay_event(self, score_data, diff_data):
         '''
         Called when a single new replay is loaded
         '''
@@ -119,8 +116,8 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.doffset_distr_graph.plot_data(score_data)
         self.aim_display.plot_data(score_data)
 
-        self.aim_difficulty.plot_data(score_data)
-        self.tap_difficulty.plot_data(score_data)
+        self.aim_difficulty.plot_data(score_data, diff_data)
+        self.tap_difficulty.plot_data(score_data, diff_data)
 
         #self.timing_bpm_dec.plot_data(score_data)
         #self.timing_bpm_inc.plot_data(score_data)
@@ -130,11 +127,11 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         #self.toffset_rhyd_graph.plot_data(score_data)
         #self.toffset_velocity.plot_data(score_data)
 
-        self.dev_doffsets.plot_data(score_data)
-        self.dev_offsets.plot_data(score_data)
+        self.dev_doffsets.plot_data(score_data, diff_data)
+        self.dev_offsets.plot_data(score_data, diff_data)
 
 
-    def overview_single_map_selection_event(self, score_data):
+    def overview_single_map_selection_event(self, score_data, diff_data):
         """
         Called when a single map is selected in the overview window.
         """
@@ -147,19 +144,19 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.doffset_distr_graph.plot_data(score_data)
         self.aim_display.plot_data(score_data)
 
-        self.aim_difficulty.plot_data(score_data)
-        self.tap_difficulty.plot_data(score_data)
+        self.aim_difficulty.plot_data(score_data, diff_data)
+        self.tap_difficulty.plot_data(score_data, diff_data)
 
-        self.toffset_bpm.plot_data(score_data)
+        self.toffset_bpm.plot_data(score_data, diff_data)
 
 
-    def set_from_play_data(self, score_data):
+    def set_from_play_data(self, score_data, diff_data):
         '''
         Called whenever the selection in the overview window changes
         '''
         self.logger.debug('set_from_play_data')
 
-        if score_data.shape[0] == 0:
+        if 0 in [ score_data.shape[0], diff_data.shape[0] ]:
             # TODO: Clear plots
             return
 
@@ -174,5 +171,5 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         #self.dev_graph_angle.plot_data(score_data)
         #self.dev_graph_vel.plot_data(score_data)
         #self.dev_graph_rhythm.plot_data(score_data)
-        self.dev_doffsets.plot_data(score_data)
-        self.dev_offsets.plot_data(score_data)
+        self.dev_doffsets.plot_data(score_data, diff_data)
+        self.dev_offsets.plot_data(score_data, diff_data)

@@ -1,3 +1,18 @@
+"""
+Window displaying a grid of cells containing color fills representing presence of data
+The data represented by the filled cells is based on a range, with transparancy indicating how many datapoints are in the given cell range
+
+The user is able to select a range of cells in the grid display to filter/select the data they wish to view in the data_overview_window.
+Clicking on a non selected cell will select it, and dragging the mouse will select a range of cells.
+Clicking on a selected cell will deselect it, and dragging the mouse will deselect a range of cells.
+
+Since the grid is 2D, only two attributes can be compared at a time. The user can select which attribute to compare by 
+selecting which of the two attributes should be displayed in a dropdown on the side.
+
+The is a selection menu on the side that allows the user to select which player's data to view and which timestamped play.
+
+Design note: Maybe have a scatter plot instead. Really depends on how much data there is and how laggy it will get.
+"""
 import PyQt5
 import pyqtgraph
 
@@ -5,8 +20,9 @@ import numpy as np
 import pandas as pd
 
 from app.misc.Logger import Logger
-from app.data_recording.data import DiffNpyData, ScoreNpyData
-from app.file_managers import score_data_obj
+
+from app.data_recording.score_npy import ScoreNpy
+from app.data_recording.diff_npy import DiffNpy
 
 
 __ROI_SELECTIONS_EN__ = False
@@ -16,7 +32,7 @@ __ROI_SELECTIONS_EN__ = False
 class CompositionViewer(PyQt5.QtWidgets.QWidget):
 
     logger = Logger.get_logger(__name__)
-    region_changed = PyQt5.QtCore.pyqtSignal(object)
+    region_changed = PyQt5.QtCore.pyqtSignal(object, object)
 
     def __init__(self, parent=None):
         PyQt5.QtWidgets.QWidget.__init__(self, parent)
@@ -26,8 +42,8 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
 
         # Stored data is already filtered by map, mod, and time of play
         # It is used to select the data to display in the scatter plot
-        self.score_data = np.empty((0, ScoreNpyData.NUM_COLS))
-        self.diff_data = np.empty((0, DiffNpyData.NUM_COLS))
+        self.score_data = ScoreNpy.get_blank_data()
+        self.diff_data  = DiffNpy.get_blank_data()
 
         self.main_layout = PyQt5.QtWidgets.QHBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
@@ -168,7 +184,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
         self.__set_composition_data(id_x=self.__ID_CS, id_y=self.__ID_AR)
         
 
-    def set_composition_from_score_data(self, map_md5_strs, timestamps):
+    def set_composition_from_score_data(self, score_data, diff_data):
         '''
         Called whenever different maps or time of plays are selected in
         the overview window. Updates the play data used to display the composition,
@@ -178,17 +194,9 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
         '''
         self.logger.debug('set_composition_from_score_data - enter')
 
-        if len(map_md5_strs) == 0:
-            return
-
-        if len(timestamps) == 0:
-            return
-        
-        # Save filtered score data for play_data compilation when ROI selections are made
-        idx_data = score_data_obj.data().groupby([ 'MD5', 'TIMESTAMP' ])
-        self.score_data = pd.concat([
-            df for idx, df in idx_data if ((idx[0] in map_md5_strs) and (idx[1] in timestamps))
-        ])
+        # Save score data for play_data compilation when ROI selections are made
+        self.score_data = score_data
+        self.diff_data  = diff_data
 
         self.logger.debug('set_composition_from_score_data - Updating just displayed data...')
         self.update_diff_data()
@@ -202,27 +210,25 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
         '''
         self.logger.debug('update_diff_data')
 
-        if self.score_data.shape[0] == 0:
-            return
-
-        # Get filtered diff data based on score data
-        #self.diff_data = DiffNpyData.get_data_score(diff_data_obj.data, self.score_data)
-
-        self.xy_data = np.zeros((self.score_data.shape[0], 2))
+        if self.diff_data.shape[0] == 0:
+            self.xy_data = np.zeros((0, 2))
+        else:
+            self.xy_data = np.zeros((self.diff_data.shape[0], 2))
+        
         self.__set_composition_data(id_x=self.__id_x, id_y=self.__id_y, force_update=True)
 
         # Update all selection masks
-        xy_data = np.zeros((self.score_data.shape[0], 2))
+        if __ROI_SELECTIONS_EN__:
+            xy_data = np.zeros(self.xy_data.shape)
 
-        for id_y in range(self.num_selections):
-            for id_x in range(self.num_selections):
-                if id_y == id_x:
-                    continue
-                
-                xy_data[:, 0] = self.__id_to_data(id_x)
-                xy_data[:, 1] = self.__id_to_data(id_y)
+            for id_y in range(self.num_selections):
+                for id_x in range(self.num_selections):
+                    if id_y == id_x:
+                        continue
+                    
+                    xy_data[:, 0] = self.__id_to_data(id_x)
+                    xy_data[:, 1] = self.__id_to_data(id_y)
 
-                if __ROI_SELECTIONS_EN__:
                     roi_id = self.__get_roi_id(id_x, id_y)
                     self.__update_roi_selection(roi_id, xy_data)
 
@@ -336,7 +342,6 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
         
                 self.__update_roi_selection(roi_id, data)
                 roi_selection['roi'].blockSignals(False)
-
             
             self.logger.debug(f'reset_roi_selections - 3')
             self.emit_master_selection()
@@ -348,13 +353,15 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
             '''
             Gets mask representing all visible data (including NaNs)
             '''
-            if type(self.score_data) == type(None):
+            if isinstance(self.score_data, type(None)) or isinstance(self.diff_data, type(None)):
                 return
+            
+            assert(self.score_data.shape[0] == self.diff_data.shape[0])
 
             select = np.ones((self.score_data.shape[0]), dtype=np.bool)
-            
             self.num_data_points_label.setText(f'Num data points selected: {np.count_nonzero(select)}')
-            return self.score_data[select]
+
+            return self.score_data[select], self.diff_data[select]
 
 
         def reset_roi_selections(self):
@@ -376,8 +383,10 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
         def __update_roi_selection(self, roi_id, xy_data):
             '''
             Updates the cached selection mask
-            '''
-            if type(xy_data) == type(None):
+            '''            
+            if xy_data.shape[0] == 0:
+                self.roi_selections[roi_id]['select'] = np.asarray([])
+                self.roi_selections[roi_id]['roi']    = np.asarray([])
                 return
 
             roi_plot = self.roi_selections[roi_id]['roi']
@@ -465,12 +474,12 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
         '''
         Composes the selections in all planes together, and emits the resulting selected play data.
         '''
-        play_data_out = self.get_selected()
-        if type(play_data_out) == type(None):
+        data = self.get_selected()
+        if isinstance(data, type(None)):
             return
 
         self.logger.debug('region_changed.emit ->')
-        self.region_changed.emit(play_data_out)
+        self.region_changed.emit(*data)
         self.logger.debug('region_changed.emit <-')
 
 
@@ -522,9 +531,6 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
             self.x_axis_selection.button(id_y).setEnabled(False)
 
             self.__id_y = id_y
-            
-        if self.score_data.shape[0] == 0:
-            return
 
         if update_x:
             self.xy_data[:, 0] = self.__id_to_data(self.__id_x)
@@ -585,44 +591,44 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
             return self.score_data['AR'].values
 
         if id_ == self.__ID_T_PRESS_DIFF:
-            return self.score_data['DIFF_T_PRESS_DIFF'].values
+            return self.diff_data['DIFF_T_PRESS_DIFF'].values
 
         if id_ == self.__ID_T_PRESS_RATE:
-            return self.score_data['DIFF_T_PRESS_RATE'].values
+            return self.diff_data['DIFF_T_PRESS_RATE'].values
 
         if id_ == self.__ID_T_BPM:
             # Convert 1/ms -> BPM then put it in terms of 1/4 snap
-            return 15000/self.score_data['DIFF_T_PRESS_DIFF'].values
+            return 15000/self.diff_data['DIFF_T_PRESS_DIFF'].values
 
         if id_ == self.__ID_T_PRESS_INC:
-            return self.score_data['DIFF_T_PRESS_INC'].values
+            return self.diff_data['DIFF_T_PRESS_INC'].values
 
         if id_ == self.__ID_T_PRESS_DEC:
-            return self.score_data['DIFF_T_PRESS_DEC'].values
+            return self.diff_data['DIFF_T_PRESS_DEC'].values
 
         if id_ == self.__ID_T_HOLD_DUR:
-            return self.score_data['DIFF_T_HOLD_DUR'].values
+            return self.diff_data['DIFF_T_HOLD_DUR'].values
 
         if id_ == self.__ID_T_PRESS_RHM:
-            return self.score_data['DIFF_T_PRESS_RHM'].values
+            return self.diff_data['DIFF_T_PRESS_RHM'].values
 
         #if id_ == self.__ID_DT_RHYTM_D:
-        #    return [ 0 ] #self.score_data['DIFF_DT_RHYM_D'].values
+        #    return [ 0 ] #self.diff_data['DIFF_DT_RHYM_D'].values
 
         if id_ == self.__ID_XY_DIST:
-            return self.score_data['DIFF_XY_DIST'].values
+            return self.diff_data['DIFF_XY_DIST'].values
 
         if id_ == self.__ID_XY_ANGLE:
-            return self.score_data['DIFF_XY_ANGLE'].values
+            return self.diff_data['DIFF_XY_ANGLE'].values
 
         if id_ == self.__ID_XY_LIN_VEL:
-            return 1000*self.score_data['DIFF_XY_LIN_VEL'].values
+            return 1000*self.diff_data['DIFF_XY_LIN_VEL'].values
 
         if id_ == self.__ID_XY_ANG_VEL:
-            return self.score_data['DIFF_XY_ANG_VEL'].values
+            return self.diff_data['DIFF_XY_ANG_VEL'].values
 
         if id_ == self.__ID_VIS_VISIBLE:
-            return self.score_data['DIFF_VIS_VISIBLE'].values
+            return self.diff_data['DIFF_VIS_VISIBLE'].values
 
         raise Exception(f'Unknown id: {id_}')
 

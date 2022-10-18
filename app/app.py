@@ -7,20 +7,30 @@ import numpy as np
 
 import PyQt5
 
-from osu_recorder import OsuRecorder
 from osu_analysis import BeatmapIO, Gamemode
 
 from app.misc.Logger import Logger
-from app.views.data_graphs_window import DataGraphsWindow
+from app.file_managers import AppConfig
+
+
+"""
+GUI Display Feature Settings
+"""
+__DATA_GRAPHS_EN__   = True
+__MAP_ARCHITECT_EN__ = True
+__MAP_DISPLAY_EN__   = True
+
+"""
+Automatic Processes Feature Settings
+"""
+__AUTO_RECORDER_EN__ = True
+
 from app.views.data_overview_window import DataOverviewWindow
-from app.views.map_architect_window import MapArchitectWindow
-from app.views.map_display_window import MapDisplayWindow
+if __DATA_GRAPHS_EN__:   from app.views.data_graphs_window   import DataGraphsWindow
+if __MAP_ARCHITECT_EN__: from app.views.map_architect_window import MapArchitectWindow
+if __MAP_DISPLAY_EN__:   from app.views.map_display_window   import MapDisplayWindow
 
-from app.file_managers import AppConfig, score_data_obj
-
-from app.data_recording.score_npy import ScoreNpy
-from app.data_recording.diff_npy import DiffNpy
-
+from osu_recorder import OsuRecorder
 
 
 """
@@ -58,7 +68,6 @@ def exception_hook(exctype, value, tb):
     #diff_data_obj.save_data_and_close()
     sys.exit(1)
 sys.excepthook = exception_hook
-
 
 
 """
@@ -101,11 +110,14 @@ class App(PyQt5.QtWidgets.QMainWindow):
             with open('config.json', 'w') as f:
                 json.dump(AppConfig.cfg, f, indent=4)
 
-        self.__osu_recorder = OsuRecorder(AppConfig.cfg['osu_dir'])
-        self.__osu_recorder.start(self.__play_handler)
+        self.__osu_recorder = OsuRecorder(AppConfig.cfg['osu_dir'], callback=self.__play_handler)
+
+        if __AUTO_RECORDER_EN__:
+            self.__osu_recorder.start(self.__play_handler)
         
         self.__construct_gui_state2()
         self.__connect_signals()
+        self.__load_data()
 
 
     def __contruct_gui_stage1(self):
@@ -161,10 +173,10 @@ class App(PyQt5.QtWidgets.QMainWindow):
         """
         self.logger.debug('__construct_gui_state2 start')
 
-        self.data_graphs_window   = DataGraphsWindow()
         self.data_overview_window = DataOverviewWindow()
-        self.map_display_window   = MapDisplayWindow()
-        self.map_architect_window = MapArchitectWindow()
+        if __DATA_GRAPHS_EN__:   self.data_graphs_window   = DataGraphsWindow()
+        if __MAP_DISPLAY_EN__:   self.map_display_window   = MapDisplayWindow()
+        if __MAP_ARCHITECT_EN__: self.map_architect_window = MapArchitectWindow()
 
         self.logger.debug('__construct_gui_state2 end')
 
@@ -173,13 +185,23 @@ class App(PyQt5.QtWidgets.QMainWindow):
         self.logger.debug('Connecting signals start')
         
         #self.data_overview_window.show_map_event.connect(self.map_display_window.set_from_play_data)
-        self.data_overview_window.show_map_event.connect(self.data_graphs_window.overview_single_map_selection_event)
-        self.data_overview_window.region_changed.connect(self.data_graphs_window.set_from_play_data)
+
+        if __DATA_GRAPHS_EN__:
+            self.data_overview_window.show_map_event.connect(self.data_graphs_window.overview_single_map_selection_event)
+            self.data_overview_window.region_changed.connect(self.data_graphs_window.set_from_play_data)
+
         self.data_overview_window.replay_open_event.connect(self.__osu_recorder.handle_new_replay)
 
-        self.map_architect_window.gen_map_event.connect(self.map_display_window.set_from_generated)
+        if __MAP_ARCHITECT_EN__:
+            if __MAP_DISPLAY_EN__:
+                self.map_architect_window.gen_map_event.connect(self.map_display_window.set_from_generated)
 
         self.logger.debug('Connecting signals end')
+
+
+    def __load_data(self):
+        #self.data_overview_window.map_list.reload_map_list(score_data_obj.data())
+        pass
 
 
     def data_overview_button_clicked(self):
@@ -189,24 +211,32 @@ class App(PyQt5.QtWidgets.QMainWindow):
 
     def data_graphs_button_clicked(self):
         self.logger.info_debug(App.debug, 'data_graphs_button_clicked')
-        self.data_graphs_window.show()
+
+        if __DATA_GRAPHS_EN__:
+            self.data_graphs_window.show()
 
 
     def map_architect_button_clicked(self):
         self.logger.info_debug(App.debug, 'map_architect_button_clicked')
-        self.map_architect_window.show()
+
+        if __MAP_ARCHITECT_EN__:
+            self.map_architect_window.show()
 
 
     def map_display_button_clicked(self):
         self.logger.info_debug(App.debug, 'map_display_button_clicked')
-        self.map_display_window.show()
+
+        if __MAP_DISPLAY_EN__:
+            self.map_display_window.show()
 
 
     def __play_handler(self, beatmap, replay):
         # Needed sleep to wait for osu! to finish writing the replay file
         time.sleep(2)
 
-        if score_data_obj.is_entry_exist(replay.beatmap_hash, replay.timestamp):
+        loaded_data = self.data_overview_window.get_loaded_data()
+
+        if loaded_data.is_entry_exist(replay.beatmap_hash, replay.timestamp):
             self.logger.info(f'Replay already exists in data: md5={replay.beatmap_hash}  timestamp={replay.timestamp}')
             return
 
@@ -233,19 +263,7 @@ class App(PyQt5.QtWidgets.QMainWindow):
                 self.logger.warning(f'Map {map_file_name} not longer exists!')
                 return
 
-        map_data, replay_data, score_data = ScoreNpy.compile_data(beatmap, replay)
-
-        # Save data and emit to notify other components that there is a new replay
-        diff_data = DiffNpy.get_data(score_data)
-        score_data = score_data.join(diff_data, on='IDXS')
-        score_data_obj.append(score_data)
-
-        # Broadcast the new replay event to the other windows
-        #time_start = time.time()
-        self.data_overview_window.new_replay_event(
-            is_import, 
-            replay.beatmap_hash
-        )
+        self.data_overview_window.append_to_data(beatmap, replay)
 
         #self.logger.debug(f'data_overview_window load time: {time.time() - time_start}')
 
@@ -274,10 +292,10 @@ class App(PyQt5.QtWidgets.QMainWindow):
 
         # Hide any widgets to allow the app to close
         try:
-            self.data_graphs_window.hide() 
             self.data_overview_window.hide()
-            self.map_architect_window.hide()
-            self.map_display_window.hide()
+            if __DATA_GRAPHS_EN__:   self.data_graphs_window.hide()
+            if __MAP_ARCHITECT_EN__: self.map_architect_window.hide()
+            if __MAP_DISPLAY_EN__:   self.map_display_window.hide()
         except AttributeError:
             pass
 

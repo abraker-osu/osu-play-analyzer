@@ -8,8 +8,6 @@ from pyqtgraph.functions import mkPen
 
 from osu_analysis import StdScoreData
 
-from app.data_recording.data import ScoreNpyData
-
 
 class GraphTapDifficulty(PyQt5.QtWidgets.QWidget):
 
@@ -55,43 +53,45 @@ class GraphTapDifficulty(PyQt5.QtWidgets.QWidget):
         self.__on_view_range_changed()
 
 
-    def plot_data(self, play_data):
-        if play_data.shape[0] == 0:
+    def plot_data(self, score_data, diff_data):
+        if 0 in [ score_data.shape[0], diff_data.shape[0] ]:
             return
 
-        thread = threading.Thread(target=self.__plot_tap_factors, args=(play_data, ))
+        thread = threading.Thread(target=self.__plot_tap_factors, args=(score_data, diff_data))
         thread.start()
 
 
-    def __plot_tap_factors(self, play_data):
+    def __plot_tap_factors(self, score_data, diff_data):
         # Determine what was the latest play
         #data_filter = \
-        #    (play_data[:, ScoreNpyData.TIMESTAMP] == max(play_data[:, ScoreNpyData.TIMESTAMP]))
-        #play_data = play_data[data_filter]
+        #    (score_data[:, ScoreNpyData.TIMESTAMP] == max(score_data[:, ScoreNpyData.TIMESTAMP]))
+        #score_data = score_data[data_filter]
 
         # Filter out sliders holds and releases
         data_filter = (
-            (play_data['TYPE_MAP'].values != StdScoreData.ACTION_HOLD) & \
-            (play_data['TYPE_MAP'].values != StdScoreData.ACTION_RELEASE)
+            (score_data['TYPE_MAP'].values != StdScoreData.ACTION_HOLD) & \
+            (score_data['TYPE_MAP'].values != StdScoreData.ACTION_RELEASE)
         )
-        play_data = play_data[data_filter]
+
+        score_data = score_data[data_filter]
+        diff_data  = diff_data[data_filter]
 
         # Check if there is any data to operate on
-        if play_data.shape[0] < 3:
+        if score_data.shape[0] < 3:
             data_stub = np.asarray([])
             self.__calc_data_event.emit(data_stub, data_stub, data_stub)
             return
 
         # Calculate data
-        timings = play_data['T_MAP'].values
-        toffsets = play_data['T_HIT'].values - timings
-        bpm_inc = play_data['DIFF_T_PRESS_DEC'].values
-        bpm_dec = play_data['DIFF_T_PRESS_INC'].values
-        rhym = play_data['DIFF_T_PRESS_RHM'].values
+        timings = score_data['T_MAP'].values
+        toffsets = score_data['T_HIT'].values - timings
+        bpm_inc = diff_data['DIFF_T_PRESS_DEC'].values
+        bpm_dec = diff_data['DIFF_T_PRESS_INC'].values
+        rhym = diff_data['DIFF_T_PRESS_RHM'].values
 
         is_miss = (
-            (play_data['TYPE_HIT'].values == StdScoreData.TYPE_MISS) & (
-                (play_data['TYPE_MAP'].values == StdScoreData.ACTION_PRESS)
+            (score_data['TYPE_HIT'].values == StdScoreData.TYPE_MISS) & (
+                (score_data['TYPE_MAP'].values == StdScoreData.ACTION_PRESS)
             )
         )
         score_mask = np.zeros((timings.shape[0] - 2, 3), dtype=np.bool)

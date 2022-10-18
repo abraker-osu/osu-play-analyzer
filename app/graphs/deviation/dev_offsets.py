@@ -38,28 +38,29 @@ class DevOffsets(PyQt5.QtWidgets.QWidget):
         self.__layout.addWidget(self.__graph)
         
 
-    def plot_data(self, play_data):
-        if play_data.shape[0] == 0:
+    def plot_data(self, score_data, diff_data):
+        if 0 in [ score_data.shape[0], diff_data.shape[0] ]:
             return
 
-        data = play_data.groupby(['MD5', 'TIMESTAMP'])
+        score_data = score_data.groupby(['MD5', 'TIMESTAMP'])
+        diff_data  = diff_data.groupby(['MD5', 'TIMESTAMP'])
 
-        data_x = np.zeros(len(data))
-        data_y = np.zeros(len(data))
+        data_x = np.zeros(len(score_data))
+        data_y = np.zeros(len(score_data))
 
         # For each map and timestamp
-        for i, (idx, df) in enumerate(data):
-            bpms = 15000/df['DIFF_T_PRESS_DIFF'].values
+        for i, ((idx_score, df_score), (idx_diff, df_diff)) in enumerate(zip(score_data, diff_data)):
+            bpms = 15000/df_diff['DIFF_T_PRESS_DIFF'].values
             bpms = bpms[~np.isnan(bpms)]
             
             # Keep just the press taps
-            df = df[df['TYPE_MAP'] == StdScoreData.ACTION_PRESS]
+            df_score = df_score[df_score['TYPE_MAP'] == StdScoreData.ACTION_PRESS]
 
-            hit_offsets  = df['T_HIT'].values - df['T_MAP'].values
+            hit_offsets  = df_score['T_HIT'].values - df_score['T_MAP'].values
 
             # Keep just the notes that have not been missed
             hit_offsets = hit_offsets[
-                (df['TYPE_HIT'].values == StdScoreData.TYPE_HITP)
+                (df_score['TYPE_HIT'].values == StdScoreData.TYPE_HITP)
             ]
 
             data_x[i] = np.mean(bpms)
