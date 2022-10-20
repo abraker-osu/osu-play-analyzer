@@ -14,11 +14,13 @@ from app.graphs.replay.hit_distr_graph import HitDistrGraph
 from app.graphs.replay.doffset_distr_graph import DoffsetsDistrGraph
 from app.graphs.replay.aim_graph import AimGraph
 
+from app.graphs.time.graph_timing_bpm_dec import GraphTimingBPMDec
+from app.graphs.time.graph_timing_bpm_inc import GraphTimingBPMInc
+from app.graphs.time.graph_timing_aim_diff import GraphTimeAimDifficulty
+
 from app.graphs.difficulty.graph_aim_difficulty import GraphAimDifficulty
 from app.graphs.difficulty.graph_tap_difficulty import GraphTapDifficulty
 
-from app.graphs.time.graph_timing_bpm_dec import GraphTimingBPMDec
-from app.graphs.time.graph_timing_bpm_inc import GraphTimingBPMInc
 from app.graphs.map.graph_toffset_bpm_inc import GraphTOffsetBPMInc
 from app.graphs.map.graph_toffset_bpm import GraphTOffsetBPM
 from app.graphs.map.map_toffset_rhy_graph import MapToffsetRhyGraph
@@ -51,11 +53,13 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.doffset_distr_graph = DoffsetsDistrGraph()
         self.aim_display = AimGraph()
 
+        self.timing_bpm_dec = GraphTimingBPMDec()
+        self.timing_bpm_inc = GraphTimingBPMInc()
+        self.timing_aim_diff = GraphTimeAimDifficulty()
+
         self.aim_difficulty = GraphAimDifficulty()
         self.tap_difficulty = GraphTapDifficulty()
 
-        self.timing_bpm_dec = GraphTimingBPMDec()
-        self.timing_bpm_inc = GraphTimingBPMInc()
         self.toffset_bpm_inc = GraphTOffsetBPMInc()
         self.toffset_bpm = GraphTOffsetBPM()
         self.toffset_rhy_graph = MapToffsetRhyGraph()
@@ -79,6 +83,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.time_tabs = PyQt5.QtWidgets.QTabWidget()
         self.time_tabs.addTab(self.timing_bpm_dec, 'Timing BPM dec')
         self.time_tabs.addTab(self.timing_bpm_inc, 'Timing BPM inc')
+        self.time_tabs.addTab(self.timing_aim_diff, 'Timing Aim diff')
 
         self.difficulty_tabs = PyQt5.QtWidgets.QTabWidget()
         self.difficulty_tabs.addTab(self.aim_difficulty, 'Aim difficulty')
@@ -108,6 +113,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
 
         self.timing_bpm_dec.time_changed_event.connect(self.time_changed_event)
         self.timing_bpm_inc.time_changed_event.connect(self.time_changed_event)
+        self.timing_aim_diff.time_changed_event.connect(self.time_changed_event)
 
         self.logger.debug('__init__ exit')
 
@@ -134,6 +140,8 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
 
         self.timing_bpm_dec.plot_data(score_data, diff_data)
         self.timing_bpm_inc.plot_data(score_data, diff_data)
+        self.timing_aim_diff.plot_data(score_data, diff_data)
+
         #self.toffset_bpm_inc.plot_data(score_data)
         ##self.toffset_bpm.plot_data(score_data)
         #self.toffset_rhy_graph.plot_data(score_data)
@@ -159,6 +167,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
 
         self.timing_bpm_dec.plot_data(score_data, diff_data)
         self.timing_bpm_inc.plot_data(score_data, diff_data)
+        self.timing_aim_diff.plot_data(score_data, diff_data)
 
         self.aim_difficulty.plot_data(score_data, diff_data)
         self.tap_difficulty.plot_data(score_data, diff_data)
@@ -178,6 +187,8 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
 
         self.timing_bpm_dec.plot_data(score_data, diff_data)
         self.timing_bpm_inc.plot_data(score_data, diff_data)
+        self.timing_aim_diff.plot_data(score_data, diff_data)
+
         #self.toffset_bpm_inc.plot_data(score_data)
         #self.toffset_bpm.plot_data(score_data)
         #self.toffset_rhy_graph.plot_data(score_data)
