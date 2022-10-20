@@ -253,15 +253,16 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
 
 
     def set_from_score_data(self, score_data):
-        if score_data.shape[0] == 0:
+        unique_md5s = np.unique(score_data.index.get_level_values(0))
+        if unique_md5s.shape[0] == 0:
             print('Error: No maps are selected')
             return
 
-        if score_data.shape[0] > 1:
+        if np.unique(score_data.index.get_level_values(1)) > 1:
             print('Warning: multiple maps are selected. Taking just the first one...')
 
         # In the event multiple md5 strings were passed, take just the first one
-        map_file_name = self.__maps_db.get_map_file_name(score_data.index.get_level_values(0)[0])
+        map_file_name = self.__maps_db.get_map_file_name(unique_md5s[0])
         if map_file_name is None:
             print('Map display: map file not found')
             return
