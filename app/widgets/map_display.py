@@ -124,12 +124,12 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         self.timeline_marker.setBounds((-10000, None))
         self.timeline_marker.sigPositionChanged.connect(self.__time_changed_event)
 
-        self.timeline.addItem(self.timeline_marker, ignoreBounds=True)
         self.timeline.addItem(self.hitobject_plot)
         self.timeline.addItem(self.k1_timing_plot)
         self.timeline.addItem(self.k2_timing_plot)
         self.timeline.addItem(self.m1_timing_plot)
         self.timeline.addItem(self.m2_timing_plot)
+        self.timeline.addItem(self.timeline_marker, ignoreBounds=True)
         self.__time_changed_event()
 
 
