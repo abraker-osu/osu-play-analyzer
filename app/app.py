@@ -189,6 +189,10 @@ class App(PyQt5.QtWidgets.QMainWindow):
         if __DATA_GRAPHS_EN__:
             self.data_overview_window.show_map_event.connect(self.data_graphs_window.overview_single_map_selection_event)
             self.data_overview_window.region_changed.connect(self.data_graphs_window.set_from_play_data)
+            
+            if __MAP_DISPLAY_EN__:
+                self.data_graphs_window.time_changed_event.connect(self.map_display_window.set_time)
+                self.map_display_window.time_changed_event.connect(self.data_graphs_window.set_time)
 
         self.data_overview_window.replay_open_event.connect(self.__osu_recorder.handle_new_replay)
 

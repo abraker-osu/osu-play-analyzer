@@ -27,6 +27,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
     __logger = Logger.get_logger(__name__)
 
     data_loaded = PyQt5.QtCore.pyqtSignal()
+    time_changed_event = PyQt5.QtCore.pyqtSignal(object)
 
     MAP_T = 0
     MAP_X = 1
@@ -123,6 +124,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
 
         self.timeline_marker.setBounds((-10000, None))
         self.timeline_marker.sigPositionChanged.connect(self.__time_changed_event)
+        self.timeline_marker.sigPositionChanged.connect(lambda obj: self.time_changed_event.emit(obj.value()))
 
         self.timeline.addItem(self.hitobject_plot)
         self.timeline.addItem(self.k1_timing_plot)
@@ -131,6 +133,13 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         self.timeline.addItem(self.m2_timing_plot)
         self.timeline.addItem(self.timeline_marker, ignoreBounds=True)
         self.__time_changed_event()
+
+
+    def set_time(self, time):
+        self.timeline_marker.blockSignals(True)
+        self.timeline_marker.setValue(time)
+        self.__time_changed_event()
+        self.timeline_marker.blockSignals(False)
 
 
     def set_map_reduced(self, data_x, data_y, data_t, cs, ar, md5=None):
@@ -153,7 +162,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         map_data = pd.concat(map_data, axis=0, keys=range(len(map_data)), names=[ 'hitobject', 'aimpoint' ])
 
         self.cs_px = OsuUtils.cs_to_px(cs)
-        self.ar_ms = OsuUtils.ar_to_ms(ar)/1000
+        self.ar_ms = OsuUtils.ar_to_ms(ar)#/1000
         self.map_md5 = md5
 
         self.__draw_map_data()
@@ -163,7 +172,6 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         self.timeline.update()
         
 
-
     def set_map_full(self, map_data, cs, ar, md5=None):
         if type(map_data) == type(None): return
         if type(cs) == type(None): return
@@ -171,7 +179,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
 
         self.map_data = map_data
         self.cs_px = OsuUtils.cs_to_px(cs)
-        self.ar_ms = OsuUtils.ar_to_ms(ar)/1000
+        self.ar_ms = OsuUtils.ar_to_ms(ar)#/1000
         self.map_md5 = md5
 
         self.__draw_map_data()
@@ -186,7 +194,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
             return
 
         self.replay_data = np.zeros((len(replay_data['time']), 7))
-        self.replay_data[:, self.REPLAY_T]  = np.asarray(replay_data['time'])/1000
+        self.replay_data[:, self.REPLAY_T]  = np.asarray(replay_data['time'])#/1000
         self.replay_data[:, self.REPLAY_X]  = np.asarray(replay_data['x'])
         self.replay_data[:, self.REPLAY_Y]  = -np.asarray(replay_data['y'])
         self.replay_data[:, self.REPLAY_K1] = np.asarray(replay_data['k1'])
@@ -210,13 +218,13 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         self.replay_data = np.zeros((score_data.shape[0]*2, 7))
 
         # Press timings
-        self.replay_data[::2, self.REPLAY_T]   = score_data['T_HIT']
+        self.replay_data[::2, self.REPLAY_T]   = score_data['T_HIT']*1000
         self.replay_data[::2, self.REPLAY_X]   = score_data['X_HIT']
         self.replay_data[::2, self.REPLAY_Y]   = -score_data['Y_HIT']
         self.replay_data[::2, self.REPLAY_K1]  = StdReplayData.PRESS
 
         # Release timings
-        self.replay_data[1::2, self.REPLAY_T]  = score_data['T_HIT'] + 0.05
+        self.replay_data[1::2, self.REPLAY_T]  = score_data['T_HIT']*1000 + 50
         self.replay_data[1::2, self.REPLAY_X]  = score_data['X_HIT']
         self.replay_data[1::2, self.REPLAY_Y]  = -score_data['Y_HIT']
         self.replay_data[1::2, self.REPLAY_K1] = StdReplayData.RELEASE
@@ -226,7 +234,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
 
     def new_replay_event(self, map_data, replay_data, cs, ar, mods, name):
         map_data = map_data.copy()
-        map_data['time'] /= 1000
+        #map_data['time'] /= 1000
         map_data['y'] = -map_data['y']
 
         mods = Mod(int(mods))
@@ -293,7 +301,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
             self.plot_approach.setData([], [], symbolSize=[])
         else:
             approach_x =  presses['x'][ar_select].values
-            approach_y =  presses['y'][ar_select].values 
+            approach_y =  presses['y'][ar_select].values
             press_times = presses['time'][ar_select].values
 
             sizes = OsuUtils.approach_circle_to_radius(self.cs_px, self.ar_ms, press_times - self.t)
@@ -309,7 +317,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
 
         replay_data_t = self.replay_data[:, self.REPLAY_T]
 
-        select_time = (replay_data_t >= self.t - 0.05) & (replay_data_t <= self.t)
+        select_time = (replay_data_t >= self.t - 50) & (replay_data_t <= self.t)
         replay_data_x = self.replay_data[select_time, self.REPLAY_X]
         replay_data_y = self.replay_data[select_time, self.REPLAY_Y]
         
@@ -396,7 +404,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
             print(Utils.get_traceback(e, 'Error reading map'))
             return
 
-        map_data['time'] /= 1000
+        #map_data['time'] /= 1000
         map_data['y'] = -map_data['y']
 
         self.set_map_full(
@@ -447,7 +455,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         if mods.has_mod(Mod.HalfTime):
             map_data['time'] *= 1.5
         
-        map_data['time'] /= 1000
+        #map_data['time'] /= 1000
         map_data['y'] = -map_data['y']
 
         self.set_map_full(map_data, cs, ar, beatmap.metadata.beatmap_md5)

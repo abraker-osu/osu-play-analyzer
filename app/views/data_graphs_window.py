@@ -36,6 +36,8 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
 
     logger = Logger.get_logger(__name__)
 
+    time_changed_event = PyQt5.QtCore.pyqtSignal(object)
+
     def __init__(self, parent=None):
         self.logger.debug('__init__ enter')
 
@@ -76,7 +78,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
 
         self.time_tabs = PyQt5.QtWidgets.QTabWidget()
         self.time_tabs.addTab(self.timing_bpm_dec, 'Timing BPM dec')
-        #self.map_tabs.addTab(self.timing_bpm_inc, 'Timing BPM inc')
+        self.time_tabs.addTab(self.timing_bpm_inc, 'Timing BPM inc')
 
         self.difficulty_tabs = PyQt5.QtWidgets.QTabWidget()
         self.difficulty_tabs.addTab(self.aim_difficulty, 'Aim difficulty')
@@ -104,7 +106,15 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.main_widget.addTab(self.play_data_tabs, 'Deviation data graphs')
         self.setCentralWidget(self.main_widget)
 
+        self.timing_bpm_dec.time_changed_event.connect(self.time_changed_event)
+        self.timing_bpm_inc.time_changed_event.connect(self.time_changed_event)
+
         self.logger.debug('__init__ exit')
+
+
+    def set_time(self, time):
+        self.timing_bpm_dec.set_time(time)
+        self.timing_bpm_inc.set_time(time)
 
 
     def new_replay_event(self, score_data, diff_data):
@@ -123,7 +133,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.tap_difficulty.plot_data(score_data, diff_data)
 
         self.timing_bpm_dec.plot_data(score_data, diff_data)
-        #self.timing_bpm_inc.plot_data(score_data)
+        self.timing_bpm_inc.plot_data(score_data, diff_data)
         #self.toffset_bpm_inc.plot_data(score_data)
         ##self.toffset_bpm.plot_data(score_data)
         #self.toffset_rhy_graph.plot_data(score_data)
@@ -148,6 +158,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.aim_display.plot_data(score_data)
 
         self.timing_bpm_dec.plot_data(score_data, diff_data)
+        self.timing_bpm_inc.plot_data(score_data, diff_data)
 
         self.aim_difficulty.plot_data(score_data, diff_data)
         self.tap_difficulty.plot_data(score_data, diff_data)
@@ -166,7 +177,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
             return
 
         self.timing_bpm_dec.plot_data(score_data, diff_data)
-        #self.timing_bpm_inc.plot_data(score_data)
+        self.timing_bpm_inc.plot_data(score_data, diff_data)
         #self.toffset_bpm_inc.plot_data(score_data)
         #self.toffset_bpm.plot_data(score_data)
         #self.toffset_rhy_graph.plot_data(score_data)

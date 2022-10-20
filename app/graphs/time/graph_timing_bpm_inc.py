@@ -6,7 +6,7 @@ import numpy as np
 from app.widgets.bar_plot import BarGraphItem
 
 
-class GraphTimingBPMDec(PyQt5.QtWidgets.QWidget):
+class GraphTimingBPMInc(PyQt5.QtWidgets.QWidget):
 
     time_changed_event = PyQt5.QtCore.pyqtSignal(object)
 
@@ -14,7 +14,7 @@ class GraphTimingBPMDec(PyQt5.QtWidgets.QWidget):
         PyQt5.QtWidgets.QWidget.__init__(self, parent)
 
         # Main graph
-        self.__graph = pyqtgraph.PlotWidget(title='Time vs Time since BPM Decrease')
+        self.__graph = pyqtgraph.PlotWidget(title='Time vs Time since BPM Increase')
         self.__graph.getPlotItem().getAxis('left').enableAutoSIPrefix(False)
         self.__graph.getPlotItem().getAxis('bottom').enableAutoSIPrefix(False)
         self.__graph.enableAutoRange(axis='x', enable=False)
@@ -22,7 +22,7 @@ class GraphTimingBPMDec(PyQt5.QtWidgets.QWidget):
         #self.__graph.setLimits(xMin=-10, xMax=5000, yMin=-200, yMax=200)
         self.__graph.setRange(xRange=[-10, 300], yRange=[-200, 200])
         self.__graph.setLabel('bottom', 'Time', units='ms', unitPrefix='')
-        self.__graph.setLabel('left', 'Time since last BPM Decrease', units='ms', unitPrefix='')
+        self.__graph.setLabel('left', 'Time since last BPM Increase', units='ms', unitPrefix='')
         self.__graph.addLegend()
 
         # Used to set text in legend item
@@ -45,7 +45,7 @@ class GraphTimingBPMDec(PyQt5.QtWidgets.QWidget):
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(2)
         self.__layout.addWidget(self.__graph)
-
+        
 
     def set_time(self, time):
         self.timeline_marker.blockSignals(True)
@@ -66,7 +66,7 @@ class GraphTimingBPMDec(PyQt5.QtWidgets.QWidget):
         diff_data  = list(diff_data.groupby(['MD5', 'TIMESTAMP', 'MODS']))[0][1]
 
         x_data = np.asarray(score_data['T_MAP'])
-        y_data = np.asarray(diff_data['DIFF_T_PRESS_DEC'])
+        y_data = np.asarray(diff_data['DIFF_T_PRESS_INC'])
 
         # Clear plots for redraw
         #self.__graph.clearPlots()

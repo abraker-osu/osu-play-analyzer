@@ -32,6 +32,8 @@ class MapDisplayWindow(PyQt5.QtWidgets.QMainWindow):
 
     logger = Logger.get_logger(__name__)
 
+    time_changed_event = PyQt5.QtCore.pyqtSignal(object)
+
     def __init__(self, parent=None):
         self.logger.debug('__init__ enter')
 
@@ -46,6 +48,8 @@ class MapDisplayWindow(PyQt5.QtWidgets.QMainWindow):
         self.map_tabs.addTab(self.selected_map_display, 'Selected')
         self.map_tabs.addTab(self.generated_map_display, 'Generated')
         self.map_tabs.addTab(self.processed_map_display, 'Processed')
+
+        self.selected_map_display.time_changed_event.connect(self.time_changed_event)
 
         self.setCentralWidget(self.map_tabs)
 
@@ -78,6 +82,10 @@ class MapDisplayWindow(PyQt5.QtWidgets.QMainWindow):
     def new_replay_event(self, map_data, replay_data, cs, ar, mods, name):
         self.logger.debug('new_replay_event')
         self.selected_map_display.new_replay_event(map_data, replay_data, cs, ar, mods, name)
+
+
+    def set_time(self, time):
+        self.selected_map_display.set_time(time)
 
 
     def set_from_generated(self, osu_data):
