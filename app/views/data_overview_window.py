@@ -184,6 +184,8 @@ class DataOverviewWindow(PyQt5.QtWidgets.QWidget):
 
         self.__play_graph.plot_plays(timestamps)
         self.__composition_viewer.set_composition_from_score_data(score_data, diff_data)
+
+        self.show_map_event.emit(score_data, diff_data)
     
 
     def __timestamp_region_changed_event(self, data):
@@ -195,11 +197,7 @@ class DataOverviewWindow(PyQt5.QtWidgets.QWidget):
         self.__composition_viewer.set_composition_from_score_data(score_data, diff_data)
         self.__composition_viewer.emit_master_selection()
 
-        if len(data['timestamps']) == 1:
-            # self.__composition_viewer.reset_roi_selections()
-            # score_data = self.__composition_viewer.get_selected()
-
-            self.show_map_event.emit(score_data, diff_data)
+        self.show_map_event.emit(score_data, diff_data)
 
 
     def show_map(self):
