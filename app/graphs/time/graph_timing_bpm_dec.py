@@ -3,8 +3,7 @@ import pyqtgraph
 
 import numpy as np
 
-from osu_analysis import StdScoreData
-from app.data_recording.data import ScoreNpyData
+from app.widgets.bar_plot import BarGraphItem
 
 
 class GraphTimingBPMDec(PyQt5.QtWidgets.QWidget):
@@ -20,15 +19,19 @@ class GraphTimingBPMDec(PyQt5.QtWidgets.QWidget):
         self.__graph.enableAutoRange(axis='y', enable=False)
         #self.__graph.setLimits(xMin=-10, xMax=5000, yMin=-200, yMax=200)
         self.__graph.setRange(xRange=[-10, 300], yRange=[-200, 200])
-        self.__graph.setLabel('left', 'Time', units='ms', unitPrefix='')
-        self.__graph.setLabel('bottom', 'Time since last BPM Decrease', units='ms', unitPrefix='')
+        self.__graph.setLabel('bottom', 'Time', units='ms', unitPrefix='')
+        self.__graph.setLabel('left', 'Time since last BPM Decrease', units='ms', unitPrefix='')
         self.__graph.addLegend()
 
         # Used to set text in legend item
         self.__label_style = pyqtgraph.PlotDataItem(pen=(0,0,0))
         self.__graph.getPlotItem().legend.addItem(self.__label_style, '')
         self.__text = self.__graph.getPlotItem().legend.getLabel(self.__label_style)
-   
+    
+        # 
+        self.__plot = BarGraphItem()
+        self.__graph.getPlotItem().addItem(self.__plot, '')
+
         # Put it all together
         self.__layout = PyQt5.QtWidgets.QHBoxLayout(self)
         self.__layout.setContentsMargins(0, 0, 0, 0)
@@ -36,26 +39,29 @@ class GraphTimingBPMDec(PyQt5.QtWidgets.QWidget):
         self.__layout.addWidget(self.__graph)
         
 
-    def plot_data(self, play_data):
-        if play_data.shape[0] == 0:
+    def plot_data(self, score_data, diff_data):
+        unique_md5s = np.unique(diff_data.index.get_level_values(0))
+        if unique_md5s.shape[0] == 0:
+            print('Error: No maps are selected')
             return
 
+        if np.unique(diff_data.index.get_level_values(1)) > 1:
+            print('Warning: multiple maps are selected. Taking just the first one...')
+
+        score_data = list(score_data.groupby(['MD5', 'TIMESTAMP', 'MODS']))[0][1]
+        diff_data  = list(diff_data.groupby(['MD5', 'TIMESTAMP', 'MODS']))[0][1]
+
+        x_data = np.asarray(score_data['T_MAP'])
+        y_data = np.asarray(diff_data['DIFF_T_PRESS_DEC'])
+
         # Clear plots for redraw
-        self.__graph.clearPlots()
+        #self.__graph.clearPlots()
         self.__text.setText(f'')
 
-        x_data_all = np.asarray([])
-        y_data_all = np.asarray([])
-
-        unique_timestamps = np.unique(play_data[:, ScoreNpyData.TIMESTAMP])
-        for timestamp in unique_timestamps:
-            data_select = \
-                (play_data[:, ScoreNpyData.TIMESTAMP] == timestamp) & \
-                (play_data[:, ScoreNpyData.TYPE_MAP] == StdScoreData.ACTION_PRESS)
-            data = play_data[data_select]
-            
-            x_data_all = np.insert(x_data_all, 0, data[:, ScoreNpyData.T_MAP])
-            y_data_all = np.insert(y_data_all, 0, data[:, ScoreNpyData.DT_INC])
-
         colors = pyqtgraph.mkBrush(color=[ 255, 0, 0, 150 ])
-        self.__graph.plot(x=x_data_all, y=y_data_all, pen=None, symbol='o', symbolPen=None, symbolSize=5, symbolBrush=colors)
+        
+        width = np.zeros(x_data.shape)
+        width[:-1] = np.diff(x_data)*0.99
+        width[-1] = width[-2]
+
+        self.__plot.setData(x=x_data, y=y_data, width=width, brush=colors)

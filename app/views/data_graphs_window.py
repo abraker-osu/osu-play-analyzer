@@ -17,8 +17,8 @@ from app.graphs.replay.aim_graph import AimGraph
 from app.graphs.difficulty.graph_aim_difficulty import GraphAimDifficulty
 from app.graphs.difficulty.graph_tap_difficulty import GraphTapDifficulty
 
-from app.graphs.map.graph_timing_bpm_dec import GraphTimingBPMDec
-from app.graphs.map.graph_timing_bpm_inc import GraphTimingBPMInc
+from app.graphs.time.graph_timing_bpm_dec import GraphTimingBPMDec
+from app.graphs.time.graph_timing_bpm_inc import GraphTimingBPMInc
 from app.graphs.map.graph_toffset_bpm_inc import GraphTOffsetBPMInc
 from app.graphs.map.graph_toffset_bpm import GraphTOffsetBPM
 from app.graphs.map.map_toffset_rhy_graph import MapToffsetRhyGraph
@@ -74,13 +74,15 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.replay_tabs.addTab(self.doffset_distr_graph, 'Doffset distribution')
         self.replay_tabs.addTab(self.aim_display, 'Aim display')
 
+        self.time_tabs = PyQt5.QtWidgets.QTabWidget()
+        self.time_tabs.addTab(self.timing_bpm_dec, 'Timing BPM dec')
+        #self.map_tabs.addTab(self.timing_bpm_inc, 'Timing BPM inc')
+
         self.difficulty_tabs = PyQt5.QtWidgets.QTabWidget()
         self.difficulty_tabs.addTab(self.aim_difficulty, 'Aim difficulty')
         self.difficulty_tabs.addTab(self.tap_difficulty, 'Tap difficulty')
 
         self.map_tabs = PyQt5.QtWidgets.QTabWidget()
-        #self.map_tabs.addTab(self.timing_bpm_dec, 'Timing BPM dec')
-        #self.map_tabs.addTab(self.timing_bpm_inc, 'Timing BPM inc')
         self.map_tabs.addTab(self.toffset_bpm_inc, 'T-offset vs BPM Inc')
         self.map_tabs.addTab(self.toffset_bpm, 'T-offset vs Note interval')
         #self.map_tabs.addTab(self.toffset_rhy_graph, 'T-offset vs Rhythm')
@@ -96,6 +98,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         
         self.main_widget = PyQt5.QtWidgets.QTabWidget()
         self.main_widget.addTab(self.replay_tabs, 'Replay graphs')
+        self.main_widget.addTab(self.time_tabs, 'Time graphs')
         self.main_widget.addTab(self.difficulty_tabs, 'Diff graphs')
         self.main_widget.addTab(self.map_tabs, 'Map graphs')
         self.main_widget.addTab(self.play_data_tabs, 'Deviation data graphs')
@@ -119,7 +122,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.aim_difficulty.plot_data(score_data, diff_data)
         self.tap_difficulty.plot_data(score_data, diff_data)
 
-        #self.timing_bpm_dec.plot_data(score_data)
+        self.timing_bpm_dec.plot_data(score_data, diff_data)
         #self.timing_bpm_inc.plot_data(score_data)
         #self.toffset_bpm_inc.plot_data(score_data)
         ##self.toffset_bpm.plot_data(score_data)
@@ -144,6 +147,8 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.doffset_distr_graph.plot_data(score_data)
         self.aim_display.plot_data(score_data)
 
+        self.timing_bpm_dec.plot_data(score_data, diff_data)
+
         self.aim_difficulty.plot_data(score_data, diff_data)
         self.tap_difficulty.plot_data(score_data, diff_data)
 
@@ -160,7 +165,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
             # TODO: Clear plots
             return
 
-        #self.timing_bpm_dec.plot_data(score_data)
+        self.timing_bpm_dec.plot_data(score_data, diff_data)
         #self.timing_bpm_inc.plot_data(score_data)
         #self.toffset_bpm_inc.plot_data(score_data)
         #self.toffset_bpm.plot_data(score_data)
