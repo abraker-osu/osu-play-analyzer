@@ -139,8 +139,8 @@ class GraphAimDifficulty(PyQt5.QtWidgets.QWidget):
                 pos_x: {x_map[1:-1][detected_zeros]} {x_map[2:][detected_zeros]}
                 pos_y: {y_map[1:-1][detected_zeros]} {y_map[2:][detected_zeros]}
                 timing: {t_map[1:-1][detected_zeros]} {t_map[2:][detected_zeros]}
-                hit_type: {score_data[:, PlayNpyData.TYPE_HIT][1:-1][detected_zeros]} {score_data[:, PlayNpyData.TYPE_MAP][2:][detected_zeros]}
-                action_type: {score_data[:, PlayNpyData.TYPE_MAP][1:-1][detected_zeros]} {score_data[:, PlayNpyData.TYPE_HIT][2:][detected_zeros]}
+                hit_type: {score_data['TYPE_HIT'].values[1:-1][detected_zeros]} {score_data['TYPE_HIT'].values[2:][detected_zeros]}
+                action_type: {score_data['TYPE_MAP'].values[1:-1][detected_zeros]} {score_data['TYPE_MAP'].values[2:][detected_zeros]}
                 """
             )
 
