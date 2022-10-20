@@ -104,7 +104,7 @@ class MapDisplayWindow(PyQt5.QtWidgets.QMainWindow):
         ]
         map_data = pd.concat(map_data, axis=0, keys=range(len(map_data)), names=[ 'hitobject', 'aimpoint' ])
 
-        map_data['time'] /= 1000
+        #map_data['time'] /= 1000
         map_data['y'] = -map_data['y']
 
         self.generated_map_display.set_map_full(map_data, cs, ar)
