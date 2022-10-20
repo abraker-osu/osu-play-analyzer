@@ -11,7 +11,6 @@ import pyqtgraph as pg
 
 from app.misc.proc_data import ProcData
 
-app = pg.mkQApp()
 
 
 class MainUI(PyQt5.QtWidgets.QWidget):
@@ -274,7 +273,7 @@ class PythonHighlighter(PyQt5.QtGui.QSyntaxHighlighter):
         if not self.searchText:
             return
             
-        palette    = app.palette()
+        palette    = PyQt5.QtWidgets.QApplication.instance().palette()
         fgnd_color = palette.color(palette.ColorGroup.Current, palette.ColorRole.Text).name()
         bgnd_color = palette.highlight().color().name()
         style = charFormat(fgnd_color, background=bgnd_color)
@@ -627,5 +626,6 @@ class MapArchitectWindow(PyQt5.QtWidgets.QMainWindow):
 
 
 if __name__ == '__main__':
+    app = pg.mkQApp()
     window = MapArchitectWindow()
     pg.exec()
