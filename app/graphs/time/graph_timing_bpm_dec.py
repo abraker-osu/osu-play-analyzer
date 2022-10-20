@@ -72,7 +72,7 @@ class GraphTimingBPMDec(PyQt5.QtWidgets.QWidget):
         #self.__graph.clearPlots()
         self.__text.setText(f'')
 
-        colors = pyqtgraph.mkBrush(color=[ 255, 0, 0, 150 ])
+        colors = [ [ 255, 0, 0, 150 ] ]
         
         width = np.zeros(x_data.shape)
         width[:-1] = np.diff(x_data)*0.99

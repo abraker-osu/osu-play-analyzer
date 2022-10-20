@@ -140,8 +140,8 @@ class BarGraphItem(pyqtgraph.GraphicsObject):
         p.setBrush(pyqtgraph.mkBrush(brush))
 
         for i in range(len(x0 if not np.isscalar(x0) else y0)):
-            if pens    is not None: p.setPen(pyqtgraph.mkPen(pens[i]))
-            if brushes is not None: p.setBrush(pyqtgraph.mkBrush(brushes[i]))
+            if pens    is not None: p.setPen(pyqtgraph.mkPen(pens[min(i, len(pens) - 1)]))
+            if brushes is not None: p.setBrush(pyqtgraph.mkBrush(brushes[min(i, len(brushes) - 1)]))
                 
             x = x0     if np.isscalar(x0)     else x0[i]
             y = y0     if np.isscalar(y0)     else y0[i]
@@ -158,7 +158,7 @@ class BarGraphItem(pyqtgraph.GraphicsObject):
         
 
     def setData(self, x, y, width=1, brush='r'):
-        self.setOpts(x=x, height=y, width=width, brush=brush)
+        self.setOpts(x=x, height=y, width=width, brushes=brush)
 
         
     def paint(self, p, *args):
