@@ -59,7 +59,7 @@ class GraphTimingBPMInc(PyQt5.QtWidgets.QWidget):
             print('Error: No maps are selected')
             return
 
-        if np.unique(diff_data.index.get_level_values(1)) > 1:
+        if np.unique(diff_data.index.get_level_values(1)).shape[0] > 1:
             print('Warning: multiple maps are selected. Taking just the first one...')
 
         score_data = list(score_data.groupby(['MD5', 'TIMESTAMP', 'MODS']))[0][1]

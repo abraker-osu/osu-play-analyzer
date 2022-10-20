@@ -266,7 +266,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
             print('Error: No maps are selected')
             return
 
-        if np.unique(score_data.index.get_level_values(1)) > 1:
+        if np.unique(score_data.index.get_level_values(1)).shape[0] > 1:
             print('Warning: multiple maps are selected. Taking just the first one...')
 
         # In the event multiple md5 strings were passed, take just the first one
