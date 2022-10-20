@@ -218,13 +218,13 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         self.replay_data = np.zeros((score_data.shape[0]*2, 7))
 
         # Press timings
-        self.replay_data[::2, self.REPLAY_T]   = score_data['T_HIT']*1000
+        self.replay_data[::2, self.REPLAY_T]   = score_data['T_HIT']
         self.replay_data[::2, self.REPLAY_X]   = score_data['X_HIT']
         self.replay_data[::2, self.REPLAY_Y]   = -score_data['Y_HIT']
         self.replay_data[::2, self.REPLAY_K1]  = StdReplayData.PRESS
 
         # Release timings
-        self.replay_data[1::2, self.REPLAY_T]  = score_data['T_HIT']*1000 + 50
+        self.replay_data[1::2, self.REPLAY_T]  = score_data['T_HIT'] + 50
         self.replay_data[1::2, self.REPLAY_X]  = score_data['X_HIT']
         self.replay_data[1::2, self.REPLAY_Y]  = -score_data['Y_HIT']
         self.replay_data[1::2, self.REPLAY_K1] = StdReplayData.RELEASE
