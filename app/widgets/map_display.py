@@ -197,28 +197,28 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         self.__draw_replay_data()
 
 
-    def set_replay_from_play_data(self, play_data):
+    def set_replay_from_play_data(self, score_data):
         # Assumes play data pertianing to only one replay is passed
         # 
         # Play data only has score info, so at best only score points are recoverable
         # Basically how old osu! 2007 - 2009 era replays looked like
         # Press timings are easy to recover, however matching cursor positions to map data is not
         #   because note/aimpoint positions are not saved in play data
-        data_filter = (play_data['TYPE_HIT'] == StdScoreData.TYPE_HITP)
-        play_data = play_data[data_filter]
+        data_filter = (score_data['TYPE_HIT'] == StdScoreData.TYPE_HITP)
+        score_data = score_data[data_filter]
 
-        self.replay_data = np.zeros((play_data.shape[0]*2, 7))
+        self.replay_data = np.zeros((score_data.shape[0]*2, 7))
 
         # Press timings
-        self.replay_data[::2, self.REPLAY_T]   = play_data['T_HIT']
-        self.replay_data[::2, self.REPLAY_X]   = play_data['X_HIT']
-        self.replay_data[::2, self.REPLAY_Y]   = -play_data['Y_HIT']
+        self.replay_data[::2, self.REPLAY_T]   = score_data['T_HIT']
+        self.replay_data[::2, self.REPLAY_X]   = score_data['X_HIT']
+        self.replay_data[::2, self.REPLAY_Y]   = -score_data['Y_HIT']
         self.replay_data[::2, self.REPLAY_K1]  = StdReplayData.PRESS
 
         # Release timings
-        self.replay_data[1::2, self.REPLAY_T]  = play_data['T_HIT'] + 0.05
-        self.replay_data[1::2, self.REPLAY_X]  = play_data['X_HIT']
-        self.replay_data[1::2, self.REPLAY_Y]  = -play_data['Y_HIT']
+        self.replay_data[1::2, self.REPLAY_T]  = score_data['T_HIT'] + 0.05
+        self.replay_data[1::2, self.REPLAY_X]  = score_data['X_HIT']
+        self.replay_data[1::2, self.REPLAY_Y]  = -score_data['Y_HIT']
         self.replay_data[1::2, self.REPLAY_K1] = StdReplayData.RELEASE
 
         self.__draw_replay_data()
@@ -252,23 +252,22 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         self.status_label.setText(f'Viewing: {name}')
 
 
-    def set_from_play_data(self, play_data, md5_strs):
-        if len(md5_strs) == 0:
+    def set_from_score_data(self, score_data):
+        if score_data.shape[0] == 0:
             print('Error: No maps are selected')
             return
 
-        if len(md5_strs) > 1:
+        if score_data.shape[0] > 1:
             print('Warning: multiple maps are selected. Taking just the first one...')
 
         # In the event multiple md5 strings were passed, take just the first one
-        map_file_name, _ = self.__maps_db.get_map_file_name(md5_strs[0])
-
+        map_file_name = self.__maps_db.get_map_file_name(score_data.index.get_level_values(0)[0])
         if map_file_name is None:
             print('Map display: map file not found')
             return
         
-        self.set_replay_from_play_data(play_data)
-        self.__open_map_from_file_name(map_file_name, play_data['MODS'].values[0])
+        self.set_replay_from_play_data(score_data)
+        self.__open_map_from_file_name(map_file_name, score_data.index.get_level_values(2)[0])
 
         # Draw note in timeline
         self.hitobject_plot.set_map_timeline(self.map_data)

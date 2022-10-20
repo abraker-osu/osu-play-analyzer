@@ -185,8 +185,6 @@ class App(PyQt5.QtWidgets.QMainWindow):
 
     def __connect_signals(self):
         self.logger.debug('Connecting signals start')
-        
-        #self.data_overview_window.show_map_event.connect(self.map_display_window.set_from_play_data)
 
         if __DATA_GRAPHS_EN__:
             self.data_overview_window.show_map_event.connect(self.data_graphs_window.overview_single_map_selection_event)
@@ -194,8 +192,10 @@ class App(PyQt5.QtWidgets.QMainWindow):
 
         self.data_overview_window.replay_open_event.connect(self.__osu_recorder.handle_new_replay)
 
-        if __MAP_ARCHITECT_EN__:
-            if __MAP_DISPLAY_EN__:
+        if __MAP_DISPLAY_EN__:
+            self.data_overview_window.show_map_event.connect(self.map_display_window.set_from_score_data)
+            
+            if __MAP_ARCHITECT_EN__:
                 self.map_architect_window.gen_map_event.connect(self.map_display_window.set_from_generated)
 
         self.__play_handler_signal.connect(self.__play_handler)

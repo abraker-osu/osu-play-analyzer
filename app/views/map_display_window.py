@@ -38,7 +38,7 @@ class MapDisplayWindow(PyQt5.QtWidgets.QMainWindow):
         PyQt5.QtWidgets.QMainWindow.__init__(self, parent)
         self.setWindowTitle('Map Display')
 
-        self.selected_map_display = MapDisplay()
+        self.selected_map_display  = MapDisplay()
         self.generated_map_display = MapDisplay()
         self.processed_map_display = MapDisplay()
         self.map_tabs = PyQt5.QtWidgets.QTabWidget()
@@ -52,26 +52,26 @@ class MapDisplayWindow(PyQt5.QtWidgets.QMainWindow):
         self.logger.debug('__init__ exit')
         
 
-    def set_from_play_data(self, play_data, md5_strs):
-        self.selected_map_display.set_from_play_data(play_data, md5_strs)
+    def set_from_score_data(self, score_data):
+        self.selected_map_display.set_from_score_data(score_data)
 
         '''
-        cs = play_data['cs'][0]
-        data_x = np.zeros(len(play_data)*3)
-        data_y = np.zeros(len(play_data)*3)
-        data_t = np.zeros(len(play_data)*3)
+        cs = score_data['cs'][0]
+        data_x = np.zeros(len(score_data)*3)
+        data_y = np.zeros(len(score_data)*3)
+        data_t = np.zeros(len(score_data)*3)
 
         data_x[0::3] = 200
         data_y[0::3] = -300
-        data_t[0::3] = play_data[:-2, ]
+        data_t[0::3] = score_data[:-2, ]
 
         data_x[1::3] = 200
         data_y[1::3] = -300
-        data_t[1::3] = play_data[1:-1, ]
+        data_t[1::3] = score_data[1:-1, ]
 
         data_x[2::3] = -200
         data_y[2::3] = -300
-        data_t[2::3] = play_data[2:, ]
+        data_t[2::3] = score_data[2:, ]
         '''
 
 
