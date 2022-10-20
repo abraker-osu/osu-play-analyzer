@@ -136,9 +136,8 @@ class AimGraph(PyQt5.QtWidgets.QWidget):
 
 
     def plot_data(self, play_data):
-        # Determine what was the latest play
-        #data_filter = (play_data[:, PlayNpyData.TIMESTAMP] == max(play_data[:, PlayNpyData.TIMESTAMP]))
-        #play_data = play_data[data_filter]
+        if play_data.shape[0] == 0:
+            return
 
         cs = play_data['CS'].values[0]
         
