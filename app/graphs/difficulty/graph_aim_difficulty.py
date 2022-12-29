@@ -9,6 +9,7 @@ from pyqtgraph.functions import mkPen
 from osu_analysis import StdScoreData
 
 from app.misc.osu_utils import OsuUtils
+from app.misc.utils import Utils
 
 
 class GraphAimDifficulty(PyQt5.QtWidgets.QWidget):
@@ -60,6 +61,7 @@ class GraphAimDifficulty(PyQt5.QtWidgets.QWidget):
         thread.start()
 
 
+    @Utils.benchmark(f'[ Threaded ] {__name__}')
     def __plot_aim_factors(self, score_data, diff_data):
         # Check if there is any data to operate on
         if score_data.shape[0] < 3:

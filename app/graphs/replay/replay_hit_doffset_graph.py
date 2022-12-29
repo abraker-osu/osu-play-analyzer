@@ -6,6 +6,7 @@ from pyqtgraph.functions import mkPen
 
 from osu_analysis import StdScoreData
 
+from app.misc.utils import Utils
 
 
 class ReplayHitDOffsetGraph(PyQt5.QtWidgets.QWidget):
@@ -60,6 +61,7 @@ class ReplayHitDOffsetGraph(PyQt5.QtWidgets.QWidget):
         self.__on_view_range_changed()
 
 
+    @Utils.benchmark(__name__)
     def plot_data(self, play_data):
         if play_data.shape[0] == 0:
             return

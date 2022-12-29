@@ -2,11 +2,9 @@ import PyQt5
 import pyqtgraph
 
 import numpy as np
-import scipy
-import math
 
 from osu_analysis import StdScoreData
-from app.data_recording.data import PlayNpyData
+from app.misc.utils import Utils
 
 
 class DoffsetsDistrGraph(PyQt5.QtWidgets.QWidget):
@@ -46,6 +44,7 @@ class DoffsetsDistrGraph(PyQt5.QtWidgets.QWidget):
         self.__on_view_range_changed()
 
 
+    @Utils.benchmark(__name__)
     def plot_data(self, play_data):
         if play_data.shape[0] == 0:
             return

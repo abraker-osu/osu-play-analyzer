@@ -4,6 +4,7 @@ import pyqtgraph
 import numpy as np
 
 from app.widgets.bar_plot import BarGraphItem
+from app.misc.utils import Utils
 
 
 class GraphTimingBPMDec(PyQt5.QtWidgets.QWidget):
@@ -53,6 +54,7 @@ class GraphTimingBPMDec(PyQt5.QtWidgets.QWidget):
         self.timeline_marker.blockSignals(False)
 
 
+    @Utils.benchmark(f'{__name__}')
     def plot_data(self, score_data, diff_data):
         unique_md5s = np.unique(diff_data.index.get_level_values(0))
         if unique_md5s.shape[0] == 0:

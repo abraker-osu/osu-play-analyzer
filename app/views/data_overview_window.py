@@ -20,6 +20,7 @@ import numpy as np
 import pandas as pd
 
 from app.misc.Logger import Logger
+from app.misc.utils import Utils
 from app.widgets.play_list import PlayList
 from app.widgets.plays_graph import PlaysGraph
 from app.widgets.composition_viewer import CompositionViewer
@@ -142,6 +143,7 @@ class DataOverviewWindow(QtWidgets.QWidget):
         return self.__loaded_score_data.is_entry_exist(md5, timestamps, mods)
 
 
+    @Utils.benchmark(f'{__name__}')
     def __get_score_data(self, md5s, timestamps=[], mods=[]):
         if len(md5s) == 0:
             return ScoreNpy.get_blank_data()
@@ -159,6 +161,7 @@ class DataOverviewWindow(QtWidgets.QWidget):
         return pd.concat(data)
 
 
+    @Utils.benchmark(f'{__name__}')
     def __get_diff_data(self, md5s, timestamps=[], mods=[]):
         if len(md5s) == 0:
             return DiffNpy.get_blank_data()

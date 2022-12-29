@@ -9,6 +9,7 @@ from pyqtgraph.functions import mkPen
 from osu_analysis import StdScoreData
 
 from app.data_recording.data import ScoreNpyData
+from app.misc.utils import Utils
 
 
 class GraphOverallDifficulty(PyQt5.QtWidgets.QWidget):
@@ -63,6 +64,7 @@ class GraphOverallDifficulty(PyQt5.QtWidgets.QWidget):
         thread.start()
 
 
+    @Utils.benchmark(f'[ Threaded ] {__name__}')
     def __plot_overall_factors(self, play_data):
         # Determine what was the latest play
         data_filter = \

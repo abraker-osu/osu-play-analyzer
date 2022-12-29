@@ -8,7 +8,9 @@ import numpy as np
 from osu_analysis import StdScoreData
 
 from app.misc.osu_utils import OsuUtils
+from app.misc.utils import Utils
 from app.widgets.bar_plot import BarGraphItem
+
 
 
 class GraphTimeAimDifficulty(PyQt5.QtWidgets.QWidget):
@@ -70,6 +72,7 @@ class GraphTimeAimDifficulty(PyQt5.QtWidgets.QWidget):
         thread.start()
 
 
+    @Utils.benchmark(f'[ Threaded ] {__name__}')
     def __calc_aim_factors(self, score_data, diff_data):
         # Check if there is any data to operate on
         if score_data.shape[0] < 3:

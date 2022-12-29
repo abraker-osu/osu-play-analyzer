@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import time
 
 
 class Utils():
@@ -15,6 +16,34 @@ class Utils():
             tb_curr = tb_curr.tb_next
 
         return traceback_str
+
+
+    @staticmethod
+    def benchmark(cls_name):
+        def decorator(func):
+            def wrap_func(*args, **kwargs):
+                t1 = time.perf_counter()
+                result = func(*args, **kwargs)
+                t2 = time.perf_counter()
+
+                print(f'    | {cls_name}.{func.__name__} executed in {1000*(t2 - t1):.2f} ms')
+                return result
+
+            return wrap_func
+
+        return decorator
+
+    
+    @staticmethod
+    def profile(num, func, *args, **kwargs):
+        data = []
+
+        for _ in range(num):
+            t1 = time.perf_counter()
+            func(*args, **kwargs)
+            data.append(time.perf_counter() - t1)
+
+        print(f'{func.__name__} done in {1000*np.mean(data):.2f} ± {1000*2*np.std(data):.2f} ms')
 
 
 class MathUtils():

@@ -239,6 +239,8 @@ class App(PyQt5.QtWidgets.QMainWindow):
 
 
     def __play_handler(self, beatmap, replay):
+        self.logger.info_debug(App.debug, '__play_handler')
+        
         # Needed sleep to wait for osu! to finish writing the replay file
         time.sleep(2)
 

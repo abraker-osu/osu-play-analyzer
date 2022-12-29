@@ -9,6 +9,7 @@ from pyqtgraph.functions import mkPen
 from osu_analysis import StdScoreData
 
 from app.misc.utils import MathUtils
+from app.misc.utils import Utils
 
 
 
@@ -56,6 +57,7 @@ class ReplayTOffsetMultimap(PyQt5.QtWidgets.QWidget):
         self.__on_view_range_changed()
 
 
+    @Utils.benchmark(__name__)
     def plot_data(self, play_data):
         if play_data.shape[0] == 0:
             self.__hit_metrics.setText('No data to display')
@@ -81,6 +83,7 @@ class ReplayTOffsetMultimap(PyQt5.QtWidgets.QWidget):
         self.__update_hit_stats(play_data)
 
 
+    @Utils.benchmark(f'    {__name__}')
     def __plot_hit_offsets(self, play_data):
         # Determine what was the latest play
         data_filter = \
@@ -117,6 +120,7 @@ class ReplayTOffsetMultimap(PyQt5.QtWidgets.QWidget):
         self.__graph.setRange(xRange=[ xMin - 100, xMax + 100 ])
 
 
+    @Utils.benchmark(f'    {__name__}')
     def __plot_misses(self, play_data):
         # Select press misses
         select_press_miss = \
@@ -146,6 +150,7 @@ class ReplayTOffsetMultimap(PyQt5.QtWidgets.QWidget):
         self.cache_miss_count = np.sum(miss_count)
 
 
+    @Utils.benchmark(f'    {__name__}')
     def __update_hit_stats(self, play_data):
         unique_map_timestamps = np.unique(play_data.index.get_level_values(1))
         num_plays = unique_map_timestamps.shape[0]

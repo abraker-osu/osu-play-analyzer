@@ -6,7 +6,7 @@ import PyQt5
 import pyqtgraph
 
 from osu_analysis import StdScoreData, Mod
-from app.data_recording.data import PlayNpyData
+from app.misc.utils import Utils
 
 
 class AimGraph(PyQt5.QtWidgets.QWidget):
@@ -135,6 +135,7 @@ class AimGraph(PyQt5.QtWidgets.QWidget):
         return angle_lambda1, angle_lambda2, x_dev, y_dev
 
 
+    @Utils.benchmark(__name__)
     def plot_data(self, play_data):
         if play_data.shape[0] == 0:
             return

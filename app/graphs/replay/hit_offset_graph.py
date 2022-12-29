@@ -5,7 +5,7 @@ import pyqtgraph
 
 from osu_analysis import StdScoreData
 
-from app.misc.utils import MathUtils
+from app.misc.utils import Utils, MathUtils
 from app.widgets.miss_plot import MissPlotItem
 
 
@@ -60,6 +60,7 @@ class HitOffsetGraph(PyQt5.QtWidgets.QWidget):
         self.__on_view_range_changed()
 
 
+    @Utils.benchmark(__name__)
     def plot_data(self, play_data):
         if play_data.shape[0] == 0:
             return

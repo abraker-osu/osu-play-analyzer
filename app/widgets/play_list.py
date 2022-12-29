@@ -206,6 +206,8 @@ class PlayList(pyqtgraph.TableWidget):
         entries = score_data.groupby(level=0)
         num_entries = len(entries)
 
+        self.logger.debug(f'reload_map_list - num entries to load: {num_entries}')
+
         for i, entry in enumerate(entries):
             data.append([
                 entry[0],
