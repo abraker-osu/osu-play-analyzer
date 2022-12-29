@@ -276,7 +276,11 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
             return
         
         self.set_replay_from_play_data(score_data)
-        self.__open_map_from_file_name(map_file_name, score_data.index.get_level_values(2)[0])
+        
+        try: self.__open_map_from_file_name(map_file_name, score_data.index.get_level_values(2)[0])
+        except:
+            self.status_label.setText(f'Error: Unable to display map\n{map_file_name}.')
+            return
 
         # Draw note in timeline
         self.hitobject_plot.set_map_timeline(self.map_data)
@@ -423,16 +427,16 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         try: beatmap = BeatmapIO.open_beatmap(file_name)
         except Exception as e:
             print(Utils.get_traceback(e, 'Error opening map'))
-            return
+            raise
 
         if beatmap.gamemode != Gamemode.OSU:
             print(f'{Gamemode(beatmap.gamemode)} gamemode is not supported')
-            return
+            raise Exception
 
         try: map_data = StdMapData.get_map_data(beatmap)
         except Exception as e:
             print(Utils.get_traceback(e, 'Error reading map'))
-            return
+            raise
 
         mods = Mod(int(mods))
         cs = beatmap.difficulty.cs
