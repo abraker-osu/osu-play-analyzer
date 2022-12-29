@@ -32,6 +32,7 @@ from app.graphs.deviation.dev_graph_vel import DevGraphVel
 from app.graphs.deviation.dev_graph_rhythm import DevGraphRhythm
 from app.graphs.deviation.dev_doffsets import DevDOffsets
 from app.graphs.deviation.dev_offsets import DevOffsets
+from app.graphs.deviation.dev_graph_ar import DevGraphAR
 
 
 class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
@@ -71,6 +72,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.dev_graph_rhythm = DevGraphRhythm()
         self.dev_doffsets = DevDOffsets()
         self.dev_offsets = DevOffsets()
+        self.dev_ar = DevGraphAR()
 
         self.replay_tabs = PyQt5.QtWidgets.QTabWidget()
         self.replay_tabs.addTab(self.hit_offset_graph, 'Hit offsets')
@@ -102,6 +104,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.play_data_tabs.addTab(self.dev_graph_rhythm, 'Dev vs Rhythm')
         self.play_data_tabs.addTab(self.dev_doffsets, 'Avg BPM vs Doffsets dev')
         self.play_data_tabs.addTab(self.dev_offsets, 'Avg BPM vs Offsets dev')
+        self.play_data_tabs.addTab(self.dev_ar, 'AR vs t-dev')
         
         self.main_widget = PyQt5.QtWidgets.QTabWidget()
         self.main_widget.addTab(self.replay_tabs, 'Replay graphs')
@@ -150,6 +153,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
 
         self.dev_doffsets.plot_data(score_data, diff_data)
         self.dev_offsets.plot_data(score_data, diff_data)
+        self.dev_ar.plot_data(score_data, diff_data)
 
 
     def overview_single_map_selection_event(self, score_data, diff_data):
@@ -174,6 +178,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
 
         self.toffset_bpm.plot_data(score_data, diff_data)
 
+        self.dev_ar.plot_data(score_data, diff_data)
 
     def set_from_play_data(self, score_data, diff_data):
         '''
@@ -200,3 +205,4 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         #self.dev_graph_rhythm.plot_data(score_data)
         self.dev_doffsets.plot_data(score_data, diff_data)
         self.dev_offsets.plot_data(score_data, diff_data)
+        self.dev_ar.plot_data(score_data, diff_data)
