@@ -72,6 +72,9 @@ class DataOverviewWindow(QtWidgets.QWidget):
 
         self.__file_menu = QtWidgets.QMenu("&File")
 
+        self.__new_data_action = QtWidgets.QAction("&New data file", triggered=lambda: self.__new_data_dialog())
+        self.__file_menu.addAction(self.__new_data_action)
+
         self.__open_data_action = QtWidgets.QAction("&Load data file (*.h5)", triggered=lambda: self.__open_data_dialog())
         self.__file_menu.addAction(self.__open_data_action)
 
@@ -230,6 +233,31 @@ class DataOverviewWindow(QtWidgets.QWidget):
 
         self.__status_label.setText('')
         self.show_map_event.emit(score_data, diff_data)
+
+
+    def __new_data_dialog(self):
+        self.logger.debug('__new_data_dialog')
+
+        name_filter = 'h5 files (*.h5)'
+        
+        file_pathname = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file',  f'./data', name_filter)[0]
+        if len(file_pathname) == 0:
+            return
+
+        # Auto add extention if it does not exist
+        if file_pathname.split('.')[-1] != 'h5':
+            file_pathname += '.h5'
+
+        self.__loaded_score_data.close()
+        self.__loaded_diff_data.close()
+
+        try: self.__loaded_score_data = NpyManager(file_pathname)
+        except NpyManager.CorruptionError:
+            self.logger.error(f'Error reading {file_pathname}')
+            return
+
+        self.__loaded_diff_data = NpyManager(f'{file_pathname.split(".")[0]}_diff.h5')
+        self.__map_list.reload_map_list(self.__loaded_diff_data.data())
 
 
     def __open_data_dialog(self):

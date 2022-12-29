@@ -53,6 +53,14 @@ class NpyManager():
         return self.__data_file.select_as_multiple('/play_data', where=query_lst)
 
 
+    def create_new(self, file_pathname):
+        self.__data_file.close()
+
+        self.__save_file = file_pathname
+        self.__data_file = None
+        self.__dataframe = None
+
+
     def append(self, data, index=True):
         if self.__data_file is None:
             # Non existent, create it
