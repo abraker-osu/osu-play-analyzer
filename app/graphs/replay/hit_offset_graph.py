@@ -2,12 +2,10 @@ import numpy as np
 
 import PyQt5
 import pyqtgraph
-from pyqtgraph.Qt import QtGui
 
 from osu_analysis import StdScoreData
 
 from app.misc.utils import MathUtils
-from app.data_recording.data import PlayNpyData
 from app.widgets.miss_plot import MissPlotItem
 
 
@@ -104,7 +102,7 @@ class HitOffsetGraph(PyQt5.QtWidgets.QWidget):
 
     def __plot_rel_offsets(self, data):
         # Extract timings and hit_offsets
-        rel_select  = data['TYPE_MAP'] == StdScoreData.ACTION_RELEASE
+        rel_select = data['TYPE_MAP'] == StdScoreData.ACTION_RELEASE
         data = data[rel_select]
 
         if data.shape[0] == 0:

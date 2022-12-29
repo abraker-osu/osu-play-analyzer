@@ -5,6 +5,8 @@ import numpy as np
 from osu_analysis import StdScoreData
 from app.data_recording.data import ScoreNpyData
 
+
+
 class DevGraphAngle(PyQt5.QtWidgets.QWidget):
 
     def __init__(self, parent=None):

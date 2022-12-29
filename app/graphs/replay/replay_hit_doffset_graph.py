@@ -6,9 +6,6 @@ from pyqtgraph.functions import mkPen
 
 from osu_analysis import StdScoreData
 
-from app.misc.utils import MathUtils
-from app.data_recording.data import PlayNpyData
-from app.widgets.miss_plot import MissPlotItem
 
 
 class ReplayHitDOffsetGraph(PyQt5.QtWidgets.QWidget):

@@ -15,7 +15,7 @@ class NpyManager():
             Exception.__init__(self)
 
 
-    def __init__(self,  file_pathname):
+    def __init__(self, file_pathname):
         self.__save_file = file_pathname
 
         if not os.path.exists(self.__save_file):

@@ -2,11 +2,7 @@ import PyQt5
 import pyqtgraph
 
 import numpy as np
-import scipy
-import math
-
 from osu_analysis import StdScoreData
-from app.data_recording.data import PlayNpyData
 
 
 class HitDistrGraph(PyQt5.QtWidgets.QWidget):

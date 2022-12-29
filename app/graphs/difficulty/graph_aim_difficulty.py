@@ -9,7 +9,6 @@ from pyqtgraph.functions import mkPen
 from osu_analysis import StdScoreData
 
 from app.misc.osu_utils import OsuUtils
-from app.data_recording.data import PlayNpyData
 
 
 class GraphAimDifficulty(PyQt5.QtWidgets.QWidget):

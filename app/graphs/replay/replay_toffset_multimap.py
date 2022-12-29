@@ -9,7 +9,6 @@ from pyqtgraph.functions import mkPen
 from osu_analysis import StdScoreData
 
 from app.misc.utils import MathUtils
-from app.data_recording.data import PlayNpyData
 
 
 
