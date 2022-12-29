@@ -74,6 +74,10 @@ class NpyManager():
             self.__dataframe = self.__data_file['/play_data']
 
 
+    def reindex(self):
+        self.__data_file.create_table_index('play_data', columns=[ 'MD5', 'TIMESTAMP', 'MODS', 'IDX' ])
+
+
     def rewrite(self, md5, data):
         if self.__dataframe is None:
             # Non existent, create it

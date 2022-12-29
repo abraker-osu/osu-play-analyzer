@@ -323,11 +323,19 @@ class DataOverviewWindow(QtWidgets.QWidget):
         map_list = self.__loaded_score_data.data().groupby([ 'MD5', 'TIMESTAMP', 'MODS' ])
         num_maps = len(map_list)
 
+        data = DiffNpy.get_blank_data()
+
         for i, (idx, df) in enumerate(map_list):
-            self.__loaded_diff_data.append(DiffNpy.get_data(df))
+            data = pd.concat([ data, DiffNpy.get_data(df) ])
+
+            if (i % 500 == 0) or (i == (len(map_list) - 1)):
+                self.__loaded_diff_data.append(data, index=False)
+                data = DiffNpy.get_blank_data()
 
             self.__progress_bar.setValue(100 * i / num_maps)
             QtWidgets.QApplication.processEvents()
+
+        self.__loaded_diff_data.reindex()
 
         self.__progress_bar.hide()
         self.__status_label.show()
