@@ -188,6 +188,13 @@ class PlayList(pyqtgraph.TableWidget):
             
     def reload_map_list(self, score_data):
         self.logger.debug('reload_map_list - enter')
+        
+        # Deselect selection before changes to play list
+        # Block the `selectionChanged` signal
+        self.selectionModel().blockSignals(True)
+        self.setCurrentItem(None)
+        self.selectionModel().blockSignals(False)
+
         self.clear()
 
         if score_data is None:
@@ -202,9 +209,6 @@ class PlayList(pyqtgraph.TableWidget):
 
 
     def __reload_map_list_thread(self, score_data):
-        if score_data is None:
-            return
-
         data = []
 
         entries = score_data.groupby(level=0)
