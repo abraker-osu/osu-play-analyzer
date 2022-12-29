@@ -188,9 +188,13 @@ class PlayList(pyqtgraph.TableWidget):
             
     def reload_map_list(self, score_data):
         self.logger.debug('reload_map_list - enter')
+        self.clear()
+
+        if score_data is None:
+            self.logger.debug('reload_map_list - nothing to reload')
+            return
 
         # Clearing table resets table config
-        self.clear()
         self.__table_is_configured = False
 
         thread = threading.Thread(target=self.__reload_map_list_thread, args=(score_data, ))
