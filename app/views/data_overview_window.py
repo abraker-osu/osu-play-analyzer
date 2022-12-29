@@ -145,38 +145,40 @@ class DataOverviewWindow(QtWidgets.QWidget):
 
     @Utils.benchmark(f'{__name__}')
     def __get_score_data(self, md5s, timestamps=[], mods=[]):
-        if len(md5s) == 0:
-            return ScoreNpy.get_blank_data()
+        # Note: Empty query returns all data
+        query = []
 
-        data = [ 
-            df for idx, df in self.__loaded_score_data.data().groupby([ 'MD5', 'TIMESTAMP', 'MODS' ]) if 
-                (idx[0] in md5s) and 
-                (True if (len(timestamps) == 0) else (idx[1] in timestamps)) and 
-                (True if (len(mods) == 0) else (idx[2] in mods))
-        ]
+        if md5s:
+            md5s  = [ f'"{md5}"' for md5 in md5s ]
+            query.append(f'MD5=({", ".join(md5s)})')
+        else:
+            query.append('MD5=""')
+                    
+        if timestamps:
+            query.append(f'TIMESTAMP=({", ".join([ f"{timestamp}" for timestamp in timestamps ])})')
 
-        if len(data) == 0:
-            return ScoreNpy.get_blank_data()
+        # TODO: MODS
 
-        return pd.concat(data)
+        return self.__loaded_score_data.query_data(query)
 
 
     @Utils.benchmark(f'{__name__}')
     def __get_diff_data(self, md5s, timestamps=[], mods=[]):
-        if len(md5s) == 0:
-            return DiffNpy.get_blank_data()
+        # Note: Empty query returns all data
+        query = [ ]
 
-        data = [ 
-            df for idx, df in self.__loaded_diff_data.data().groupby([ 'MD5', 'TIMESTAMP', 'MODS' ]) if 
-                (idx[0] in md5s) and 
-                (True if (len(timestamps) == 0) else (idx[1] in timestamps)) and 
-                (True if (len(mods) == 0) else (idx[2] in mods))
-        ]
+        if md5s:
+            md5s  = [ f'"{md5}"' for md5 in md5s ]
+            query.append(f'MD5=({", ".join(md5s)})')
+        else:
+            query.append('MD5=""')
+        
+        if timestamps:
+            query.append(f'TIMESTAMP=({", ".join([ f"{timestamp}" for timestamp in timestamps ])})')
 
-        if len(data) == 0:
-            return DiffNpy.get_blank_data()
+        # TODO: MODS
 
-        return pd.concat(data)
+        return self.__loaded_diff_data.query_data(query)
 
 
     def __map_select_event(self, map_md5_strs):

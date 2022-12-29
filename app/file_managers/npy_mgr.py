@@ -49,7 +49,11 @@ class NpyManager():
         return self.__dataframe.loc[md5]
 
 
-    def append(self, data):
+    def query_data(self, query_lst):
+        return self.__data_file.select_as_multiple('/play_data', where=query_lst)
+
+
+    def append(self, data, index=True):
         if self.__data_file is None:
             # Non existent, create it
             data.to_hdf(self.__save_file, key='play_data', mode='a', format='table')
