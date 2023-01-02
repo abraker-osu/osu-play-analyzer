@@ -134,10 +134,9 @@ class DevGraphAR(QtWidgets.QWidget):
             # Calc linear regression
             m, b = MathUtils.linear_regresion(data_x, data_y)
             if type(m) == type(None) or type(b) == type(None):
-                self.__graph.plot(x=data_x, y=data_y, pen=None, symbol='o', symbolPen=None, symbolSize=5, symbolBrush=color)
                 continue
 
-            y_model = m*data_x + b                # model: y = mx + b
+            y_model = m*data_x + b              # model: y = mx + b
             x_model = (data_y - b)/m            # model: x = (y - b)/m
 
             m_dev_x = np.std(data_x - x_model)  # deviation of x from model
@@ -154,10 +153,10 @@ class DevGraphAR(QtWidgets.QWidget):
             label = f'bpm={bpm:.2f}  n={data_x.shape[0]}  σ={m_dev_y:.2f}  m={m:.5f}±{m_se_95:.5f}  b={b:.2f}±{b_se_95:.2f}'
             print(label)
 
-            self.__graph.plot(x=[0, max(data_x)], y=[b, m*max(data_x) + b], pen=(100, 100, 0, 150), name=f'{bpm:.2f} bpm')
+            self.__graph.plot(x=[0, max(data_x)], y=[b, m*max(data_x) + b], pen=pyqtgraph.mkPen(width=4, color=color), name=f'{bpm:.2f} bpm')
 
         #self.__text.setText(label)
-        
+
 
     def set_dev(self, dev):
         self.__dev_marker_95.setPos(dev/4)
