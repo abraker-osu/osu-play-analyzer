@@ -14,6 +14,11 @@ class NpyManager():
         def __init__(self):
             Exception.__init__(self)
 
+    class FileError(Exception):
+        
+        def __init__(self):
+            Exception.__init__(self)
+            
 
     def __init__(self, file_pathname):
         self.__save_file = file_pathname
@@ -50,6 +55,10 @@ class NpyManager():
 
 
     def query_data(self, query_lst):
+        if not self.__data_file.is_open:
+            NpyManager.logger.error('NpyManager.query_data | Data file is not open')
+            raise NpyManager.FileError
+
         return self.__data_file.select_as_multiple('/play_data', where=query_lst)
 
 
@@ -68,13 +77,23 @@ class NpyManager():
             
             self.__data_file = pd.HDFStore(self.__save_file, mode='a')
             self.__dataframe = self.__data_file['/play_data']
-        else:
-            # Exists and can be appended to
-            self.__data_file.append('play_data', data, data_columns=[ 'MD5', 'TIMESTAMP', 'MODS', 'IDX' ])
-            self.__dataframe = self.__data_file['/play_data']
+
+            return
+
+        if not self.__data_file.is_open:
+            NpyManager.logger.error('NpyManager.append | Data file is not open')
+            raise NpyManager.FileError
+
+        # Exists and can be appended to
+        self.__data_file.append('play_data', data, data_columns=[ 'MD5', 'TIMESTAMP', 'MODS', 'IDX' ])
+        self.__dataframe = self.__data_file['/play_data']
 
 
     def reindex(self):
+        if not self.__data_file.is_open:
+            NpyManager.logger.error('NpyManager.reindex | Data file is not open')
+            raise NpyManager.FileError
+
         self.__data_file.create_table_index('play_data', columns=[ 'MD5', 'TIMESTAMP', 'MODS', 'IDX' ])
 
 

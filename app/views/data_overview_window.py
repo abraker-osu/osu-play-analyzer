@@ -249,12 +249,18 @@ class DataOverviewWindow(QtWidgets.QWidget):
         if file_pathname.split('.')[-1] != 'h5':
             file_pathname += '.h5'
 
+        old_filename = self.__loaded_score_data.get_file_pathname()
+
         self.__loaded_score_data.close()
         self.__loaded_diff_data.close()
 
         try: self.__loaded_score_data = NpyManager(file_pathname)
         except NpyManager.CorruptionError:
             self.logger.error(f'Error reading {file_pathname}')
+
+            # Fallback to data file that was open before
+            file_pathname = old_filename
+            self.__loaded_score_data = NpyManager(old_filename)
             return
 
         self.__loaded_diff_data = NpyManager(f'{file_pathname.split(".")[0]}_diff.h5')
