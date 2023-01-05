@@ -131,11 +131,12 @@ class DataOverviewWindow(QtWidgets.QWidget):
         diff_data = DiffNpy.get_data(score_data)
         self.__loaded_diff_data.append(diff_data)
 
-        # Load new data into play listings
+        # Load new data into play listings, and get selected item(s) back
         self.__map_list.load_play(diff_data)
+        selected_md5s = self.__map_list.get_selected()
 
-        # Update timeline
-        score_data = self.__get_score_data([ replay.beatmap_hash ])
+        score_data = self.__get_score_data(selected_md5s)
+        diff_data  = self.__get_diff_data(selected_md5s)
 
         # Update timeline and composition viewer
         self.__play_graph.plot_plays(np.unique(score_data.index.get_level_values(1)))
@@ -156,7 +157,7 @@ class DataOverviewWindow(QtWidgets.QWidget):
             query.append(f'MD5=({", ".join(md5s)})')
         else:
             query.append('MD5=""')
-                    
+
         if timestamps:
             query.append(f'TIMESTAMP=({", ".join([ f"{timestamp}" for timestamp in timestamps ])})')
 
