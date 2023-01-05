@@ -54,7 +54,7 @@ class DevGraphAR(QtWidgets.QWidget):
         Meant to be used on single play and not multiple plays
         '''
         if 0 in [ score_data.shape[0], diff_data.shape[0] ]:
-            return
+            return np.asarray([ ])
 
         # Clear plots for redraw
         self.__graph.clearPlots()
