@@ -191,6 +191,15 @@ class DataOverviewWindow(QtWidgets.QWidget):
         score_data = self.__get_score_data(map_md5_strs)
         diff_data  = self.__get_diff_data(map_md5_strs)
 
+        # If sizes doesn't match, the diff data is stale - force recalc
+        # and try again. This may happen if user manually copy-pastes
+        # score data as a new file without doing same to diff data.
+        if score_data.shape[0] != diff_data.shape[0]:
+            self.__recalc_difficulties()
+
+            score_data = self.__get_score_data(map_md5_strs)
+            diff_data  = self.__get_diff_data(map_md5_strs)
+
         timestamps = np.unique(score_data.index.get_level_values(1))
 
         self.__play_graph.plot_plays(timestamps)
