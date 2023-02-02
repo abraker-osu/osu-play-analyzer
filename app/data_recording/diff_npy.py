@@ -36,7 +36,7 @@ class DiffNpy():
         map_t_rel_select = rel_select
 
         # TODO: Figure out how to relate presses to releases associated with holds
-        #map_t_hld_select = np.zeros(map_t.shape[0], dtype=np.bool)
+        #map_t_hld_select = np.zeros(map_t.shape[0], dtype=np.bool8)
         #map_t_hld_select[1:] = (prs_select[:-1] & rel_select[1:]) | (hld_select[:-1] & rel_select[1:])
 
         map_t_prs_idx_ref = np.arange(map_t_prs_select.shape[0])[map_t_prs_select]

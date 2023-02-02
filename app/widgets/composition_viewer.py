@@ -134,7 +134,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
                             pen=pyqtgraph.mkPen((0, 255, 0, 255), width=0.5), 
                             closed=True
                         ),
-                        'select' : np.empty(0, dtype=np.bool),
+                        'select' : np.empty(0, dtype=np.bool8),
                     }
 
                     self.roi_selections[roi_id]['roi'].sigRegionChanged.connect(lambda _: self.__roi_selection_event(emit_data=False))
@@ -243,7 +243,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
                 return
 
             # Calculate master selection across all multidimensional planes
-            select = np.ones((self.score_data.shape[0]), dtype=np.bool)
+            select = np.ones((self.score_data.shape[0]), dtype=np.bool8)
             for roi_selection in self.roi_selections.values():
                 select &= roi_selection['select']
 
@@ -358,7 +358,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
             
             assert(self.score_data.shape[0] == self.diff_data.shape[0])
 
-            select = np.ones((self.score_data.shape[0]), dtype=np.bool)
+            select = np.ones((self.score_data.shape[0]), dtype=np.bool8)
             self.num_data_points_label.setText(f'Num data points selected: {np.count_nonzero(select)}')
 
             return self.score_data[select], self.diff_data[select]
@@ -392,7 +392,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
             roi_plot = self.roi_selections[roi_id]['roi']
             inv_filter = ~(np.isnan(xy_data).any(axis=1))
             
-            filtered_xy_data = np.zeros((xy_data.shape[0]), dtype=np.bool)
+            filtered_xy_data = np.zeros((xy_data.shape[0]), dtype=np.bool8)
             filtered_xy_data[~inv_filter] = True
             filtered_xy_data[ inv_filter] = self.__select_data_in_roi(roi_plot, xy_data[inv_filter])
 
@@ -450,7 +450,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
             '''
             handles = [ pyqtgraph.Point(h.pos()) + roi_plot.pos() for h in roi_plot.getHandles() ]
 
-            is_in_roi = np.zeros((data.shape[0]), dtype=np.bool)
+            is_in_roi = np.zeros((data.shape[0]), dtype=np.bool8)
             iters = list(range(len(handles)))
 
             for i in iters:

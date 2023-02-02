@@ -91,7 +91,7 @@ class GraphOverallDifficulty(PyQt5.QtWidgets.QWidget):
         #bpm_inc = play_data[:, ScoreNpyData.DT_DEC]
         #bpm_dec = play_data[:, ScoreNpyData.DT_INC]
 
-        score_mask = np.zeros((timings.shape[0] - 2, 3), dtype=np.bool)
+        score_mask = np.zeros((timings.shape[0] - 2, 3), dtype=np.bool8)
         score_mask[:, 0] = is_miss[2:]
         score_mask[:, 1] = np.abs(toffsets[2:] <= 32)
         score_mask[:, 2] = np.abs(toffsets[2:] > 32) & ~is_miss[2:]

@@ -49,7 +49,7 @@ class ScoreNpyData():
         hash_mask = 0xFFFFFFFFFFFFFFFF
         md5_data = data[:, [ScoreNpyData.MAP_MD5_LH, ScoreNpyData.MAP_MD5_UH]].astype(np.uint64)
         
-        select = np.zeros((data.shape[0], ), dtype=np.bool)
+        select = np.zeros((data.shape[0], ), dtype=np.bool8)
 
         for md5_str in md5_strs:
             md5_int = int(md5_str, 16)
@@ -123,8 +123,8 @@ class DiffNpyData():
         
         # The selection features a column for diff data and a column for score data
         # This allows to match the selection blocks in diff data with the selection blocks in score data
-        select_score = np.zeros((score_data.shape[0], ), dtype=np.bool)
-        select_diff  = np.zeros((diff_data.shape[0], ), dtype=np.bool)
+        select_score = np.zeros((score_data.shape[0], ), dtype=np.bool8)
+        select_diff  = np.zeros((diff_data.shape[0], ), dtype=np.bool8)
 
         for meta_data in unique_meta_data:
             select_score |= \
@@ -207,7 +207,7 @@ class PlayNpyData():
         hash_mask = 0xFFFFFFFFFFFFFFFF
         md5_data = data[:, [ScoreNpyData.MAP_MD5_LH, ScoreNpyData.MAP_MD5_UH]].astype(np.uint64)
         
-        select = np.zeros((data.shape[0], ), dtype=np.bool)
+        select = np.zeros((data.shape[0], ), dtype=np.bool8)
 
         for md5_str in md5_strs:
             md5_int = int(md5_str, 16)
