@@ -7,7 +7,7 @@ from pyqtgraph.functions import mkPen
 
 from osu_analysis import StdScoreData
 
-from app.misc.utils import MathUtils
+from app.misc.poibin import PoiBin
 from app.misc.utils import Utils
 
 
@@ -298,35 +298,35 @@ class ReplayTOffsetMultimap(PyQt5.QtWidgets.QWidget):
         prob_300_OD8s[slider_mask] = 1.0
         prob_300_OD8s *= 1 - miss_count/num_plays
 
-        poibin_300_OD4s = MathUtils.PoiBin(prob_300_OD4s)
-        poibin_300_OD5s = MathUtils.PoiBin(prob_300_OD5s)
-        poibin_300_OD6s = MathUtils.PoiBin(prob_300_OD6s)
-        poibin_300_OD7s = MathUtils.PoiBin(prob_300_OD7s)
-        poibin_300_OD8s = MathUtils.PoiBin(prob_300_OD8s)
+        poibin_300_OD4s = PoiBin(prob_300_OD4s)
+        poibin_300_OD5s = PoiBin(prob_300_OD5s)
+        poibin_300_OD6s = PoiBin(prob_300_OD6s)
+        poibin_300_OD7s = PoiBin(prob_300_OD7s)
+        poibin_300_OD8s = PoiBin(prob_300_OD8s)
 
-        prob_OD4_99 = np.sum(np.asarray([ poibin_300_OD4s.pdf(i) for i in range(needed_num_300s_99, num_total) ]))
-        prob_OD5_99 = np.sum(np.asarray([ poibin_300_OD5s.pdf(i) for i in range(needed_num_300s_99, num_total) ]))
-        prob_OD6_99 = np.sum(np.asarray([ poibin_300_OD6s.pdf(i) for i in range(needed_num_300s_99, num_total) ]))
-        prob_OD7_99 = np.sum(np.asarray([ poibin_300_OD7s.pdf(i) for i in range(needed_num_300s_99, num_total) ]))
-        prob_OD8_99 = np.sum(np.asarray([ poibin_300_OD8s.pdf(i) for i in range(needed_num_300s_99, num_total) ]))
+        prob_OD4_99 = np.sum(np.asarray([ poibin_300_OD4s.pmf(i) for i in range(needed_num_300s_99, num_total) ]))
+        prob_OD5_99 = np.sum(np.asarray([ poibin_300_OD5s.pmf(i) for i in range(needed_num_300s_99, num_total) ]))
+        prob_OD6_99 = np.sum(np.asarray([ poibin_300_OD6s.pmf(i) for i in range(needed_num_300s_99, num_total) ]))
+        prob_OD7_99 = np.sum(np.asarray([ poibin_300_OD7s.pmf(i) for i in range(needed_num_300s_99, num_total) ]))
+        prob_OD8_99 = np.sum(np.asarray([ poibin_300_OD8s.pmf(i) for i in range(needed_num_300s_99, num_total) ]))
 
-        prob_OD4_98 = np.sum(np.asarray([ poibin_300_OD4s.pdf(i) for i in range(needed_num_300s_98, num_total) ]))
-        prob_OD5_98 = np.sum(np.asarray([ poibin_300_OD5s.pdf(i) for i in range(needed_num_300s_98, num_total) ]))
-        prob_OD6_98 = np.sum(np.asarray([ poibin_300_OD6s.pdf(i) for i in range(needed_num_300s_98, num_total) ]))
-        prob_OD7_98 = np.sum(np.asarray([ poibin_300_OD7s.pdf(i) for i in range(needed_num_300s_98, num_total) ]))
-        prob_OD8_98 = np.sum(np.asarray([ poibin_300_OD8s.pdf(i) for i in range(needed_num_300s_99, num_total) ]))
+        prob_OD4_98 = np.sum(np.asarray([ poibin_300_OD4s.pmf(i) for i in range(needed_num_300s_98, num_total) ]))
+        prob_OD5_98 = np.sum(np.asarray([ poibin_300_OD5s.pmf(i) for i in range(needed_num_300s_98, num_total) ]))
+        prob_OD6_98 = np.sum(np.asarray([ poibin_300_OD6s.pmf(i) for i in range(needed_num_300s_98, num_total) ]))
+        prob_OD7_98 = np.sum(np.asarray([ poibin_300_OD7s.pmf(i) for i in range(needed_num_300s_98, num_total) ]))
+        prob_OD8_98 = np.sum(np.asarray([ poibin_300_OD8s.pmf(i) for i in range(needed_num_300s_99, num_total) ]))
 
-        prob_OD4_97 = np.sum(np.asarray([ poibin_300_OD4s.pdf(i) for i in range(needed_num_300s_97, num_total) ]))
-        prob_OD5_97 = np.sum(np.asarray([ poibin_300_OD5s.pdf(i) for i in range(needed_num_300s_97, num_total) ]))
-        prob_OD6_97 = np.sum(np.asarray([ poibin_300_OD6s.pdf(i) for i in range(needed_num_300s_97, num_total) ]))
-        prob_OD7_97 = np.sum(np.asarray([ poibin_300_OD7s.pdf(i) for i in range(needed_num_300s_97, num_total) ]))
-        prob_OD8_97 = np.sum(np.asarray([ poibin_300_OD8s.pdf(i) for i in range(needed_num_300s_97, num_total) ]))
+        prob_OD4_97 = np.sum(np.asarray([ poibin_300_OD4s.pmf(i) for i in range(needed_num_300s_97, num_total) ]))
+        prob_OD5_97 = np.sum(np.asarray([ poibin_300_OD5s.pmf(i) for i in range(needed_num_300s_97, num_total) ]))
+        prob_OD6_97 = np.sum(np.asarray([ poibin_300_OD6s.pmf(i) for i in range(needed_num_300s_97, num_total) ]))
+        prob_OD7_97 = np.sum(np.asarray([ poibin_300_OD7s.pmf(i) for i in range(needed_num_300s_97, num_total) ]))
+        prob_OD8_97 = np.sum(np.asarray([ poibin_300_OD8s.pmf(i) for i in range(needed_num_300s_97, num_total) ]))
 
-        prob_OD4_95 = np.sum(np.asarray([ poibin_300_OD4s.pdf(i) for i in range(needed_num_300s_95, num_total) ]))
-        prob_OD5_95 = np.sum(np.asarray([ poibin_300_OD5s.pdf(i) for i in range(needed_num_300s_95, num_total) ]))
-        prob_OD6_95 = np.sum(np.asarray([ poibin_300_OD6s.pdf(i) for i in range(needed_num_300s_95, num_total) ]))
-        prob_OD7_95 = np.sum(np.asarray([ poibin_300_OD7s.pdf(i) for i in range(needed_num_300s_95, num_total) ]))
-        prob_OD8_95 = np.sum(np.asarray([ poibin_300_OD8s.pdf(i) for i in range(needed_num_300s_95, num_total) ]))
+        prob_OD4_95 = np.sum(np.asarray([ poibin_300_OD4s.pmf(i) for i in range(needed_num_300s_95, num_total) ]))
+        prob_OD5_95 = np.sum(np.asarray([ poibin_300_OD5s.pmf(i) for i in range(needed_num_300s_95, num_total) ]))
+        prob_OD6_95 = np.sum(np.asarray([ poibin_300_OD6s.pmf(i) for i in range(needed_num_300s_95, num_total) ]))
+        prob_OD7_95 = np.sum(np.asarray([ poibin_300_OD7s.pmf(i) for i in range(needed_num_300s_95, num_total) ]))
+        prob_OD8_95 = np.sum(np.asarray([ poibin_300_OD8s.pmf(i) for i in range(needed_num_300s_95, num_total) ]))
 
         self.__hit_metrics.setText(
             f'''

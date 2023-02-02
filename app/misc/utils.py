@@ -49,43 +49,6 @@ class Utils():
 
 class MathUtils():
 
-    class PoiBin():
-        
-        def __init__(self, probs):
-            omega = 2 * np.pi / (len(probs) + 1)
-
-            half_number_trials = int(len(probs) / 2 + len(probs) % 2)
-            num_values = min(250, half_number_trials)
-
-            idx_array = np.arange(1, num_values + 1)
-            exp_value = np.exp(omega * idx_array * 1j)
-
-            # Multiplying each probability by each complex number forming an arc of a circle
-            xy = 1 - probs + probs*exp_value.reshape(num_values, 1)
-            
-            argz_sum = np.arctan2(xy.imag, xy.real).sum(axis=1)
-
-            d_value = np.zeros(num_values)
-            d_value = np.abs(xy).prod(axis=1)
-
-            chi = np.zeros(len(probs) + 1, dtype=complex)
-            chi[0] = 1
-            chi[1:num_values + 1] = d_value*np.exp(argz_sum * 1j)
-            chi[half_number_trials + 1:len(probs) + 1] = np.conjugate(chi[1:len(probs) - half_number_trials + 1] [::-1])
-            chi /= len(probs) + 1
-
-            self.pmf = np.fft.fft(chi).real
-            # self.cmf = np.add.accumulate(self.pmf)
-
-
-        def pdf(self, x):
-            return self.pmf[x]
-
-
-        # def cdf(self, x):
-        #     return self.cmf[x]
-
-
     @staticmethod
     def max_rolling(a, window, axis=1):
         # Thanks https://stackoverflow.com/a/52219082
