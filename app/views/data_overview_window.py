@@ -320,7 +320,7 @@ class DataOverviewWindow(QtWidgets.QWidget):
         for file_name, i in zip(file_names, range(num_files)):
             self.replay_open_event.emit(file_name)
 
-            self.__progress_bar.setValue(100 * i / num_files)
+            self.__progress_bar.setValue(int(100 * i / num_files))
             QtWidgets.QApplication.processEvents()
 
         self.__progress_bar.hide()
