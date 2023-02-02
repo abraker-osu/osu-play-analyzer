@@ -29,9 +29,9 @@ class TimingPlot(pyqtgraph.GraphItem):
 
         num_intervals = len(start_times)
 
-        pos  = np.zeros((num_intervals*2, 2), dtype=np.float)
-        adj  = np.zeros((num_intervals, 2), dtype=np.int)
-        size = np.zeros(num_intervals*2, dtype=np.int)
+        pos  = np.zeros((num_intervals*2, 2), dtype=np.float32)
+        adj  = np.zeros((num_intervals, 2), dtype=np.int32)
+        size = np.zeros(num_intervals*2, dtype=np.int32)
         
         if (len(start_times) != len(end_times)):
             raise AssertionError(f'start_times and end_times are not the same length, len(start_times)={len(start_times)}, len(end_times)={len(end_times)}')

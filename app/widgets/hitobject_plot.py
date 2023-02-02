@@ -49,16 +49,16 @@ class HitobjectPlot(pyqtgraph.GraphItem):
             else:
                 adj.append([ obj_num, obj_num ])
 
-        pos = np.asarray(pos, dtype=np.float)
-        adj = np.asarray(adj, dtype=np.int)
+        pos = np.asarray(pos, dtype=np.float32)
+        adj = np.asarray(adj, dtype=np.int32)
 
         self.setData(pos=pos, adj=adj, size=size, symbol='o', pxMode=True)
 
 
     def set_map_display(self, t, map_data, ar_ms, cs_px):
         # Reset drawn with empty data (sliders don't disappear otherwise)
-        pos = np.zeros((0, 2), dtype=np.float)
-        adj = np.zeros((0, ), dtype=np.int)
+        pos = np.zeros((0, 2), dtype=np.float32)
+        adj = np.zeros((0, ), dtype=np.int32)
         self.setData(pos=pos, adj=adj, size=[], symbol='o', pxMode=False)
         
         # Select hitobjects within AR range of currently viewed timing
@@ -73,16 +73,16 @@ class HitobjectPlot(pyqtgraph.GraphItem):
         release_select = points['type'].values == StdMapData.TYPE_RELEASE
         press_select = points['type'].values == StdMapData.TYPE_PRESS
 
-        pos = np.zeros((num_points, 2), dtype=np.float)
+        pos = np.zeros((num_points, 2), dtype=np.float32)
         pos[:, 0] = points['x'].values
         pos[:, 1] = points['y'].values
 
-        adj = np.zeros((num_points, 2), dtype=np.int)
+        adj = np.zeros((num_points, 2), dtype=np.int32)
         adj[:, 0] = np.arange(num_points)
         adj[:, 1] = adj[:, 0] + 1
         adj[release_select, 1] = adj[release_select, 0]
 
-        size = np.zeros((num_points, ), dtype=np.float)
+        size = np.zeros((num_points, ), dtype=np.float32)
         size[press_select] = cs_px
 
         self.pen.setWidth(cs_px)
