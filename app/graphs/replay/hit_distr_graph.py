@@ -54,7 +54,7 @@ class HitDistrGraph(PyQt5.QtWidgets.QWidget):
 
         #play_data = play_data[data_filter]
             
-        slider_select = np.zeros(play_data.shape[0], dtype=bool)
+        slider_select = np.zeros(play_data.shape[0], dtype=np.bool8)
         slider_select[:-1] = \
             (play_data['TYPE_MAP'].values[:-1] == StdScoreData.ACTION_PRESS) & (
                 (play_data['TYPE_MAP'].values[1:] == StdScoreData.ACTION_HOLD) | \

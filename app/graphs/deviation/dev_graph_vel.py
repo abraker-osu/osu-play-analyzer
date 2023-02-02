@@ -69,7 +69,7 @@ class DevGraphVel(PyQt5.QtWidgets.QWidget):
         Meant to be used on single play and not multiple plays
         '''
         # Filters to get just hitcircles with valid hits
-        data_filter = np.ones(play_data.shape[0], dtype=bool)
+        data_filter = np.ones(play_data.shape[0], dtype=np.bool8)
 
         # Filter out sliders
         data_filter[:-1] = \

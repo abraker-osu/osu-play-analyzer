@@ -86,7 +86,7 @@ class GraphTimeAimDifficulty(PyQt5.QtWidgets.QWidget):
         # do not have any consequences for not aiming the slider end. As a
         # result, it is not a significant aiming challenge if they go very 
         # fast. Sliders are considered short when they have no hold scorepoints.
-        short_slider_rel_select = np.zeros(score_data.shape[0], dtype=bool)
+        short_slider_rel_select = np.zeros(score_data.shape[0], dtype=np.bool8)
         short_slider_rel_select[1:] = (
             (type_map[:-1] == StdScoreData.ACTION_PRESS) & 
             (type_map[1:] == StdScoreData.ACTION_RELEASE)
@@ -101,7 +101,7 @@ class GraphTimeAimDifficulty(PyQt5.QtWidgets.QWidget):
         #
         # TODO: How to determine if slider path is oriented in the direction of jump?
         # TODO: What if slider path goes into opposite direction of jump?
-        short_slider_prs_select = np.zeros(score_data.shape[0], dtype=bool)
+        short_slider_prs_select = np.zeros(score_data.shape[0], dtype=np.bool8)
         short_slider_prs_select[:-1] = (
             (type_map[:-1] == StdScoreData.ACTION_PRESS) & 
             (type_map[1:] == StdScoreData.ACTION_RELEASE)

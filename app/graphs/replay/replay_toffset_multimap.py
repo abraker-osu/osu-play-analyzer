@@ -187,7 +187,7 @@ class ReplayTOffsetMultimap(PyQt5.QtWidgets.QWidget):
         all_select = \
             (play_data['TYPE_MAP'].values == StdScoreData.ACTION_PRESS)
 
-        slider_select = np.zeros(play_data.shape[0], dtype=bool)
+        slider_select = np.zeros(play_data.shape[0], dtype=np.bool8)
         slider_select[:-1] = \
             (play_data['TYPE_MAP'].values[:-1] == StdScoreData.ACTION_PRESS) & (
                 (play_data['TYPE_MAP'].values[1:] == StdScoreData.ACTION_HOLD) | \
