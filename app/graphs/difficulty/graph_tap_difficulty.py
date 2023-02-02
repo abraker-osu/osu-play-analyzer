@@ -96,6 +96,7 @@ class GraphTapDifficulty(PyQt5.QtWidgets.QWidget):
                 (score_data['TYPE_MAP'].values == StdScoreData.ACTION_PRESS)
             )
         )
+        score_mask = np.zeros((timings.shape[0] - 2, 3), dtype=np.bool8)
         score_mask[:, 0] = is_miss[2:]
         score_mask[:, 1] = np.abs(toffsets[2:] <= 32)
         score_mask[:, 2] = np.abs(toffsets[2:] > 32) & ~is_miss[2:]
