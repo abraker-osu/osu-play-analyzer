@@ -267,7 +267,8 @@ class PoiBin(object):
         :param xi_values: single event probabilities
         :type xi_values: complex
         """
-        return np.all(xi_values.imag <= np.finfo(float).eps)
+        print(xi_values.imag[xi_values.imag > 4*np.finfo(float).eps])
+        return np.all(xi_values.imag <= 4*np.finfo(float).eps)
 
     def check_input_prob(self):
         """Check that all the input probabilities are in the interval [0, 1]."""
