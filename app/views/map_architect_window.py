@@ -51,6 +51,7 @@ class MainUI(QtWidgets.QWidget):
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
 
         self.title_editor = QtWidgets.QLineEdit()
+        self.title_editor.setPlaceholderText('Script name')
 
         self.code_editor = QtWidgets.QPlainTextEdit(self.layoutWidget1)
         font = QtGui.QFont()
@@ -539,17 +540,25 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
         if not os.path.exists(file_path):
             os.makedirs(file_path)
 
+        if len(script_pathname) == 0:
+            msg = QtWidgets.QMessageBox()
+            msg.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+            msg.setText('Unable to save: Please name the script!\nUse the "Script name" edit box above')
+            msg.setWindowTitle('Error saving file')
+            msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
+            msg.exec_()
+            return
+
         try: 
             with open(file_pathname, 'w') as f:
                 f.write(self.__ui.code_editor.toPlainText())
         except PermissionError:
             msg = QtWidgets.QMessageBox()
-            msg.setIcon(QtWidgets.QMessageBox.Icon.Warning)
+            msg.setIcon(QtWidgets.QMessageBox.Icon.Critical)
             msg.setText('Unable to save: Permission error!')
             msg.setWindowTitle('Error saving file')
             msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
             msg.exec_()
-            
             return
 
         self.__script_list = self.__get_script_list()
