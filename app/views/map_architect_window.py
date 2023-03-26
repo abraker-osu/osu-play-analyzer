@@ -1,19 +1,16 @@
 import keyword
 import os
 import re
-import subprocess
+import threading
 import sys
-import json
-import base64
+import time
+import ctypes
 
 from PyQt5 import QtCore
 from PyQt5 import QtGui
 from PyQt5 import QtWidgets
 
 import pyqtgraph as pg
-
-from app.misc.proc_data import ProcData
-
 
 
 class MainUI(QtWidgets.QWidget):
@@ -566,41 +563,57 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
 
 
     def __run_script(self):
-        script_path = os.path.abspath(os.path.dirname(__file__))
-        path        = os.path.dirname(os.path.dirname(script_path))
+        # Add paths to utilities for map generation
+        add_paths = []
 
-        env = dict(os.environ)
-        env['PYTHONPATH'] = f'{path}/map_generator;{path}/app/misc'
+        if getattr(sys, 'frozen', False):
+            # Indication that this is being run via the pyinstaller exe
+            add_paths.append(os.getcwd().replace("\\", "/"))
+        else:
+            # Indication that this is being run via python directly
+            script_path = os.path.abspath(os.path.dirname(__file__))
+            path        = os.path.dirname(os.path.dirname(script_path)).replace('\\', '/')
 
-        try:
-            proc = subprocess.run(
-                # `sys.executable` should be "path/python.exe"
-                [ sys.executable ],
-                # Contents of the script
-                input   = self.__ui.code_editor.toPlainText().encode('UTF-8'), 
-                # Enables output to be captured via `ProcData`
-                stdout  = subprocess.PIPE,
-                # The location from where the GUI is run
-                cwd     = os.getcwd(),
-                env     = env,
-                timeout = 10  # seconds
-            )
-        except subprocess.TimeoutExpired:
+            add_paths.append(f'{path}/map_generator')
+            add_paths.append(f'{path}/app/misc')
+
+        add_paths = ''.join([ f'sys.path.append("{add_path}")\n' for add_path in add_paths ])
+
+        code = \
+        'import sys\n' \
+        f'{add_paths}' \
+        f'{self.__ui.code_editor.toPlainText()}'
+
+        # Need to to insert `gen_map_event` so that there is a way
+        # to display the generated map in Map Display > Generated
+        tmp_globals = dict(globals())
+        tmp_globals['gen_map_event'] = self.gen_map_event
+
+        # Set a timeout of 5 seconds
+        thread = threading.Thread(target=lambda: exec(code, tmp_globals))
+        thread.setDaemon(True)
+        thread.start()
+
+        # Wait 5 seconds or until thread finishes
+        start = time.time()
+        while thread.is_alive():
+            time.sleep(0.001)
+            if time.time() - start >= 5:
+                break
+
+        if thread.is_alive():
             msg = QtWidgets.QMessageBox()
             msg.setIcon(QtWidgets.QMessageBox.Icon.Warning)
             msg.setWindowTitle('Warning')
             msg.setText('Script timed out')
             msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
             msg.exec_()
+            
+            # Thanks https://docs.python.org/3/c-api/init.html?highlight=pythreadstate_setasyncexc#c.PyThreadState_SetAsyncExc
+            # Thanks https://stackoverflow.com/questions/65089503/raising-exceptions-in-a-thread
+            # Allows to force terminate a thread by causing it to raise an exception
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(thread.ident), ctypes.py_object(Exception))
             return
-
-        try:
-            proc_data = ProcData()
-            proc_data.recieve(proc.stdout)
-            proc_data.print()
-            self.gen_map_event.emit(proc_data.data('map_data'))
-        except json.decoder.JSONDecodeError as e:
-            print('Unable to decode script output:', e)
 
 
     def __get_code_content(self, pathname):
