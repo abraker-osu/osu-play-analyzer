@@ -571,22 +571,26 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
 
         env = dict(os.environ)
         env['PYTHONPATH'] = f'{path}/map_generator;{path}/app/misc'
-        
+
         try:
             proc = subprocess.run(
-                [ sys.executable, '-' ],
+                # `sys.executable` should be "path/python.exe"
+                [ sys.executable ],
+                # Contents of the script
                 input   = self.__ui.code_editor.toPlainText().encode('UTF-8'), 
-                stdout  = subprocess.PIPE, 
-                cwd     = MapArchitectWindow.FOLDER_LOCATION, 
+                # Enables output to be captured via `ProcData`
+                stdout  = subprocess.PIPE,
+                # The location from where the GUI is run
+                cwd     = os.getcwd(),
                 env     = env,
                 timeout = 10  # seconds
             )
         except subprocess.TimeoutExpired:
             msg = QtWidgets.QMessageBox()
-            msg.setIcon(QtWidgets.QMessageBox.Warning)
+            msg.setIcon(QtWidgets.QMessageBox.Icon.Warning)
             msg.setWindowTitle('Warning')
             msg.setText('Script timed out')
-            msg.setStandardButtons(QtWidgets.QMessageBox.Ok)
+            msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
             msg.exec_()
             return
 
