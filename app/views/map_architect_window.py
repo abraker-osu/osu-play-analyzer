@@ -399,7 +399,7 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
         
         # Don't filter very short strings
         for name, filepath in unnestedDict(self.__script_list).items():
-            contents = self.__get_code_content(f'{MapArchitectWindow.FOLDER_LOCATION}\\{filepath}').lower()
+            contents = self.__get_code_content(f'{MapArchitectWindow.FOLDER_LOCATION}/{filepath}').lower()
             
             if text in contents:
                 titles.append(name)
@@ -523,7 +523,7 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
             # This happens if the user clicks on a folder in the QTreeWidget
             return
 
-        file_pathname = f'{MapArchitectWindow.FOLDER_LOCATION}\\{script_pathname}'
+        file_pathname = f'{MapArchitectWindow.FOLDER_LOCATION}/{script_pathname}'
         
         self.__ui.code_editor.setPlainText(self.__get_code_content(file_pathname))
         self.__ui.title_editor.setText(script_pathname)
