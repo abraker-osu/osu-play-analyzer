@@ -17,6 +17,7 @@ from app.graphs.replay.aim_graph import AimGraph
 from app.graphs.time.graph_timing_bpm_dec import GraphTimingBPMDec
 from app.graphs.time.graph_timing_bpm_inc import GraphTimingBPMInc
 from app.graphs.time.graph_timing_aim_diff import GraphTimeAimDifficulty
+from app.graphs.time.graph_timing_reading import GraphTimeReadingDifficulty
 
 from app.graphs.difficulty.graph_aim_difficulty import GraphAimDifficulty
 from app.graphs.difficulty.graph_tap_difficulty import GraphTapDifficulty
@@ -58,6 +59,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.timing_bpm_dec = GraphTimingBPMDec()
         self.timing_bpm_inc = GraphTimingBPMInc()
         self.timing_aim_diff = GraphTimeAimDifficulty()
+        self.timing_reading_diff = GraphTimeReadingDifficulty()
 
         self.aim_difficulty = GraphAimDifficulty()
         self.tap_difficulty = GraphTapDifficulty()
@@ -88,6 +90,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.time_tabs.addTab(self.timing_bpm_dec, 'Timing BPM dec')
         self.time_tabs.addTab(self.timing_bpm_inc, 'Timing BPM inc')
         self.time_tabs.addTab(self.timing_aim_diff, 'Timing Aim diff')
+        self.time_tabs.addTab(self.timing_reading_diff, 'Timing Reading diff')
 
         self.difficulty_tabs = PyQt5.QtWidgets.QTabWidget()
         self.difficulty_tabs.addTab(self.aim_difficulty, 'Aim difficulty')
@@ -147,6 +150,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.timing_bpm_dec.plot_data(score_data, diff_data)
         self.timing_bpm_inc.plot_data(score_data, diff_data)
         self.timing_aim_diff.plot_data(score_data, diff_data)
+        self.timing_reading_diff.plot_data(score_data, diff_data)
 
         #self.toffset_bpm_inc.plot_data(score_data)
         ##self.toffset_bpm.plot_data(score_data)
@@ -176,6 +180,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.timing_bpm_dec.plot_data(score_data, diff_data)
         self.timing_bpm_inc.plot_data(score_data, diff_data)
         self.timing_aim_diff.plot_data(score_data, diff_data)
+        self.timing_reading_diff.plot_data(score_data, diff_data)
 
         self.aim_difficulty.plot_data(score_data, diff_data)
         self.tap_difficulty.plot_data(score_data, diff_data)
