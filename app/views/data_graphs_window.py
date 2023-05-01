@@ -33,6 +33,7 @@ from app.graphs.deviation.dev_graph_rhythm import DevGraphRhythm
 from app.graphs.deviation.dev_doffsets import DevDOffsets
 from app.graphs.deviation.dev_offsets import DevOffsets
 from app.graphs.deviation.dev_graph_ar import DevGraphAR
+from app.graphs.deviation.dev_visible_ar import DevVisibleAR
 
 
 class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
@@ -46,7 +47,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
 
         PyQt5.QtWidgets.QMainWindow.__init__(self, parent)
         self.setWindowTitle('Data graphs')
-    
+
         self.hit_offset_graph = HitOffsetGraph()
         self.replay_offset_multimap_graph = ReplayTOffsetMultimap()
         self.replay_hit_doffset_graph = ReplayHitDOffsetGraph()
@@ -66,13 +67,14 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.toffset_rhy_graph = MapToffsetRhyGraph()
         self.toffset_rhyd_graph = MapToffsetRhydGraph()
         self.toffset_velocity = GraphTOffsetVelocity()
-        
+
         self.dev_graph_angle = DevGraphAngle()
         self.dev_graph_vel = DevGraphVel()
         self.dev_graph_rhythm = DevGraphRhythm()
         self.dev_doffsets = DevDOffsets()
         self.dev_offsets = DevOffsets()
         self.dev_ar = DevGraphAR()
+        self.dev_visible_ar = DevVisibleAR()
 
         self.replay_tabs = PyQt5.QtWidgets.QTabWidget()
         self.replay_tabs.addTab(self.hit_offset_graph, 'Hit offsets')
@@ -105,7 +107,8 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.play_data_tabs.addTab(self.dev_doffsets, 'Avg BPM vs Doffsets dev')
         self.play_data_tabs.addTab(self.dev_offsets, 'Avg BPM vs Offsets dev')
         self.play_data_tabs.addTab(self.dev_ar, 'AR vs t-dev')
-        
+        self.play_data_tabs.addTab(self.dev_visible_ar, 'AR vs # Misses')
+
         self.main_widget = PyQt5.QtWidgets.QTabWidget()
         self.main_widget.addTab(self.replay_tabs, 'Replay graphs')
         self.main_widget.addTab(self.time_tabs, 'Time graphs')
@@ -154,6 +157,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.dev_doffsets.plot_data(score_data, diff_data)
         self.dev_offsets.plot_data(score_data, diff_data)
         self.dev_ar.plot_data(score_data, diff_data)
+        self.dev_visible_ar.plot_data(score_data, diff_data)
 
 
     def overview_single_map_selection_event(self, score_data, diff_data):
@@ -179,6 +183,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.toffset_bpm.plot_data(score_data, diff_data)
 
         self.dev_ar.plot_data(score_data, diff_data)
+        self.dev_visible_ar.plot_data(score_data, diff_data)
 
     def set_from_play_data(self, score_data, diff_data):
         '''
@@ -206,3 +211,4 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.dev_doffsets.plot_data(score_data, diff_data)
         self.dev_offsets.plot_data(score_data, diff_data)
         self.dev_ar.plot_data(score_data, diff_data)
+        self.dev_visible_ar.plot_data(score_data, diff_data)

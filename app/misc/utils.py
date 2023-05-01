@@ -34,7 +34,7 @@ class Utils():
 
         return decorator
 
-    
+
     @staticmethod
     def profile(num, func, *args, **kwargs):
         data = []
@@ -87,7 +87,7 @@ class MathUtils():
         lin[lin < 100] = np.log(np.exp(lin[lin < 100]) + np.exp(y))
         return lin
 
-    
+
     @staticmethod
     def linear_regresion(x, y):
         # Model processing. Needs at least 2 points.
@@ -119,7 +119,7 @@ class MathUtils():
             # Negative slope
             g1 = (x < avg_x) & (y >= avg_y)   # Group 1 select
             g2 = (x >= avg_x) & (y < avg_y)   # Group 2 select
-        
+
         # Check if follows model by having positive linear slope
         if(not any(g1) or not any(g2)):
             return None, None
@@ -137,3 +137,49 @@ class MathUtils():
         b = p1y - m*p1x
 
         return m, b
+
+
+    @staticmethod
+    def exp_regression(x, y):
+        '''
+        Thanks: https://math.stackexchange.com/a/2318659
+        Fits y = a + be^(cx)
+        '''
+        if y.shape[0] < 4:
+            return None, None, None
+
+        if y.shape[0] != x.shape[0]:
+            raise ValueError('x and y must have the same length')
+
+        s = np.zeros(x.shape[0])
+        for k in range(1, x.shape[0]):
+            s[k] = s[k-1] + (x[k] - x[k-1])*(y[k] + y[k-1])/2
+
+        mat_c0 = np.linalg.inv(np.asarray([
+            [ np.sum((x - x[0])**2),  np.sum((x - x[0])*s) ],
+            [ np.sum((x - x[0])*s),   np.sum(s**2)         ]
+        ]))
+
+        mat_c1 = np.asarray([
+            [ np.sum((y - y[0])*(x - x[0])) ],
+            [ np.sum((y - y[0])*s) ]
+        ]),
+
+        mat_dot = np.dot(mat_c0, mat_c1)
+        c = mat_dot[1][0][0]
+
+        mat_ab0 = np.linalg.inv(np.asarray([
+            [ x.shape[0],          np.sum(np.exp(c*x))   ],
+            [ np.sum(np.exp(c*x)), np.sum(np.exp(2*c*x)) ]
+        ]))
+
+        mat_ab1 = np.asarray([
+            [ np.sum(y) ],
+            [ np.sum(y*np.exp(c*x)) ]
+        ])
+
+        mat_dot = np.dot(mat_ab0, mat_ab1)
+        a = mat_dot[0][0]
+        b = mat_dot[1][0]
+
+        return a, b, c

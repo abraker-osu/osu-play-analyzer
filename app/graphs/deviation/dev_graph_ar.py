@@ -15,15 +15,15 @@ class DevGraphAR(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
 
         # Main graph
-        self.__graph = pyqtgraph.PlotWidget(title='AR dev-t (vel)')
+        self.__graph = pyqtgraph.PlotWidget(title='AR dev-t')
         self.__graph.getPlotItem().getAxis('left').enableAutoSIPrefix(False)
         self.__graph.getPlotItem().getAxis('bottom').enableAutoSIPrefix(False)
         self.__graph.enableAutoRange(axis='x', enable=False)
         self.__graph.enableAutoRange(axis='y', enable=False)
-        self.__graph.setLimits(xMin=0, xMax=5000, yMin=-10, yMax=200)
+        #self.__graph.setLimits(xMin=0, xMax=5000, yMin=-10, yMax=200)
         self.__graph.setRange(xRange=[-10, 600], yRange=[-10, 20])
-        self.__graph.setLabel('left', 'tap deviation', units='σ', unitPrefix='')
-        self.__graph.setLabel('bottom', 'AR', units='ms', unitPrefix='')
+        self.__graph.setLabel('left', 'Tap deviation', units='1σ ms', unitPrefix='')
+        self.__graph.setLabel('bottom', 'Density', units='# note visible', unitPrefix='')
         self.__graph.addLegend()
 
         # Deviation marker indicating expected deviation according to set CS
@@ -37,7 +37,7 @@ class DevGraphAR(QtWidgets.QWidget):
         self.__label_style = pyqtgraph.PlotDataItem(pen=(0,0,0))
         self.__graph.getPlotItem().legend.addItem(self.__label_style, '')
         self.__text = self.__graph.getPlotItem().legend.getLabel(self.__label_style)
-   
+
         # Put it all together
         self.__layout = QtWidgets.QHBoxLayout(self)
         self.__layout.setContentsMargins(0, 0, 0, 0)
@@ -59,7 +59,7 @@ class DevGraphAR(QtWidgets.QWidget):
         # Clear plots for redraw
         self.__graph.clearPlots()
         self.__text.setText(f'')
-        
+
         score_data = score_data.groupby(['MD5', 'TIMESTAMP'])
         diff_data  = diff_data.groupby(['MD5', 'TIMESTAMP'])
 
@@ -83,7 +83,7 @@ class DevGraphAR(QtWidgets.QWidget):
 
             press_select = (df_score['TYPE_MAP'] == StdScoreData.ACTION_PRESS)
             hit_select   = (df_score['TYPE_HIT'] == StdScoreData.TYPE_HITP)
-            
+
             num_notes   = np.count_nonzero(press_select & hit_select)
             hit_offsets = hit_offsets[press_select & hit_select]
             bpm = bpm[press_select[1:] & hit_select[1:]]
@@ -103,7 +103,11 @@ class DevGraphAR(QtWidgets.QWidget):
         if dev_data.shape[0] == 0:
             return
 
-        # # Colored gradient r->g->b multiple plots at different angles
+        # Round to nearest BPM so that cases like [ 136.01, 136.02 ]
+        # don't spawn extra descrete BPM selections
+        dev_data[:, 2] = np.round(dev_data[:, 2], 0)
+
+        # Colored gradient r->g->b multiple plots at different angles
         unique_bpms = np.unique(dev_data[:, 2])
 
         bpm_lut = pyqtgraph.ColorMap(
@@ -125,35 +129,53 @@ class DevGraphAR(QtWidgets.QWidget):
                 # Selected region has no data. Nothing else to do
                 continue
 
-            data_x = dev_data[data_select, 0]
+            data_x = dev_data[data_select, 0]*dev_data[data_select, 2] / 60000
             data_y = dev_data[data_select, 1]
-            color = bpm_lut.map(bpm, 'qcolor')
+            color  = bpm_lut.map(dev_data[data_select, 2], 'qcolor')
 
             self.__graph.plot(x=data_x, y=data_y, pen=None, symbol='o', symbolPen=None, symbolSize=5, symbolBrush=color, name=f'{bpm:.2f} bpm')
+
+            # Calc exponential regression
+            a, b, c = MathUtils.exp_regression(data_x, data_y)
+            if isinstance(type(None), ( type(a), type(b), type(c) )):
+                 continue
+
+
+            # The curve behaves as 1/x, so invert it
+            # to perform a linear regression. The resultant
+            # regresion will then be inverted back to match
+            # the data
+            data_y = 1/data_y
 
             # Calc linear regression
             m, b = MathUtils.linear_regresion(data_x, data_y)
             if type(m) == type(None) or type(b) == type(None):
                 continue
 
-            y_model = m*data_x + b              # model: y = mx + b
-            x_model = (data_y - b)/m            # model: x = (y - b)/m
+            # y_model = m*data_x + b              # model: y = mx + b
+            # x_model = (data_y - b)/m            # model: x = (y - b)/m
 
-            m_dev_x = np.std(data_x - x_model)  # deviation of x from model
-            m_dev_y = np.std(data_y - y_model)  # deviation of y from model
+            # m_dev_x = np.std(data_x - x_model)  # deviation of x from model
+            # m_dev_y = np.std(data_y - y_model)  # deviation of y from model
 
-            x_mean = np.mean(data_x)
+            # x_mean  = np.mean(data_x)
 
-            # Standard error of slope @ 95% confidence interval
-            m_se_95 = (m_dev_y/m_dev_x)/math.sqrt(data_x.shape[0] - 2)*1.96
+            # # Standard error of slope @ 95% confidence interval
+            # m_se_95 = (m_dev_y/m_dev_x)/math.sqrt(data_x.shape[0] - 2)*1.96
 
-            # Standard error of y-intercept @ 95% confidence interval
-            b_se_95 = 2*m_se_95*x_mean
+            # # Standard error of y-intercept @ 95% confidence interval
+            # b_se_95 = 2*m_se_95*x_mean
 
-            label = f'bpm={bpm:.2f}  n={data_x.shape[0]}  σ={m_dev_y:.2f}  m={m:.5f}±{m_se_95:.5f}  b={b:.2f}±{b_se_95:.2f}'
-            print(label)
+            # label = f'bpm={bpm:.2f}  n={data_x.shape[0]}  σ={m_dev_y:.2f}  m={m:.5f}±{m_se_95:.5f}  b={b:.2f}±{b_se_95:.2f}'
+            # print(label)
 
-            self.__graph.plot(x=[0, max(data_x)], y=[b, m*max(data_x) + b], pen=pyqtgraph.mkPen(width=4, color=color), name=f'{bpm:.2f} bpm')
+            data_x = np.linspace(0, max(data_x), 20)
+            data_y = 1/(m*data_x + b)  # Invert the regression back
+            #data_y = a + b*np.exp(c * data_x)
+
+            color  = bpm_lut.map(bpm, 'qcolor')
+
+            self.__graph.plot(x=data_x, y=data_y, pen=pyqtgraph.mkPen(width=4, color=color), name=f'{bpm:.2f} bpm')
 
         #self.__text.setText(label)
 
