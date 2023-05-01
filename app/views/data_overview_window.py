@@ -1,6 +1,6 @@
 """
 The data overview window manages and displays loaded data. The are 3 data displays present:
-    - On the left side is a list of all loaded plays. Each play is distinguished by a 
+    - On the left side is a list of all loaded plays. Each play is distinguished by a
         unique md5 and mod combination. When a play is selected, the md5 and mod combinations
         are sent to the timeline
 
@@ -48,7 +48,7 @@ class DataOverviewWindow(QtWidgets.QWidget):
         QtWidgets.QWidget.__init__(self, parent)
 
         self.setWindowTitle('Data overview')
-        
+
         self.__map_list = PlayList()
         self.__composition_viewer = CompositionViewer()
         self.__play_graph = PlaysGraph()
@@ -56,7 +56,7 @@ class DataOverviewWindow(QtWidgets.QWidget):
         self.__show_map_btn = QtWidgets.QPushButton('Show map')
         self.__status_label = QtWidgets.QLabel('')
         self.__progress_bar = QtWidgets.QProgressBar()
-        
+
         self.__overview = QtWidgets.QWidget()
         self.__overview_layout = QtWidgets.QVBoxLayout(self.__overview)
         self.__overview_layout.setContentsMargins(0, 0, 0, 0)
@@ -97,7 +97,7 @@ class DataOverviewWindow(QtWidgets.QWidget):
         self.__connect_signals()
 
         # Load temporary score file
-        try: 
+        try:
             self.__loaded_score_data = NpyManager(DataOverviewWindow.__SCORE_TEMP_FILE)
             self.__loaded_score_data.drop()
         except NpyManager.CorruptionError:
@@ -105,12 +105,12 @@ class DataOverviewWindow(QtWidgets.QWidget):
             self.__loaded_score_data = NpyManager(DataOverviewWindow.__SCORE_TEMP_FILE)
 
         # Load temporary difficulty file
-        try: 
+        try:
             self.__loaded_diff_data = NpyManager(DataOverviewWindow.__DIFF_TEMP_FILE)
             self.__loaded_diff_data.drop()
         except NpyManager.CorruptionError:
             os.remove(DataOverviewWindow.__DIFF_TEMP_FILE)
-            self.__loaded_diff_data = NpyManager(DataOverviewWindow.__DIFF_TEMP_FILE)            
+            self.__loaded_diff_data = NpyManager(DataOverviewWindow.__DIFF_TEMP_FILE)
 
         self.logger.debug('__init__ exit')
 
@@ -122,7 +122,7 @@ class DataOverviewWindow(QtWidgets.QWidget):
         self.__composition_viewer.region_changed.connect(self.region_changed)
         self.__show_map_btn.clicked.connect(self.show_map)
 
-        
+
     def append_to_data(self, beatmap, replay):
         # Append to existing data
         map_data, replay_data, score_data = ScoreNpy.compile_data(beatmap, replay)
@@ -135,8 +135,8 @@ class DataOverviewWindow(QtWidgets.QWidget):
         self.__map_list.load_play(diff_data)
         selected_md5s = self.__map_list.get_selected()
 
-        score_data = self.__get_score_data(selected_md5s)
-        diff_data  = self.__get_diff_data(selected_md5s)
+        score_data = self.__get_score_data(selected_md5s).sort_index(level=0)
+        diff_data  = self.__get_diff_data(selected_md5s).sort_index(level=0)
 
         # Update timeline and composition viewer
         self.__play_graph.plot_plays(np.unique(score_data.index.get_level_values(1)))
@@ -176,7 +176,7 @@ class DataOverviewWindow(QtWidgets.QWidget):
             query.append(f'MD5=({", ".join(md5s)})')
         else:
             query.append('MD5=""')
-        
+
         if timestamps:
             query.append(f'TIMESTAMP=({", ".join([ f"{timestamp}" for timestamp in timestamps ])})')
 
@@ -202,17 +202,23 @@ class DataOverviewWindow(QtWidgets.QWidget):
 
         timestamps = np.unique(score_data.index.get_level_values(1))
 
+        score_data = score_data.sort_index(level=0)
+        diff_data = diff_data.sort_index(level=0)
+
         self.__play_graph.plot_plays(timestamps)
         self.__composition_viewer.set_composition_from_score_data(score_data, diff_data)
 
         self.show_map_event.emit(score_data, diff_data)
-    
+
 
     def __timestamp_region_changed_event(self, data):
         selected_maps = self.__map_list.get_selected()
-        
+
         score_data = self.__get_score_data(selected_maps, timestamps=data['timestamps'])
         diff_data = self.__get_diff_data(selected_maps, timestamps=data['timestamps'])
+
+        score_data = score_data.sort_index(level=0)
+        diff_data = diff_data.sort_index(level=0)
 
         self.__composition_viewer.set_composition_from_score_data(score_data, diff_data)
         self.__composition_viewer.emit_master_selection()
@@ -249,7 +255,7 @@ class DataOverviewWindow(QtWidgets.QWidget):
         self.logger.debug('__new_data_dialog')
 
         name_filter = 'h5 files (*.h5)'
-        
+
         file_pathname = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file',  f'./data', name_filter)[0]
         if len(file_pathname) == 0:
             return
@@ -280,7 +286,7 @@ class DataOverviewWindow(QtWidgets.QWidget):
         self.logger.debug('__open_data_dialog')
 
         name_filter = 'h5 files (*.h5)'
-        
+
         file_pathname = QtWidgets.QFileDialog.getOpenFileName(self, 'Open data file',  f'./data', name_filter)[0]
         if len(file_pathname) == 0:
             return
@@ -332,7 +338,7 @@ class DataOverviewWindow(QtWidgets.QWidget):
 
         self.__status_label.hide()
         self.__progress_bar.show()
-        
+
         # Go through the list of maps
         self.__loaded_diff_data.drop()
 

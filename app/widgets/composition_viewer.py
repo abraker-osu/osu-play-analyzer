@@ -6,7 +6,7 @@ The user is able to select a range of cells in the grid display to filter/select
 Clicking on a non selected cell will select it, and dragging the mouse will select a range of cells.
 Clicking on a selected cell will deselect it, and dragging the mouse will deselect a range of cells.
 
-Since the grid is 2D, only two attributes can be compared at a time. The user can select which attribute to compare by 
+Since the grid is 2D, only two attributes can be compared at a time. The user can select which attribute to compare by
 selecting which of the two attributes should be displayed in a dropdown on the side.
 
 The is a selection menu on the side that allows the user to select which player's data to view and which timestamped play.
@@ -130,8 +130,8 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
                     roi_id = self.__get_roi_id(id_x, id_y)
                     self.roi_selections[roi_id] = {
                         'roi' : pyqtgraph.PolyLineROI(
-                            [[0, 0], [0, 100], [100, 100], [100, 0]], 
-                            pen=pyqtgraph.mkPen((0, 255, 0, 255), width=0.5), 
+                            [[0, 0], [0, 100], [100, 100], [100, 0]],
+                            pen=pyqtgraph.mkPen((0, 255, 0, 255), width=0.5),
                             closed=True
                         ),
                         'select' : np.empty(0, dtype=np.bool8),
@@ -157,7 +157,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
             layout.addWidget(y_axis_radio)
 
             widget_item = PyQt5.QtWidgets.QListWidgetItem()
-            widget_item.setSizeHint(widget.sizeHint())    
+            widget_item.setSizeHint(widget.sizeHint())
 
             self.data_type_selection.addItem(widget_item)
             self.data_type_selection.setItemWidget(widget_item, widget)
@@ -182,7 +182,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
         self.x_axis_selection.button(self.__ID_CS).setChecked(True)
         self.y_axis_selection.button(self.__ID_AR).setChecked(True)
         self.__set_composition_data(id_x=self.__ID_CS, id_y=self.__ID_AR)
-        
+
 
     def set_composition_from_score_data(self, score_data, diff_data):
         '''
@@ -214,7 +214,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
             self.xy_data = np.zeros((0, 2))
         else:
             self.xy_data = np.zeros((self.diff_data.shape[0], 2))
-        
+
         self.__set_composition_data(id_x=self.__id_x, id_y=self.__id_y, force_update=True)
 
         # Update all selection masks
@@ -225,7 +225,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
                 for id_x in range(self.num_selections):
                     if id_y == id_x:
                         continue
-                    
+
                     xy_data[:, 0] = self.__id_to_data(id_x)
                     xy_data[:, 1] = self.__id_to_data(id_y)
 
@@ -257,8 +257,8 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
 
             self.num_data_points_label.setText(f'Num data points selected: {np.count_nonzero(select)}')
             return self.score_data[select]
-        
-        
+
+
         def reset_roi_selections(self):
             '''
             Resets ROI selections to fit the entire displayed data
@@ -282,10 +282,10 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
                     if id_y == id_x:
                         continue
 
-                    roi_id = self.__get_roi_id(id_x, id_y)                
+                    roi_id = self.__get_roi_id(id_x, id_y)
                     data_x = self.__id_to_data(id_x)
                     data_y = self.__id_to_data(id_y)
-                
+
                     inv_filter = ~(np.isnan(data).any(axis=1))
                     if data[inv_filter].shape[0] == 0:
                         roi_datas[roi_id]['data_x'] = []
@@ -312,7 +312,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
                 #is_already_displayed = (roi_plot.scene() != None)
                 #if not is_already_displayed:
                 #    self.plot_widget.addItem(roi_plot)
-                
+
                 pyqtgraph.ROI.setPos(roi_plot, [0, 0], update=False)
                 pyqtgraph.ROI.setSize(roi_plot, [1, 1], update=False)
                 pyqtgraph.ROI.setAngle(roi_plot, 0.0, update=False)
@@ -321,13 +321,13 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
 
                 while len(roi_plot.handles) > 4:
                     roi_plot.removeHandle(roi_plot.handles[0]['item'])
-                    
+
                 while len(roi_plot.handles) < 4:
                     roi_plot.addFreeHandle([0, 0])
 
                 #for i, point in enumerate(roi_data['roi_points']):
                 #    roi_plot.handles[i]['item'].setPos(point[0], point[1])
-                
+
                 #for i in range(-1, len(roi_plot.handles) - 1):
                 #    roi_plot.addSegment(roi_plot.handles[i]['item'], roi_plot.handles[i + 1]['item'])
 
@@ -339,10 +339,10 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
 
                 data[:, 0] = roi_data['data_x']
                 data[:, 1] = roi_data['data_y']
-        
+
                 self.__update_roi_selection(roi_id, data)
                 roi_selection['roi'].blockSignals(False)
-            
+
             self.logger.debug(f'reset_roi_selections - 3')
             self.emit_master_selection()
 
@@ -355,7 +355,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
             '''
             if isinstance(self.score_data, type(None)) or isinstance(self.diff_data, type(None)):
                 return
-            
+
             assert(self.score_data.shape[0] == self.diff_data.shape[0])
 
             select = np.ones((self.score_data.shape[0]), dtype=np.bool8)
@@ -369,7 +369,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
             Stub
             '''
             pass
-        
+
 
     if __ROI_SELECTIONS_EN__:
 
@@ -383,7 +383,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
         def __update_roi_selection(self, roi_id, xy_data):
             '''
             Updates the cached selection mask
-            '''            
+            '''
             if xy_data.shape[0] == 0:
                 self.roi_selections[roi_id]['select'] = np.asarray([])
                 self.roi_selections[roi_id]['roi']    = np.asarray([])
@@ -391,7 +391,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
 
             roi_plot = self.roi_selections[roi_id]['roi']
             inv_filter = ~(np.isnan(xy_data).any(axis=1))
-            
+
             filtered_xy_data = np.zeros((xy_data.shape[0]), dtype=np.bool8)
             filtered_xy_data[~inv_filter] = True
             filtered_xy_data[ inv_filter] = self.__select_data_in_roi(roi_plot, xy_data[inv_filter])
@@ -402,7 +402,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
         def __roi_selection_event(self, emit_data):
             '''
             This function is called whenever the user interacts with the ROI.
-            The function updates the selection cache of the displayed data 
+            The function updates the selection cache of the displayed data
             (the current multidimensional plane), then composes the selections
             in all planes together, and emits the resulting selected play data.
             '''
@@ -421,7 +421,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
             for i in range(len(state['points'])):
                 point = state['points'][i]
                 state['points'][i] = pyqtgraph.Point(point[1], point[0])
-            
+
             pos = state['pos']
             state['pos'] = pyqtgraph.Point(pos[1], pos[0])
 
@@ -437,11 +437,11 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
             self.plot_widget.removeItem(roi_plot_yx)
 
             self.emit_master_selection()
-        
+
 
         def __select_data_in_roi(self, roi_plot, data):
             '''
-            Returns a mask array selecting displayed data points that are 
+            Returns a mask array selecting displayed data points that are
             located within the given ROI.
 
             Invalid values (NaN and Inf) must not be passed to this function.
@@ -495,7 +495,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
 
         update_x = force_update
         update_y = force_update
- 
+
         can_update_x = (id_x != None) and (self.__id_x != id_x)
         can_update_y = (id_y != None) and (self.__id_y != id_y)
         prev_xy_exists = (self.__id_x != None) and (self.__id_y != None)
@@ -504,7 +504,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
             if prev_xy_exists:
                 if __ROI_SELECTIONS_EN__:
                     self.plot_widget.removeItem(self.roi_selections[self.__get_roi_id(self.__id_x, self.__id_y)]['roi'])
-            
+
             if self.__id_y != None:
                 if __ROI_SELECTIONS_EN__:
                     self.plot_widget.addItem(self.roi_selections[self.__get_roi_id(id_x, self.__id_y)]['roi'])
@@ -520,7 +520,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
             if prev_xy_exists:
                 if __ROI_SELECTIONS_EN__:
                     self.plot_widget.removeItem(self.roi_selections[self.__get_roi_id(self.__id_x, self.__id_y)]['roi'])
-            
+
             if self.__id_x != None:
                 if __ROI_SELECTIONS_EN__:
                     self.plot_widget.addItem(self.roi_selections[self.__get_roi_id(self.__id_x, id_y)]['roi'])
@@ -544,7 +544,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
         # Prepare dictionary of md5-to-map names to apply to each data point
         unique_md5s = ScoreNpyData.get_unique_md5s(self.score_data)
         md5_to_name = {}
-        
+
         for unique_md5 in unique_md5s:
             md5_str = ScoreNpyData.get_md5_str(*unique_md5)
             md5_to_name[md5_str] = MapsDB.get_map_file_name(md5_str, filename=False)[0]
@@ -554,7 +554,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
         def score_data_to_str(score_data):
             '''
             md5_str  = ScoreNpyData.get_md5_str(*score_data[[ScoreNpyData.MAP_MD5_LH, ScoreNpyData.MAP_MD5_UH]].astype(np.uint64))
-            
+
             map_name = md5_to_name[md5_str]
             time     = score_data[ScoreNpyData.T_MAP]
             t_offset = score_data[ScoreNpyData.T_HIT] - score_data[ScoreNpyData.T_MAP]
@@ -575,7 +575,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
         if update_x or update_y:
             #i_data = np.apply_along_axis(score_data_to_str, 1, self.score_data)
 
-            # Make sure no invalid values are passed to display or it will won't 
+            # Make sure no invalid values are passed to display or it will won't
             # display points due to inability to compute bounds
             inv_filter = ~(np.isnan(self.xy_data).any(axis=1))
 
