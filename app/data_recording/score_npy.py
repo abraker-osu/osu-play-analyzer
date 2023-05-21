@@ -13,8 +13,13 @@ class ScoreNpy():
 
     logger = Logger.get_logger(__name__)
 
+    IDX_MAP   = 0
+    IDX_ENTRY = 1
+    IDX_MOD   = 2
+    IDX_NOTE  = 3
+
     COLUMNS = [
-        'MD5', 'TIMESTAMP', 'MODS', 'IDXS', 
+        'MD5', 'TIMESTAMP', 'MODS', 'IDXS',
         'CS', 'AR', 'T_MAP', 'X_MAP', 'Y_MAP', 'T_HIT', 'X_HIT', 'Y_HIT', 'TYPE_MAP', 'TYPE_HIT'
     ]
 
@@ -77,7 +82,7 @@ class ScoreNpy():
         if replay.mods.has_mod('HR'):
             # Do nothing
             pass
-            
+
 
     @staticmethod
     def __get_data(map_data, replay_data, map_md5, timestamp, mods, cs, ar):
@@ -114,10 +119,72 @@ class ScoreNpy():
 
 
     @staticmethod
-    def get_blank_data():
-        df = pd.DataFrame(columns=ScoreNpy.COLUMNS)
+    def get_blank_data() -> pd.DataFrame:
+        df = pd.DataFrame(columns = ScoreNpy.COLUMNS)
         df.set_index(['MD5', 'TIMESTAMP', 'MODS', 'IDXS'], inplace=True)
         return df
+
+
+    @staticmethod
+    def get_first_entry(score_data: pd.DataFrame, groupby: list = ['MD5', 'TIMESTAMP', 'MODS']) -> pd.DataFrame:
+        for entry in score_data.groupby(groupby):
+            # Gives (idx, data)
+            return entry[1]
+
+
+    @staticmethod
+    def get_entries(score_data: pd.DataFrame, groupby: list = ['MD5', 'TIMESTAMP', 'MODS']) -> pd.DataFrame:
+        """
+        This is not expected to be used directly, but rather
+        to serve as an example on how to get entries
+        """
+        for entry in score_data.groupby(groupby):
+            yield entry[1]
+
+
+    @staticmethod
+    def get_idx_md5s(score_data: pd.DataFrame) -> pd.Index:
+        return score_data.index.get_level_values(ScoreNpy.IDX_MAP)
+
+
+    @staticmethod
+    def get_idx_timestamps(score_data: pd.DataFrame) -> pd.Index:
+        return score_data.index.get_level_values(ScoreNpy.IDX_ENTRY)
+
+
+    @staticmethod
+    def get_idx_mods(score_data: pd.DataFrame) -> pd.Index:
+        return score_data.index.get_level_values(ScoreNpy.IDX_MOD)
+
+
+    @staticmethod
+    def get_idx_notes(score_data: pd.DataFrame) -> pd.Index:
+        return score_data.index.get_level_values(ScoreNpy.IDX_NOTE)
+
+
+    @staticmethod
+    def get_num_maps(score_data: pd.DataFrame) -> int:
+        return score_data.index.unique(level=ScoreNpy.IDX_MAP).shape[0]
+
+
+    @staticmethod
+    def get_num_entries(score_data: pd.DataFrame) -> int:
+        return score_data.index.unique(level=ScoreNpy.IDX_ENTRY).shape[0]
+
+
+    @staticmethod
+    def get_first_entry_md5(score_data: pd.DataFrame) -> str:
+        return score_data.index.values[0][ScoreNpy.IDX_MAP]
+
+
+    @staticmethod
+    def get_first_entry_timestamp(score_data: pd.DataFrame) -> int:
+        return score_data.index.values[0][ScoreNpy.IDX_ENTRY]
+
+
+    @staticmethod
+    def get_first_entry_mod(score_data: pd.DataFrame) -> int:
+        return score_data.index.values[0][ScoreNpy.IDX_MOD]
 
 
     @staticmethod
@@ -142,9 +209,9 @@ class ScoreNpy():
         return map_data, replay_data, ScoreNpy.__get_data(
             map_data,
             replay_data,
-            beatmap.metadata.beatmap_md5, 
+            beatmap.metadata.beatmap_md5,
             timestamp,
-            replay.mods.value, 
+            replay.mods.value,
             beatmap.difficulty.cs,
             beatmap.difficulty.ar
         )
