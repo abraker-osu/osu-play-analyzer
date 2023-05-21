@@ -16,6 +16,7 @@ from osu_db import MapsDB
 
 from app.misc.Logger import Logger
 from app.misc.utils import Utils
+from app.data_recording.score_npy import ScoreNpy
 from app.misc.osu_utils import OsuUtils
 from app.widgets.hitobject_plot import HitobjectPlot
 from app.widgets.timing_plot import TimingPlot
@@ -154,13 +155,13 @@ class MapDisplay(QtWidgets.QWidget):
         map_data = [
             pd.DataFrame(
             [
-                [ t + 0, x, y, StdMapData.TYPE_PRESS,   StdMapData.TYPE_CIRCLE ],
-                [ t + 1, x, y, StdMapData.TYPE_RELEASE, StdMapData.TYPE_CIRCLE ],
+                [ t + 0, x, -y, StdMapData.TYPE_PRESS,   StdMapData.TYPE_CIRCLE ],
+                [ t + 1, x, -y, StdMapData.TYPE_RELEASE, StdMapData.TYPE_CIRCLE ],
             ],
             columns=['time', 'x', 'y', 'type', 'object'])
             for t, x, y in zip(data_t, data_x, data_y)
         ]
-        map_data = pd.concat(map_data, axis=0, keys=range(len(map_data)), names=[ 'hitobject', 'aimpoint' ])
+        self.map_data = pd.concat(map_data, axis=0, keys=range(len(map_data)), names=[ 'hitobject', 'aimpoint' ])
 
         self.cs_px = OsuUtils.cs_to_px(cs)
         self.ar_ms = OsuUtils.ar_to_ms(ar)#/1000
@@ -262,31 +263,42 @@ class MapDisplay(QtWidgets.QWidget):
 
 
     def set_from_score_data(self, score_data):
-        unique_md5s = np.unique(score_data.index.get_level_values(0))
-        if unique_md5s.shape[0] == 0:
+        num_entries = ScoreNpy.get_num_entries(score_data)
+        if num_entries == 0:
             print('Error: No maps are selected')
             return
 
-        if np.unique(score_data.index.get_level_values(1)).shape[0] > 1:
+        num_maps = ScoreNpy.get_num_maps(score_data)
+        if num_maps > 1:
             print('Warning: multiple maps are selected. Taking just the first one...')
 
-        # In the event multiple md5 strings were passed, take just the first one
-        map_file_name = self.__maps_db.get_map_file_name(unique_md5s[0])
-        if map_file_name is None:
-            print('Map display: map file not found')
-            return
-        
+        score_data = ScoreNpy.get_first_entry(score_data)
+        md5 = ScoreNpy.get_first_entry_md5(score_data)
+
         self.set_replay_from_play_data(score_data)
-        
-        try: self.__open_map_from_file_name(map_file_name, score_data.index.get_level_values(2)[0])
-        except:
-            self.status_label.setText(f'Error: Unable to display map\n{map_file_name}.')
-            return
 
-        # Draw note in timeline
-        self.hitobject_plot.set_map_timeline(self.map_data)
-        self.timeline.update()
+        # In the event multiple md5 strings were passed, take just the first one
+        map_file_name = self.__maps_db.get_map_file_name(md5)
+        if map_file_name:
+            try:
+                self.__open_map_from_file_name(map_file_name, score_data.index.get_level_values(2)[0])
 
+                # Draw notes in timeline
+                self.hitobject_plot.set_map_timeline(self.map_data)
+                self.timeline.update()
+                return
+            except:
+                self.status_label.setText(f'Error: Unable to display map\n{map_file_name}.')
+                return
+
+        # Failed to find associated map; display from score data
+        data_x = score_data['X_MAP'].values
+        data_y = score_data['Y_MAP'].values
+        data_t = score_data['T_MAP'].values
+        cs = score_data['CS'][0]
+        ar = score_data['AR'][0]
+
+        self.set_map_reduced(data_x, data_y, data_t, cs, ar, md5=None)
         self.status_label.setText('Warning: viewing play data, which contains only the basic scoring information.')
 
 
