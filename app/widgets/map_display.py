@@ -144,12 +144,12 @@ class MapDisplay(QtWidgets.QWidget):
 
 
     def set_map_reduced(self, data_x, data_y, data_t, cs, ar, md5=None):
-        if type(data_x) == type(None): return
-        if type(data_y) == type(None): return
-        if type(data_t) == type(None): return
+        if isinstance(data_x, type(None)): return
+        if isinstance(data_y, type(None)): return
+        if isinstance(data_t, type(None)): return
 
-        if type(ar) == type(None): return
-        if type(cs) == type(None): return        
+        if isinstance(ar, type(None)): return
+        if isinstance(cs, type(None)): return
 
         map_data = [
             pd.DataFrame(
@@ -174,9 +174,9 @@ class MapDisplay(QtWidgets.QWidget):
 
 
     def set_map_full(self, map_data, cs, ar, md5=None):
-        if type(map_data) == type(None): return
-        if type(cs) == type(None): return
-        if type(ar) == type(None): return
+        if isinstance(map_data, type(None)): return
+        if isinstance(cs, type(None)): return
+        if isinstance(ar, type(None)): return
 
         self.map_data = map_data
         self.cs_px = OsuUtils.cs_to_px(cs)
@@ -191,7 +191,7 @@ class MapDisplay(QtWidgets.QWidget):
 
 
     def set_replay_from_replay_data(self, replay_data):
-        if type(replay_data) == type(None): 
+        if isinstance(replay_data, type(None)):
             return
 
         self.replay_data = np.zeros((len(replay_data['time']), 7))
@@ -291,11 +291,11 @@ class MapDisplay(QtWidgets.QWidget):
 
 
     def __draw_map_data(self):
-        if type(self.map_data) == type(None): 
+        if isinstance(self.map_data, type(None)):
             return
 
-        if type(self.ar_ms) == type(None): return
-        if type(self.cs_px) == type(None): return
+        if isinstance(self.ar_ms, type(None)): return
+        if isinstance(self.cs_px, type(None)): return
 
         # Draw approach circles
         presses = StdMapData.get_presses(self.map_data)
@@ -317,7 +317,7 @@ class MapDisplay(QtWidgets.QWidget):
 
 
     def __draw_replay_data(self):
-        if type(self.replay_data) == type(None):
+        if isinstance(self.replay_data, type(None)):
             return
 
         replay_data_t = self.replay_data[:, self.REPLAY_T]
