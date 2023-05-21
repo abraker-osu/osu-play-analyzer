@@ -1,5 +1,5 @@
 """
-Widget that allows to view beatmaps and replays. 
+Widget that allows to view beatmaps and replays.
 
 The user can load beatmaps and replays via menubar on top.
 Maps being made in the map_architect_window are also displayed here
@@ -7,7 +7,8 @@ Maps being made in the map_architect_window are also displayed here
 import numpy as np
 import pandas as pd
 
-import PyQt5
+from PyQt5 import QtWidgets
+from PyQt5 import QtCore
 import pyqtgraph
 
 from osu_analysis import BeatmapIO, ReplayIO, StdMapData, StdReplayData, StdScoreData, Gamemode, Mod
@@ -22,12 +23,12 @@ from app.widgets.timing_plot import TimingPlot
 from app.file_managers import AppConfig
 
 
-class MapDisplay(PyQt5.QtWidgets.QWidget):
+class MapDisplay(QtWidgets.QWidget):
 
     __logger = Logger.get_logger(__name__)
 
-    data_loaded = PyQt5.QtCore.pyqtSignal()
-    time_changed_event = PyQt5.QtCore.pyqtSignal(object)
+    data_loaded = QtCore.pyqtSignal()
+    time_changed_event = QtCore.pyqtSignal(object)
 
     MAP_T = 0
     MAP_X = 1
@@ -42,7 +43,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
     REPLAY_M2 = 6
 
     def __init__(self, parent=None):
-        PyQt5.QtWidgets.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
 
         MapDisplay.__logger.debug('MapDisplay.__init__ enter')
 
@@ -55,7 +56,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         self.map_md5 = None
         self.ar_ms = None
         self.cs_px = None
-        
+
         self.map_text = ''
         self.replay_text = ''
 
@@ -66,13 +67,13 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
 
 
     def __init_gui(self):
-        self.menu_bar  = PyQt5.QtWidgets.QMenuBar()
-        self.file_menu = PyQt5.QtWidgets.QMenu("&File")
+        self.menu_bar  = QtWidgets.QMenuBar()
+        self.file_menu = QtWidgets.QMenu("&File")
 
-        self.open_map_action    = PyQt5.QtWidgets.QAction("&Open *.osu", self.file_menu, triggered=lambda: self.__open_map_dialog())
-        self.open_replay_action = PyQt5.QtWidgets.QAction("&Open *.osr", self.file_menu, triggered=lambda: self.__open_replay_dialog())
+        self.open_map_action    = QtWidgets.QAction("&Open *.osu", self.file_menu, triggered=lambda: self.__open_map_dialog())
+        self.open_replay_action = QtWidgets.QAction("&Open *.osr", self.file_menu, triggered=lambda: self.__open_replay_dialog())
 
-        self.layout = PyQt5.QtWidgets.QVBoxLayout(self)
+        self.layout = QtWidgets.QVBoxLayout(self)
 
         # Pattern Visualization
         self.visual = pyqtgraph.PlotWidget(title='Pattern visualization')
@@ -80,7 +81,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         self.visual.addItem(self.plot_notes)
         self.plot_cursor = self.visual.plot(pen=None, symbol='+', symbolPen=(0, 166, 31, 255), symbolBrush=None, symbolSize=6, pxMode=True)
         self.plot_approach = self.visual.plot(pen=None, symbol='o', symbolPen=(100, 100, 255, 200), symbolBrush=None, symbolSize=100, pxMode=False)
-        
+
         # Timing visualization
         self.timeline = pyqtgraph.PlotWidget()
         self.timeline_marker = pyqtgraph.InfiniteLine(angle=90, movable=True)
@@ -90,7 +91,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         self.m1_timing_plot = TimingPlot()
         self.m2_timing_plot = TimingPlot()
 
-        self.status_label = PyQt5.QtWidgets.QLabel()
+        self.status_label = QtWidgets.QLabel()
 
 
     def __build_layout(self):
@@ -150,7 +151,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         if type(ar) == type(None): return
         if type(cs) == type(None): return        
 
-        map_data = [ 
+        map_data = [
             pd.DataFrame(
             [
                 [ t + 0, x, y, StdMapData.TYPE_PRESS,   StdMapData.TYPE_CIRCLE ],
@@ -166,11 +167,11 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         self.map_md5 = md5
 
         self.__draw_map_data()
-        
+
         # Draw note in timeline
         self.hitobject_plot.set_map_timeline(self.map_data)
         self.timeline.update()
-        
+
 
     def set_map_full(self, map_data, cs, ar, md5=None):
         if type(map_data) == type(None): return
@@ -187,7 +188,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         # Draw note in timeline
         self.hitobject_plot.set_map_timeline(self.map_data)
         self.timeline.update()
-        
+
 
     def set_replay_from_replay_data(self, replay_data):
         if type(replay_data) == type(None): 
@@ -207,7 +208,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
 
     def set_replay_from_play_data(self, score_data):
         # Assumes play data pertianing to only one replay is passed
-        # 
+        #
         # Play data only has score info, so at best only score points are recoverable
         # Basically how old osu! 2007 - 2009 era replays looked like
         # Press timings are easy to recover, however matching cursor positions to map data is not
@@ -252,7 +253,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
 
         self.set_map_full(map_data, cs, ar)
         self.set_replay_from_replay_data(replay_data)
-        
+
         # Draw note in timeline
         self.hitobject_plot.set_map_timeline(self.map_data)
         self.timeline.update()
@@ -287,7 +288,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         self.timeline.update()
 
         self.status_label.setText('Warning: viewing play data, which contains only the basic scoring information.')
-        
+
 
     def __draw_map_data(self):
         if type(self.map_data) == type(None): 
@@ -324,7 +325,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         select_time = (replay_data_t >= self.t - 50) & (replay_data_t <= self.t)
         replay_data_x = self.replay_data[select_time, self.REPLAY_X]
         replay_data_y = self.replay_data[select_time, self.REPLAY_Y]
-        
+
         self.plot_cursor.setData(replay_data_x, replay_data_y)
         self.visual.update()
 
@@ -336,13 +337,13 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         k1_release_select = self.replay_data[:, self.REPLAY_K1] == StdReplayData.RELEASE
         k2_release_select = self.replay_data[:, self.REPLAY_K2] == StdReplayData.RELEASE
         m1_release_select = self.replay_data[:, self.REPLAY_M1] == StdReplayData.RELEASE
-        m2_release_select = self.replay_data[:, self.REPLAY_M2] == StdReplayData.RELEASE        
+        m2_release_select = self.replay_data[:, self.REPLAY_M2] == StdReplayData.RELEASE
 
         self.timeline.removeItem(self.k1_timing_plot)
         self.k1_timing_plot = TimingPlot()
         self.k1_timing_plot.setTimings(
-            self.replay_data[k1_press_select, self.REPLAY_T], 
-            self.replay_data[k1_release_select, self.REPLAY_T], 
+            self.replay_data[k1_press_select, self.REPLAY_T],
+            self.replay_data[k1_release_select, self.REPLAY_T],
             y_pos=-4, color=(255, 100, 100, 150)
         )
         self.timeline.addItem(self.k1_timing_plot)
@@ -350,8 +351,8 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         self.timeline.removeItem(self.m1_timing_plot)
         self.m1_timing_plot = TimingPlot()
         self.m1_timing_plot.setTimings(
-            self.replay_data[m1_press_select, self.REPLAY_T], 
-            self.replay_data[m1_release_select, self.REPLAY_T], 
+            self.replay_data[m1_press_select, self.REPLAY_T],
+            self.replay_data[m1_release_select, self.REPLAY_T],
             y_pos=-2, color=(255, 100, 255, 150)
         )
         self.timeline.addItem(self.m1_timing_plot)
@@ -359,8 +360,8 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         self.timeline.removeItem(self.k2_timing_plot)
         self.k2_timing_plot = TimingPlot()
         self.k2_timing_plot.setTimings(
-            self.replay_data[k2_press_select, self.REPLAY_T], 
-            self.replay_data[k2_release_select, self.REPLAY_T], 
+            self.replay_data[k2_press_select, self.REPLAY_T],
+            self.replay_data[k2_release_select, self.REPLAY_T],
             y_pos=2, color=(71, 185, 255, 150)
         )
         self.timeline.addItem(self.k2_timing_plot)
@@ -368,8 +369,8 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         self.timeline.removeItem(self.m2_timing_plot)
         self.m2_timing_plot = TimingPlot()
         self.m2_timing_plot.setTimings(
-            self.replay_data[m2_press_select, self.REPLAY_T], 
-            self.replay_data[m2_release_select, self.REPLAY_T], 
+            self.replay_data[m2_press_select, self.REPLAY_T],
+            self.replay_data[m2_release_select, self.REPLAY_T],
             y_pos=4, color=(100, 255, 100, 150)
         )
         self.timeline.addItem(self.m2_timing_plot)
@@ -384,7 +385,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
 
 
     def __open_map_dialog(self):
-        file_name = PyQt5.QtWidgets.QFileDialog.getOpenFileName(self, 'Open file',  f'{AppConfig.cfg["osu_dir"]}/Songs', 'osu! map files (*.osu)')
+        file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file',  f'{AppConfig.cfg["osu_dir"]}/Songs', 'osu! map files (*.osu)')
         file_name = file_name[0]
 
         if len(file_name) == 0:
@@ -412,9 +413,9 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         map_data['y'] = -map_data['y']
 
         self.set_map_full(
-            map_data, 
-            beatmap.difficulty.cs, 
-            beatmap.difficulty.ar, 
+            map_data,
+            beatmap.difficulty.cs,
+            beatmap.difficulty.ar,
             beatmap.metadata.beatmap_md5
         )
 
@@ -458,7 +459,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
 
         if mods.has_mod(Mod.HalfTime):
             map_data['time'] *= 1.5
-        
+
         #map_data['time'] /= 1000
         map_data['y'] = -map_data['y']
 
@@ -472,7 +473,7 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
     def __open_replay_dialog(self):
         name_filter = 'osu! replay files (*.osr)' if self.map_md5 == None else f'osu! replay files ({self.map_md5}-*.osr)\nosu! replay files (*.osr)'
 
-        file_name = PyQt5.QtWidgets.QFileDialog.getOpenFileName(self, 'Open replay',  f'{AppConfig.cfg["osu_dir"]}/Data/r', name_filter)
+        file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open replay',  f'{AppConfig.cfg["osu_dir"]}/Data/r', name_filter)
         file_name = file_name[0]
 
         if len(file_name) == 0:
@@ -498,4 +499,3 @@ class MapDisplay(PyQt5.QtWidgets.QWidget):
         viewing_text = self.map_text + ' ' + self.replay_text
         self.status_label.setText(f'Viewing: {viewing_text}')
 
-        
