@@ -116,7 +116,7 @@ class App(PyQt5.QtWidgets.QMainWindow):
 
         if __AUTO_RECORDER_EN__:
             self.__osu_recorder.start(self.__play_handler_signal.emit)
-        
+
         self.__construct_gui_state2()
         self.__connect_signals()
         self.__load_data()
@@ -124,7 +124,7 @@ class App(PyQt5.QtWidgets.QMainWindow):
 
     def __contruct_gui_stage1(self):
         """
-        Stage 1 Constructs the initial main selection 
+        Stage 1 Constructs the initial main selection
         window that's visible at the start.
         """
         self.logger.debug('__construct_gui_state1 start')
@@ -189,7 +189,7 @@ class App(PyQt5.QtWidgets.QMainWindow):
         if __DATA_GRAPHS_EN__:
             self.data_overview_window.show_map_event.connect(self.data_graphs_window.overview_single_map_selection_event)
             self.data_overview_window.region_changed.connect(self.data_graphs_window.set_from_play_data)
-            
+
             if __MAP_DISPLAY_EN__:
                 self.data_graphs_window.time_changed_event.connect(self.map_display_window.set_time)
                 self.map_display_window.time_changed_event.connect(self.data_graphs_window.set_time)
@@ -198,7 +198,7 @@ class App(PyQt5.QtWidgets.QMainWindow):
 
         if __MAP_DISPLAY_EN__:
             self.data_overview_window.show_map_event.connect(self.map_display_window.set_from_score_data)
-            
+
             if __MAP_ARCHITECT_EN__:
                 self.map_architect_window.gen_map_event.connect(self.map_display_window.set_from_generated)
 
@@ -240,7 +240,7 @@ class App(PyQt5.QtWidgets.QMainWindow):
 
     def __play_handler(self, beatmap, replay):
         self.logger.info_debug(App.debug, '__play_handler')
-        
+
         # Needed sleep to wait for osu! to finish writing the replay file
         time.sleep(2)
 
