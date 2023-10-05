@@ -9,7 +9,7 @@ from app.misc.osu_utils import OsuUtils
 from app.misc.utils import MathUtils
 
 
-class DevGraphAR(QtWidgets.QWidget):
+class DevTGraphAR(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
@@ -74,6 +74,7 @@ class DevGraphAR(QtWidgets.QWidget):
         # For each map and timestamp
         for i, ((idx_score, df_score), (idx_diff, df_diff)) in enumerate(zip(score_data, diff_data)):
             ar_ms       = OsuUtils.ar_to_ms(df_score['AR'].values[0])
+            #ar_ms = df_diff['DIFF_VIS_VISIBLE'].values[0]
 
             hit_offsets = df_score['T_HIT'].values - df_score['T_MAP'].values
             t_map       = df_score['T_MAP'].values
@@ -83,12 +84,20 @@ class DevGraphAR(QtWidgets.QWidget):
 
             press_select = (df_score['TYPE_MAP'] == StdScoreData.ACTION_PRESS)
             hit_select   = (df_score['TYPE_HIT'] == StdScoreData.TYPE_HITP)
+            miss_select  = (df_score['TYPE_HIT'] == StdScoreData.TYPE_MISS)
 
             num_notes   = np.count_nonzero(press_select & hit_select)
+            num_misses  = np.count_nonzero(press_select & miss_select)
+
             hit_offsets = hit_offsets[press_select & hit_select]
             bpm = bpm[press_select[1:] & hit_select[1:]]
 
-            data.append([ ar_ms, np.std(hit_offsets), np.mean(bpm) ])
+            new_hit_offsets = np.zeros(hit_offsets.shape[0] + 2*num_misses)
+            new_hit_offsets[:hit_offsets.shape[0]] = hit_offsets
+            new_hit_offsets[hit_offsets.shape[0] : hit_offsets.shape[0] + num_misses] = 100
+            new_hit_offsets[hit_offsets.shape[0] + num_misses:] = -100
+
+            data.append([ ar_ms, np.std(new_hit_offsets), np.mean(bpm) ])
 
         return np.asarray(data)
 
@@ -129,7 +138,7 @@ class DevGraphAR(QtWidgets.QWidget):
                 # Selected region has no data. Nothing else to do
                 continue
 
-            data_x = dev_data[data_select, 0]*dev_data[data_select, 2] / 60000
+            data_x = dev_data[data_select, 0]*dev_data[data_select, 2] / 30000
             data_y = dev_data[data_select, 1]
             color  = bpm_lut.map(dev_data[data_select, 2], 'qcolor')
 
@@ -139,7 +148,6 @@ class DevGraphAR(QtWidgets.QWidget):
             a, b, c = MathUtils.exp_regression(data_x, data_y)
             if isinstance(type(None), ( type(a), type(b), type(c) )):
                  continue
-
 
             # The curve behaves as 1/x, so invert it
             # to perform a linear regression. The resultant
