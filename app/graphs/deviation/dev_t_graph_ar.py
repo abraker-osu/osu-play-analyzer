@@ -145,7 +145,10 @@ class DevTGraphAR(QtWidgets.QWidget):
             self.__graph.plot(x=data_x, y=data_y, pen=None, symbol='o', symbolPen=None, symbolSize=5, symbolBrush=color, name=f'{bpm:.2f} bpm')
 
             # Calc exponential regression
-            a, b, c = MathUtils.exp_regression(data_x, data_y)
+            try: a, b, c = MathUtils.exp_regression(data_x, data_y)
+            except np.linalg.LinAlgError:
+                continue
+
             if isinstance(type(None), ( type(a), type(b), type(c) )):
                  continue
 
