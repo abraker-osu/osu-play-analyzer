@@ -1,8 +1,8 @@
 from PyQt5 import QtWidgets
 import pyqtgraph
 
-import math
 import numpy as np
+from scipy.optimize import curve_fit
 
 from osu_analysis import StdScoreData
 from app.misc.osu_utils import OsuUtils
@@ -14,6 +14,9 @@ class DevTGraphAR(QtWidgets.QWidget):
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
 
+        # Make sure StdScoreData.Settings valid range window is set to [100, 100] for this to be accurate
+        self.__VALID_RANGE_WIN = 200  # ms
+
         # Main graph
         self.__graph = pyqtgraph.PlotWidget(title='AR dev-t')
         self.__graph.getPlotItem().getAxis('left').enableAutoSIPrefix(False)
@@ -21,10 +24,14 @@ class DevTGraphAR(QtWidgets.QWidget):
         self.__graph.enableAutoRange(axis='x', enable=False)
         self.__graph.enableAutoRange(axis='y', enable=False)
         #self.__graph.setLimits(xMin=0, xMax=5000, yMin=-10, yMax=200)
-        self.__graph.setRange(xRange=[-10, 600], yRange=[-10, 20])
-        self.__graph.setLabel('left', 'Tap deviation', units='1σ ms', unitPrefix='')
+        self.__graph.setRange(xRange=[-0.1, 20], yRange=[-0.1, 1.1])
+        self.__graph.setLabel('left', 'Tap deviation', units='2σ ms', unitPrefix='')
         self.__graph.setLabel('bottom', 'Density', units='# note visible', unitPrefix='')
         self.__graph.addLegend()
+
+        # Stats
+        self.__graph_text = pyqtgraph.TextItem('', anchor=(0, 0), )
+        self.__graph.addItem(self.__graph_text)
 
         # Deviation marker indicating expected deviation according to set CS
         self.__dev_marker_95 = pyqtgraph.InfiniteLine(angle=0, movable=False, pen=pyqtgraph.mkPen(color=(255, 100, 0, 100), style=pyqtgraph.QtCore.Qt.DashLine))
@@ -108,6 +115,7 @@ class DevTGraphAR(QtWidgets.QWidget):
         # Clear plots for redraw
         self.__graph.clearPlots()
         self.__text.setText(f'')
+        self.__graph_text.setText('')
 
         if dev_data.shape[0] == 0:
             return
@@ -138,57 +146,43 @@ class DevTGraphAR(QtWidgets.QWidget):
                 # Selected region has no data. Nothing else to do
                 continue
 
+            # Plot data
             data_x = dev_data[data_select, 0]*dev_data[data_select, 2] / 30000
-            data_y = dev_data[data_select, 1]
-            color  = bpm_lut.map(dev_data[data_select, 2], 'qcolor')
+            data_y = 2*dev_data[data_select, 1] / self.__VALID_RANGE_WIN
+            color  = bpm_lut.map(dev_data[data_select, 2], pyqtgraph.ColorMap.QCOLOR)
 
-            self.__graph.plot(x=data_x, y=data_y, pen=None, symbol='o', symbolPen=None, symbolSize=5, symbolBrush=color, name=f'{bpm:.2f} bpm')
+            self.__graph.plot(x=data_x, y=(1 - data_y), pen=None, symbol='o', symbolPen=None, symbolSize=5, symbolBrush=color, name=f'{bpm:.2f} bpm')
 
-            # Calc exponential regression
-            try: a, b, c = MathUtils.exp_regression(data_x, data_y)
-            except np.linalg.LinAlgError:
+            if data_x.shape[0] < 4:
+                # Filter out incomplete data
                 continue
 
-            if isinstance(type(None), ( type(a), type(b), type(c) )):
-                 continue
+        # Plot model
+        data_x = dev_data[:, 0]*dev_data[:, 2] / 30000
+        data_y = 2*dev_data[:, 1] / self.__VALID_RANGE_WIN
 
-            # The curve behaves as 1/x, so invert it
-            # to perform a linear regression. The resultant
-            # regresion will then be inverted back to match
-            # the data
-            data_y = 1/data_y
+        idx_sort = np.argsort(data_x)
+        data_x = data_x[idx_sort]
+        data_y = data_y[idx_sort]
 
-            # Calc linear regression
-            m, b = MathUtils.linear_regresion(data_x, data_y)
-            if type(m) == type(None) or type(b) == type(None):
-                continue
+        data_x = np.append(data_x, np.asarray([15, 16, 17, 18, 19, 20]).repeat(10))
+        data_y = np.append(data_y, np.asarray([ 1,  1,  1,  1,  1,  1]).repeat(10))
 
-            # y_model = m*data_x + b              # model: y = mx + b
-            # x_model = (data_y - b)/m            # model: x = (y - b)/m
+        self.__graph.plot(x=data_x, y=(1 - data_y), pen=None, symbol='o', symbolPen=None, symbolSize=5, symbolBrush=pyqtgraph.mkColor(255, 255, 0), name=f'test')
 
-            # m_dev_x = np.std(data_x - x_model)  # deviation of x from model
-            # m_dev_y = np.std(data_y - y_model)  # deviation of y from model
+        try: fit_params, _ = curve_fit(MathUtils.sigmoid, data_x, data_y, method='dogbox', maxfev=5000)
+        except RuntimeError as e:
+            return
 
-            # x_mean  = np.mean(data_x)
+        s_x, s_y, o_x, o_y = fit_params
 
-            # # Standard error of slope @ 95% confidence interval
-            # m_se_95 = (m_dev_y/m_dev_x)/math.sqrt(data_x.shape[0] - 2)*1.96
+        fit_x = np.linspace(0, 20, 100)
+        fit_y = MathUtils.sigmoid(fit_x, s_x, s_y, o_x, o_y)
 
-            # # Standard error of y-intercept @ 95% confidence interval
-            # b_se_95 = 2*m_se_95*x_mean
+        self.__graph.plot(x=fit_x, y=(1 - fit_y), pen=pyqtgraph.mkPen(width=2, color=pyqtgraph.mkColor(255, 255, 0)), name=f'model')
+        self.__graph_text.setText(self.__graph_text.textItem.toPlainText() + f'g_sx: {s_x:.4f}  |  g_sy: {s_y:.4f}  |  g_ox: {o_x:.2f} notes  |  g_oy: {1 - o_y:.2f}\n')
 
-            # label = f'bpm={bpm:.2f}  n={data_x.shape[0]}  σ={m_dev_y:.2f}  m={m:.5f}±{m_se_95:.5f}  b={b:.2f}±{b_se_95:.2f}'
-            # print(label)
-
-            data_x = np.linspace(0, max(data_x), 20)
-            data_y = 1/(m*data_x + b)  # Invert the regression back
-            #data_y = a + b*np.exp(c * data_x)
-
-            color  = bpm_lut.map(bpm, 'qcolor')
-
-            self.__graph.plot(x=data_x, y=data_y, pen=pyqtgraph.mkPen(width=4, color=color), name=f'{bpm:.2f} bpm')
-
-        #self.__text.setText(label)
+        #self.__text.setText()
 
 
     def set_dev(self, dev):

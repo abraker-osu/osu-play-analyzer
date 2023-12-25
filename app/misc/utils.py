@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import scipy.special
 import time
 
 
@@ -86,6 +85,11 @@ class MathUtils():
         lin = r*(t - t_min)
         lin[lin < 100] = np.log(np.exp(lin[lin < 100]) + np.exp(y))
         return lin
+
+
+    @staticmethod
+    def sigmoid(x, s_x, s_y, o_x, o_y):
+        return 1 / (s_y * (1 + np.exp((o_x - x) / s_x))) + o_y
 
 
     @staticmethod
