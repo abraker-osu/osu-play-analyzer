@@ -1,4 +1,4 @@
 python -O -m PyInstaller -n osu-performance-analyzer ^
-    --add-data venv\Lib\site-packages\tables.libs;tables.libs ^
+    --collect-binaries=tables ^
     --onefile ^
     run.py
