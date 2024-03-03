@@ -354,7 +354,7 @@ class DataOverviewWindow(QtWidgets.QWidget):
                 self.__loaded_diff_data.append(data, index=False)
                 data = DiffNpy.get_blank_data()
 
-            self.__progress_bar.setValue(100 * i / num_maps)
+            self.__progress_bar.setValue(int(100 * i / num_maps))
             QtWidgets.QApplication.processEvents()
 
         self.__loaded_diff_data.reindex()
