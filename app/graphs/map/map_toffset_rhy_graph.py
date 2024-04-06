@@ -1,31 +1,30 @@
-import PyQt5
+from PyQt5 import QtCore
+from PyQt5 import QtWidgets
+
 import pyqtgraph
 
 import numpy as np
 import threading
 
-from osu_analysis import StdScoreData
-from app.data_recording.data import ScoreNpyData
 
+class MapToffsetRhyGraph(QtWidgets.QWidget):
 
-class MapToffsetRhyGraph(PyQt5.QtWidgets.QWidget):
-
-    __calc_data_event = PyQt5.QtCore.pyqtSignal(object, object)
+    __calc_data_event = QtCore.pyqtSignal(object)
 
     def __init__(self, parent=None):
-        PyQt5.QtWidgets.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
 
         self.__avg_data_points = True
 
         # Main graph
-        self.__graph = pyqtgraph.PlotWidget(title='Avg T-Offset vs Note Rhythm')
+        self.__graph = pyqtgraph.PlotWidget(title='Avg T-offset vs Note Rhythm')
         self.__graph.getPlotItem().getAxis('left').enableAutoSIPrefix(False)
         self.__graph.getPlotItem().getAxis('bottom').enableAutoSIPrefix(False)
         self.__graph.enableAutoRange(axis='x', enable=False)
         self.__graph.enableAutoRange(axis='y', enable=False)
         #self.__graph.setLimits(xMin=-10, xMax=5000, yMin=-200, yMax=200)
         self.__graph.setRange(xRange=[-10, 300], yRange=[-200, 200])
-        self.__graph.setLabel('left', 'T-Offset', units='ms', unitPrefix='')
+        self.__graph.setLabel('left', 'Avg T-offset', units='ms', unitPrefix='')
         self.__graph.setLabel('bottom', 'Note Rhythm', units='%', unitPrefix='')
         self.__graph.addLegend()
 
@@ -33,45 +32,60 @@ class MapToffsetRhyGraph(PyQt5.QtWidgets.QWidget):
         self.__label_style = pyqtgraph.PlotDataItem(pen=(0,0,0))
         self.__graph.getPlotItem().legend.addItem(self.__label_style, '')
         self.__text = self.__graph.getPlotItem().legend.getLabel(self.__label_style)
-   
+
         # Put it all together
-        self.__layout = PyQt5.QtWidgets.QHBoxLayout(self)
+        self.__layout = QtWidgets.QHBoxLayout(self)
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(2)
         self.__layout.addWidget(self.__graph)
 
         # Connect signals
         self.__calc_data_event.connect(self.__display_data)
-        
 
-    def plot_data(self, play_data):        
+
+    def plot_data(self, score_data, diff_data):
         # Clear plots for redraw
         self.__graph.clearPlots()
         self.__text.setText(f'')
 
-        if play_data.shape[0] == 0:
+        if 0 in [ score_data.shape[0], diff_data.shape[0] ]:
             return
 
-        thread = threading.Thread(target=self.__proc_data, args=(play_data, ))
+        thread = threading.Thread(target=self.__proc_data, args=(score_data, diff_data))
         thread.start()
 
 
-    def __proc_data(self, play_data):
-        nan_filter = ~(np.isnan(play_data[:, ScoreNpyData.DT_RHYM]) | np.isnan(play_data[:, ScoreNpyData.T_OFFSETS]))
-        t_offsets = play_data[nan_filter, ScoreNpyData.T_OFFSETS]
-        rhytms  = play_data[nan_filter, ScoreNpyData.DT_RHYM]
-        
-        if self.__avg_data_points:
-            # Average overlapping data points (those that have same x-axis within +/- 0.01)
-            t_offsets = np.asarray([ np.mean(t_offsets[np.abs(rhytms - rhytm) < 0.01]) for rhytm in np.unique(rhytms) ])
-            rhytms = np.unique(rhytms)
 
-        data_x = rhytms
-        data_y = t_offsets
+    def __proc_data(self, score_data, diff_data):
+        score_data = score_data.groupby(['MD5', 'TIMESTAMP'])
+        diff_data  = diff_data.groupby(['MD5', 'TIMESTAMP'])
 
-        self.__calc_data_event.emit(data_x, data_y)
+        '''
+        [     rhm  dev  avg_bpm
+            [ ..., ..., ... ],
+            ...
+        ]
+        '''
+        data = []
+
+        # For each map and timestamp
+        for i, ((idx_score, df_score), (idx_diff, df_diff)) in enumerate(zip(score_data, diff_data)):
+            nan_filter = ~np.isnan(df_diff['DIFF_T_PRESS_RHM'].values)
+            t_offsets = (df_score['T_HIT'].values - df_score['T_MAP']).values[nan_filter]
+            rhythms   = df_diff['DIFF_T_PRESS_RHM'].values[nan_filter]
+
+            # Operate on overlapping data points (those that have same x-axis within +/- 5%)
+            rounded_rhythms = np.unique(rhythms // 5 * 5)
+
+            # Get average offsets for collected rhythms
+            t_avgs = 2 * np.asarray([ np.mean(t_offsets[(0 <= (rhythms - r)) & ((rhythms - r) < 5)]) for r in rounded_rhythms ])
+
+            for rhythm, t_dev in zip(rounded_rhythms, t_avgs):
+                data.append([ rhythm, t_dev ])
+
+        self.__calc_data_event.emit(np.asarray(data))
 
 
-    def __display_data(self, data_x, data_y):
+    def __display_data(self, data):
         colors = pyqtgraph.mkBrush(color=[ 255, 0, 0, 150 ])
-        self.__graph.plot(x=data_x, y=data_y, pen=None, symbol='o', symbolPen=None, symbolSize=5, symbolBrush=colors)
+        self.__graph.plot(x=data[:, 0], y=data[:, 1], pen=None, symbol='o', symbolPen=None, symbolSize=5, symbolBrush=colors)
