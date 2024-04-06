@@ -99,7 +99,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.map_tabs = PyQt5.QtWidgets.QTabWidget()
         self.map_tabs.addTab(self.toffset_bpm_inc, 'T-offset vs BPM Inc')
         self.map_tabs.addTab(self.toffset_bpm, 'T-offset vs Note interval')
-        #self.map_tabs.addTab(self.toffset_rhy_graph, 'T-offset vs Rhythm')
+        self.map_tabs.addTab(self.toffset_rhy_graph, 'T-offset vs Rhythm')
         #self.map_tabs.addTab(self.toffset_rhyd_graph, 'T-offset vs Rhythm delta')
         self.map_tabs.addTab(self.toffset_velocity, 'T-offset vs Velocity')
 
@@ -154,9 +154,9 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
 
         #self.toffset_bpm_inc.plot_data(score_data)
         ##self.toffset_bpm.plot_data(score_data)
-        #self.toffset_rhy_graph.plot_data(score_data)
         #self.toffset_rhyd_graph.plot_data(score_data)
         #self.toffset_velocity.plot_data(score_data)
+        self.toffset_rhy_graph.plot_data(score_data, diff_data)
 
         self.dev_doffsets.plot_data(score_data, diff_data)
         self.dev_offsets.plot_data(score_data, diff_data)
@@ -176,6 +176,8 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.hit_distr_graph.plot_data(score_data)
         self.doffset_distr_graph.plot_data(score_data)
         self.aim_display.plot_data(score_data)
+
+        self.toffset_rhy_graph.plot_data(score_data, diff_data)
 
         self.timing_bpm_dec.plot_data(score_data, diff_data)
         self.timing_bpm_inc.plot_data(score_data, diff_data)
@@ -206,9 +208,9 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
 
         #self.toffset_bpm_inc.plot_data(score_data)
         #self.toffset_bpm.plot_data(score_data)
-        #self.toffset_rhy_graph.plot_data(score_data)
         #self.toffset_rhyd_graph.plot_data(score_data)
         #self.toffset_velocity.plot_data(score_data)
+        self.toffset_rhy_graph.plot_data(score_data, diff_data)
 
         #self.dev_graph_angle.plot_data(score_data)
         #self.dev_graph_vel.plot_data(score_data)
