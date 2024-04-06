@@ -29,13 +29,13 @@ __ROI_SELECTIONS_EN__ = False
 
 
 
-class CompositionViewer(PyQt5.QtWidgets.QWidget):
+class CompositionViewer(QtWidgets.QWidget):
 
     logger = Logger.get_logger(__name__)
-    region_changed = PyQt5.QtCore.pyqtSignal(object, object)
+    region_changed = QtCore.pyqtSignal(object, object)
 
     def __init__(self, parent=None):
-        PyQt5.QtWidgets.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
 
         # Displayed xy scatter plot data
         self.xy_data = np.zeros((0, 2))
@@ -45,7 +45,7 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
         self.score_data = ScoreNpy.get_blank_data()
         self.diff_data  = DiffNpy.get_blank_data()
 
-        self.main_layout = PyQt5.QtWidgets.QHBoxLayout(self)
+        self.main_layout = QtWidgets.QHBoxLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
 
         self.plot_widget = pyqtgraph.PlotWidget(plotItem=pyqtgraph.PlotItem())
@@ -67,19 +67,19 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
         self.plot_widget.addItem(self.grid_plot_item)
         self.plot_widget.addItem(self.data_plot)
 
-        self.data_type_selection = PyQt5.QtWidgets.QListWidget()
-        self.data_type_selection.setSelectionMode(PyQt5.QtWidgets.QAbstractItemView.NoSelection)
+        self.data_type_selection = QtWidgets.QListWidget()
+        self.data_type_selection.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
 
-        self.num_data_points_label = PyQt5.QtWidgets.QLabel('Num data points selected: 0')
+        self.num_data_points_label = QtWidgets.QLabel('Num data points selected: 0')
 
         if __ROI_SELECTIONS_EN__:
-            self.reset_roi_selections_button = PyQt5.QtWidgets.QPushButton('Reset selections')
+            self.reset_roi_selections_button = QtWidgets.QPushButton('Reset selections')
             self.reset_roi_selections_button.setToolTip('Resets selections to select all data')
 
-        self.x_axis_selection = PyQt5.QtWidgets.QButtonGroup()
+        self.x_axis_selection = QtWidgets.QButtonGroup()
         self.x_axis_selection.setExclusive(True)
 
-        self.y_axis_selection = PyQt5.QtWidgets.QButtonGroup()
+        self.y_axis_selection = QtWidgets.QButtonGroup()
         self.y_axis_selection.setExclusive(True)
 
         # MUST BE CONTIGUOUS
@@ -143,12 +143,12 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
         self.data_type_selection.addItem('x-axis                                 y-axis')
 
         for select_text, select_id in selections.items():
-            widget = PyQt5.QtWidgets.QWidget()
-            layout = PyQt5.QtWidgets.QHBoxLayout(widget)
+            widget = QtWidgets.QWidget()
+            layout = QtWidgets.QHBoxLayout(widget)
             layout.setContentsMargins(0, 0, 0, 0)
 
-            x_axis_radio = PyQt5.QtWidgets.QRadioButton(select_text)
-            y_axis_radio = PyQt5.QtWidgets.QRadioButton(select_text)
+            x_axis_radio = QtWidgets.QRadioButton(select_text)
+            y_axis_radio = QtWidgets.QRadioButton(select_text)
 
             self.x_axis_selection.addButton(x_axis_radio, id=select_id)
             self.y_axis_selection.addButton(y_axis_radio, id=select_id)
@@ -156,13 +156,13 @@ class CompositionViewer(PyQt5.QtWidgets.QWidget):
             layout.addWidget(x_axis_radio)
             layout.addWidget(y_axis_radio)
 
-            widget_item = PyQt5.QtWidgets.QListWidgetItem()
+            widget_item = QtWidgets.QListWidgetItem()
             widget_item.setSizeHint(widget.sizeHint())
 
             self.data_type_selection.addItem(widget_item)
             self.data_type_selection.setItemWidget(widget_item, widget)
 
-        self.right_side_layout = PyQt5.QtWidgets.QVBoxLayout()
+        self.right_side_layout = QtWidgets.QVBoxLayout()
         self.right_side_layout.setContentsMargins(0, 0, 0, 0)
         self.right_side_layout.addWidget(self.data_type_selection)
         self.right_side_layout.addWidget(self.num_data_points_label)
