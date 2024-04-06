@@ -13,13 +13,18 @@ The is a selection menu on the side that allows the user to select which player'
 
 Design note: Maybe have a scatter plot instead. Really depends on how much data there is and how laggy it will get.
 """
-import PyQt5
+from PyQt5 import QtCore
+from PyQt5 import QtWidgets
+
 import pyqtgraph
 
 import numpy as np
 import pandas as pd
 
+from osu_analysis import StdScoreData
+
 from app.misc.Logger import Logger
+from app.misc.utils import MathUtils
 
 from app.data_recording.score_npy import ScoreNpy
 from app.data_recording.diff_npy import DiffNpy
@@ -92,12 +97,14 @@ class CompositionViewer(QtWidgets.QWidget):
         self.__ID_T_PRESS_DEC  = 6   # Time since last decrease between scorepoint press timing
         self.__ID_T_PRESS_RHM  = 7   # Scorepoint press's relative spacing compared to other scorepoint presses
         self.__ID_T_HOLD_DUR   = 8   # Time duration of hold
-        self.__ID_XY_DIST      = 9   # Distance between every scorepoint
-        self.__ID_XY_ANGLE     = 10   # Angle between every scorepoint
-        self.__ID_XY_LIN_VEL   = 11  # Linear velocity between every scorepoint
-        self.__ID_XY_ANG_VEL   = 12  # Angular velocity between every scorepoint
-        self.__ID_VIS_VISIBLE  = 13  # Number of notes visible
-        self.__NUM_IDS         = 14
+        self.__ID_T_OFFSET_SCR = 9   # (score) Tap offset
+        self.__ID_XY_DIST      = 10  # Distance between every scorepoint
+        self.__ID_XY_ANGLE     = 11  # Angle between every scorepoint
+        self.__ID_XY_LIN_VEL   = 12  # Linear velocity between every scorepoint
+        self.__ID_XY_ANG_VEL   = 13  # Angular velocity between every scorepoint
+        self.__ID_XY_DIST_SCR  = 15  # (score) Distance from center of note
+        self.__ID_VIS_VISIBLE  = 14  # Number of notes visible
+        self.__NUM_IDS         = 15
 
         self.__id_x = None
         self.__id_y = None
@@ -112,10 +119,12 @@ class CompositionViewer(QtWidgets.QWidget):
             'T_PRESS_DEC':  self.__ID_T_PRESS_DEC,
             'T_PRESS_RHM':  self.__ID_T_PRESS_RHM,
             'T_HOLD_DUR':   self.__ID_T_HOLD_DUR,
+            'T_OFFSET_SCR': self.__ID_T_OFFSET_SCR,
             'XY_DIST':      self.__ID_XY_DIST,
             'XY_ANGLE':     self.__ID_XY_ANGLE,
             'XY_LIN_VEL':   self.__ID_XY_LIN_VEL,
             'XY_ANG_VEL':   self.__ID_XY_ANG_VEL,
+            'XY_DIST_SCR':  self.__ID_XY_DIST_SCR,
             'VIS_VISIBLE':  self.__ID_VIS_VISIBLE,
         }
         self.num_selections = len(selections)
@@ -612,6 +621,16 @@ class CompositionViewer(QtWidgets.QWidget):
         if id_ == self.__ID_T_PRESS_RHM:
             return self.diff_data['DIFF_T_PRESS_RHM'].values
 
+        if id_ == self.__ID_T_OFFSET_SCR:
+            # TODO: Commented out because filtering produces different size than data
+            # being compared to on the other axis
+            #press_select = (self.score_data['TYPE_MAP'] == StdScoreData.ACTION_PRESS)
+            #hit_select   = (self.score_data['TYPE_HIT'] == StdScoreData.TYPE_HITP)
+
+            t_map = self.score_data['T_MAP'].values#[press_select & hit_select]
+            t_hit = self.score_data['T_HIT'].values#[press_select & hit_select]
+            return t_hit - t_map
+
         #if id_ == self.__ID_DT_RHYTM_D:
         #    return [ 0 ] #self.diff_data['DIFF_DT_RHYM_D'].values
 
@@ -626,6 +645,19 @@ class CompositionViewer(QtWidgets.QWidget):
 
         if id_ == self.__ID_XY_ANG_VEL:
             return self.diff_data['DIFF_XY_ANG_VEL'].values
+
+        if id_ == self.__ID_XY_DIST_SCR:
+            # TODO: Commented out because filtering produces different size than data
+            # being compared to on the other axis
+            #press_select = (self.score_data['TYPE_MAP'] == StdScoreData.ACTION_PRESS)
+            #hit_select   = (self.score_data['TYPE_HIT'] == StdScoreData.TYPE_HITP)
+
+            x_map = self.score_data['X_MAP'].values#[press_select & hit_select]
+            y_map = self.score_data['Y_MAP'].values#[press_select & hit_select]
+            x_hit = self.score_data['X_HIT'].values#[press_select & hit_select]
+            y_hit = self.score_data['Y_HIT'].values#[press_select & hit_select]
+            return ((x_hit - x_map)**2 + (y_hit - y_map)**2)**0.5
+
 
         if id_ == self.__ID_VIS_VISIBLE:
             return self.diff_data['DIFF_VIS_VISIBLE'].values
@@ -644,10 +676,12 @@ class CompositionViewer(QtWidgets.QWidget):
         if id_ == self.__ID_T_PRESS_RHM:   return '% the note is from previous note to next note (% of tn[2] - tn[0])'
         #if id_ == self.__ID_DT_RHYTM_D:   return 'Normalized rate (%)'
         if id_ == self.__ID_T_HOLD_DUR:    return 'Hold duration (ms)'
+        if id_ == self.__ID_T_OFFSET_SCR:  return 'Tap offset (ms)'
         if id_ == self.__ID_XY_DIST:       return 'Distance (osu!px)'
         if id_ == self.__ID_XY_ANGLE:      return 'Angle (deg)'
         if id_ == self.__ID_XY_LIN_VEL:    return 'Linear Velocity (osu!px/s)'
         if id_ == self.__ID_XY_ANG_VEL:    return 'Angular Velocity (RPM)'
+        if id_ == self.__ID_XY_DIST_SCR:   return 'Hit distance from center (osu!px)'
         if id_ == self.__ID_VIS_VISIBLE:   return 'Number of notes visible (#)'
 
         raise Exception(f'Unknown id: {id_}')
