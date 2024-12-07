@@ -1,0 +1,25 @@
+{
+    "version": "2.0.0",
+
+    "tasks": [
+        {
+            "label": "Setup",
+            "command": "scripts\\setup.bat",
+            "type": "shell"
+        },
+        {
+            "label": "Run",
+            "command": "scripts\\run.bat",
+            "type": "shell",
+        },
+        {
+            "label": "Build",
+            "command": "scripts\\build.bat",
+            "type": "shell"
+        }
+    ],
+    "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+}
