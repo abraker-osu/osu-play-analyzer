@@ -18,7 +18,8 @@ Different tabs available:
 """
 import pandas as pd
 
-import PyQt5
+from PyQt5 import QtCore
+from PyQt5 import QtWidgets
 
 from osu_analysis import StdMapData
 
@@ -27,22 +28,22 @@ from app.misc.osu_utils import OsuUtils
 from app.widgets.map_display import MapDisplay
 
 
-class MapDisplayWindow(PyQt5.QtWidgets.QMainWindow):
+class MapDisplayWindow(QtWidgets.QMainWindow):
 
     logger = Logger.get_logger(__name__)
 
-    time_changed_event = PyQt5.QtCore.pyqtSignal(object)
+    time_changed_event = QtCore.pyqtSignal(object)
 
     def __init__(self, parent=None):
         self.logger.debug('__init__ enter')
 
-        PyQt5.QtWidgets.QMainWindow.__init__(self, parent)
+        QtWidgets.QMainWindow.__init__(self, parent)
         self.setWindowTitle('Map Display')
 
         self.selected_map_display  = MapDisplay()
         self.generated_map_display = MapDisplay()
         self.processed_map_display = MapDisplay()
-        self.map_tabs = PyQt5.QtWidgets.QTabWidget()
+        self.map_tabs = QtWidgets.QTabWidget()
 
         self.map_tabs.addTab(self.selected_map_display, 'Selected')
         self.map_tabs.addTab(self.generated_map_display, 'Generated')
