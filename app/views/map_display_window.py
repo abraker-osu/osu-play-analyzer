@@ -1,5 +1,5 @@
 """
-Window that allows to view beatmaps and replays. 
+Window that allows to view beatmaps and replays.
 
 Different tabs available:
 * Selected:
@@ -16,7 +16,6 @@ Different tabs available:
 
       Map viewed here is same as in the selected tab.
 """
-import io
 import pandas as pd
 
 import PyQt5
@@ -54,7 +53,7 @@ class MapDisplayWindow(PyQt5.QtWidgets.QMainWindow):
         self.setCentralWidget(self.map_tabs)
 
         self.logger.debug('__init__ exit')
-        
+
 
     def set_from_score_data(self, score_data):
         self.selected_map_display.set_from_score_data(score_data)
@@ -93,7 +92,7 @@ class MapDisplayWindow(PyQt5.QtWidgets.QMainWindow):
 
 
     def set_from_generated_old(self, gen_data, cs, ar):
-        map_data = [ 
+        map_data = [
             pd.DataFrame(
             [
                 [ t + 0, x, y, StdMapData.TYPE_PRESS,   StdMapData.TYPE_CIRCLE ],
