@@ -12,13 +12,13 @@ from app.misc.utils import Utils
 
 
 
-class ReplayTOffsetMultimap(PyQt5.QtWidgets.QWidget):
+class ScoreTOffsetMultimap(PyQt5.QtWidgets.QWidget):
 
     __OFFSET_OD4 = 55.5  # +/-ms window
     __OFFSET_OD5 = 49.5  # +/-ms window
     __OFFSET_OD6 = 43.5  # +/-ms window
     __OFFSET_OD7 = 37.5  # +/-ms window
-    __OFFSET_OD8 = 31.5  # +/-ms window        
+    __OFFSET_OD8 = 31.5  # +/-ms window
 
     def __init__(self, parent=None):
         PyQt5.QtWidgets.QWidget.__init__(self, parent)
@@ -47,8 +47,8 @@ class ReplayTOffsetMultimap(PyQt5.QtWidgets.QWidget):
 
         self.__graph.addLine(x=None, y=0, pen=pyqtgraph.mkPen((0, 150, 0, 255), width=1))
 
-        self.__graph.addLine(x=None, y= ReplayTOffsetMultimap.__OFFSET_OD8, pen=pyqtgraph.mkPen((50, 50, 150, 200), width=1))
-        self.__graph.addLine(x=None, y=-ReplayTOffsetMultimap.__OFFSET_OD8, pen=pyqtgraph.mkPen((50, 50, 150, 200), width=1))
+        self.__graph.addLine(x=None, y= ScoreTOffsetMultimap.__OFFSET_OD8, pen=pyqtgraph.mkPen((50, 50, 150, 200), width=1))
+        self.__graph.addLine(x=None, y=-ScoreTOffsetMultimap.__OFFSET_OD8, pen=pyqtgraph.mkPen((50, 50, 150, 200), width=1))
 
         # Hit stats
         self.__hit_metrics = pyqtgraph.TextItem('', anchor=(0, 0), )
@@ -128,7 +128,7 @@ class ReplayTOffsetMultimap(PyQt5.QtWidgets.QWidget):
                 for hit_timing in unique_x_data
             ])
             hit_timings     = unique_x_data
-            # hit_offsets_avg = y_data_avg_out 
+            # hit_offsets_avg = y_data_avg_out
             # hit_offsets_std = y_data_dev_out
 
         # Calculate view
@@ -158,7 +158,7 @@ class ReplayTOffsetMultimap(PyQt5.QtWidgets.QWidget):
 
         # Extract data and plot
         hit_timings = data['T_MAP']
-        
+
         # Process overlapping data points along x-axis
         miss_count = np.asarray([ hit_timings[hit_timings == hit_timing].shape[0] for hit_timing in np.unique(hit_timings) ])
         hit_timings = np.unique(hit_timings)
@@ -223,7 +223,7 @@ class ReplayTOffsetMultimap(PyQt5.QtWidgets.QWidget):
 
         # Stacks hits for each timestamp and calculates average and deviation
         avgs = np.asarray([ np.mean(hit_offsets[hit_timings == hit_timing]) for hit_timing in unique_hit_timings ])
-        devs = np.asarray([ 
+        devs = np.asarray([
             np.std(hit_offsets[hit_timings == hit_timing]) if hit_offsets[hit_timings == hit_timing].shape[0] > 1 else 1
             for hit_timing in unique_hit_timings
         ])
@@ -231,18 +231,18 @@ class ReplayTOffsetMultimap(PyQt5.QtWidgets.QWidget):
         devs[devs == 0] = 1
 
         print('Avg info:')
-        print(f'  OD4 Num = {np.count_nonzero((-ReplayTOffsetMultimap.__OFFSET_OD4 <= avgs) & (avgs <= ReplayTOffsetMultimap.__OFFSET_OD4))}')
-        print(f'  OD5 Num = {np.count_nonzero((-ReplayTOffsetMultimap.__OFFSET_OD5 <= avgs) & (avgs <= ReplayTOffsetMultimap.__OFFSET_OD5))}')
-        print(f'  OD6 Num = {np.count_nonzero((-ReplayTOffsetMultimap.__OFFSET_OD6 <= avgs) & (avgs <= ReplayTOffsetMultimap.__OFFSET_OD6))}')
-        print(f'  OD7 Num = {np.count_nonzero((-ReplayTOffsetMultimap.__OFFSET_OD7 <= avgs) & (avgs <= ReplayTOffsetMultimap.__OFFSET_OD7))}')
-        print(f'  OD8 Num = {np.count_nonzero((-ReplayTOffsetMultimap.__OFFSET_OD8 <= avgs) & (avgs <= ReplayTOffsetMultimap.__OFFSET_OD8))}')
+        print(f'  OD4 Num = {np.count_nonzero((-ScoreTOffsetMultimap.__OFFSET_OD4 <= avgs) & (avgs <= ScoreTOffsetMultimap.__OFFSET_OD4))}')
+        print(f'  OD5 Num = {np.count_nonzero((-ScoreTOffsetMultimap.__OFFSET_OD5 <= avgs) & (avgs <= ScoreTOffsetMultimap.__OFFSET_OD5))}')
+        print(f'  OD6 Num = {np.count_nonzero((-ScoreTOffsetMultimap.__OFFSET_OD6 <= avgs) & (avgs <= ScoreTOffsetMultimap.__OFFSET_OD6))}')
+        print(f'  OD7 Num = {np.count_nonzero((-ScoreTOffsetMultimap.__OFFSET_OD7 <= avgs) & (avgs <= ScoreTOffsetMultimap.__OFFSET_OD7))}')
+        print(f'  OD8 Num = {np.count_nonzero((-ScoreTOffsetMultimap.__OFFSET_OD8 <= avgs) & (avgs <= ScoreTOffsetMultimap.__OFFSET_OD8))}')
 
         print('Dev info:')
-        print(f'  OD4 Num = {np.count_nonzero((-ReplayTOffsetMultimap.__OFFSET_OD4 <= (avgs - devs)) & ((avgs + devs) <= ReplayTOffsetMultimap.__OFFSET_OD4))}')
-        print(f'  OD5 Num = {np.count_nonzero((-ReplayTOffsetMultimap.__OFFSET_OD5 <= (avgs - devs)) & ((avgs + devs) <= ReplayTOffsetMultimap.__OFFSET_OD5))}')
-        print(f'  OD6 Num = {np.count_nonzero((-ReplayTOffsetMultimap.__OFFSET_OD6 <= (avgs - devs)) & ((avgs + devs) <= ReplayTOffsetMultimap.__OFFSET_OD6))}')
-        print(f'  OD7 Num = {np.count_nonzero((-ReplayTOffsetMultimap.__OFFSET_OD7 <= (avgs - devs)) & ((avgs + devs) <= ReplayTOffsetMultimap.__OFFSET_OD7))}')
-        print(f'  OD8 Num = {np.count_nonzero((-ReplayTOffsetMultimap.__OFFSET_OD8 <= (avgs - devs)) & ((avgs + devs) <= ReplayTOffsetMultimap.__OFFSET_OD8))}')
+        print(f'  OD4 Num = {np.count_nonzero((-ScoreTOffsetMultimap.__OFFSET_OD4 <= (avgs - devs)) & ((avgs + devs) <= ScoreTOffsetMultimap.__OFFSET_OD4))}')
+        print(f'  OD5 Num = {np.count_nonzero((-ScoreTOffsetMultimap.__OFFSET_OD5 <= (avgs - devs)) & ((avgs + devs) <= ScoreTOffsetMultimap.__OFFSET_OD5))}')
+        print(f'  OD6 Num = {np.count_nonzero((-ScoreTOffsetMultimap.__OFFSET_OD6 <= (avgs - devs)) & ((avgs + devs) <= ScoreTOffsetMultimap.__OFFSET_OD6))}')
+        print(f'  OD7 Num = {np.count_nonzero((-ScoreTOffsetMultimap.__OFFSET_OD7 <= (avgs - devs)) & ((avgs + devs) <= ScoreTOffsetMultimap.__OFFSET_OD7))}')
+        print(f'  OD8 Num = {np.count_nonzero((-ScoreTOffsetMultimap.__OFFSET_OD8 <= (avgs - devs)) & ((avgs + devs) <= ScoreTOffsetMultimap.__OFFSET_OD8))}')
 
         # Calculate needed 300s for 99% accuracy
         num_50s_99  = num_circles*0.0
@@ -268,32 +268,32 @@ class ReplayTOffsetMultimap(PyQt5.QtWidgets.QWidget):
         # Sliders are excluded from required 300s by marking them as 100% change of 300s because
         # osu! slider hit window is so lenient it may as well be a free hit
         # Misses are averaged into the probabilities
-        prob_greater_than_neg = scipy.stats.norm.cdf(-ReplayTOffsetMultimap.__OFFSET_OD4, loc=avgs, scale=devs)
-        prob_less_than_pos    = scipy.stats.norm.cdf(ReplayTOffsetMultimap.__OFFSET_OD4, loc=avgs, scale=devs)
+        prob_greater_than_neg = scipy.stats.norm.cdf(-ScoreTOffsetMultimap.__OFFSET_OD4, loc=avgs, scale=devs)
+        prob_less_than_pos    = scipy.stats.norm.cdf(ScoreTOffsetMultimap.__OFFSET_OD4, loc=avgs, scale=devs)
         prob_300_OD4s = prob_less_than_pos - prob_greater_than_neg
         prob_300_OD4s[slider_mask] = 1.0
         prob_300_OD4s *= 1 - miss_count/num_plays
 
-        prob_greater_than_neg = scipy.stats.norm.cdf(-ReplayTOffsetMultimap.__OFFSET_OD5, loc=avgs, scale=devs)
-        prob_less_than_pos    = scipy.stats.norm.cdf(ReplayTOffsetMultimap.__OFFSET_OD5, loc=avgs, scale=devs)
+        prob_greater_than_neg = scipy.stats.norm.cdf(-ScoreTOffsetMultimap.__OFFSET_OD5, loc=avgs, scale=devs)
+        prob_less_than_pos    = scipy.stats.norm.cdf(ScoreTOffsetMultimap.__OFFSET_OD5, loc=avgs, scale=devs)
         prob_300_OD5s = prob_less_than_pos - prob_greater_than_neg
         prob_300_OD5s[slider_mask] = 1.0
         prob_300_OD5s *= 1 - miss_count/num_plays
-        
-        prob_greater_than_neg = scipy.stats.norm.cdf(-ReplayTOffsetMultimap.__OFFSET_OD6, loc=avgs, scale=devs)
-        prob_less_than_pos    = scipy.stats.norm.cdf(ReplayTOffsetMultimap.__OFFSET_OD6, loc=avgs, scale=devs)
+
+        prob_greater_than_neg = scipy.stats.norm.cdf(-ScoreTOffsetMultimap.__OFFSET_OD6, loc=avgs, scale=devs)
+        prob_less_than_pos    = scipy.stats.norm.cdf(ScoreTOffsetMultimap.__OFFSET_OD6, loc=avgs, scale=devs)
         prob_300_OD6s = prob_less_than_pos - prob_greater_than_neg
         prob_300_OD6s[slider_mask] = 1.0
         prob_300_OD6s *= 1 - miss_count/num_plays
 
-        prob_greater_than_neg = scipy.stats.norm.cdf(-ReplayTOffsetMultimap.__OFFSET_OD7, loc=avgs, scale=devs)
-        prob_less_than_pos    = scipy.stats.norm.cdf(ReplayTOffsetMultimap.__OFFSET_OD7, loc=avgs, scale=devs)
+        prob_greater_than_neg = scipy.stats.norm.cdf(-ScoreTOffsetMultimap.__OFFSET_OD7, loc=avgs, scale=devs)
+        prob_less_than_pos    = scipy.stats.norm.cdf(ScoreTOffsetMultimap.__OFFSET_OD7, loc=avgs, scale=devs)
         prob_300_OD7s = prob_less_than_pos - prob_greater_than_neg
         prob_300_OD7s[slider_mask] = 1.0
         prob_300_OD7s *= 1 - miss_count/num_plays
 
-        prob_greater_than_neg = scipy.stats.norm.cdf(-ReplayTOffsetMultimap.__OFFSET_OD8, loc=avgs, scale=devs)
-        prob_less_than_pos    = scipy.stats.norm.cdf(ReplayTOffsetMultimap.__OFFSET_OD8, loc=avgs, scale=devs)
+        prob_greater_than_neg = scipy.stats.norm.cdf(-ScoreTOffsetMultimap.__OFFSET_OD8, loc=avgs, scale=devs)
+        prob_less_than_pos    = scipy.stats.norm.cdf(ScoreTOffsetMultimap.__OFFSET_OD8, loc=avgs, scale=devs)
         prob_300_OD8s = prob_less_than_pos - prob_greater_than_neg
         prob_300_OD8s[slider_mask] = 1.0
         prob_300_OD8s *= 1 - miss_count/num_plays

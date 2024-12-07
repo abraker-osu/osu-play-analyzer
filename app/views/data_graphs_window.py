@@ -7,12 +7,12 @@ import PyQt5
 
 from app.misc.Logger import Logger
 
-from app.graphs.replay.hit_offset_graph import HitOffsetGraph
-from app.graphs.replay.replay_hit_doffset_graph import ReplayHitDOffsetGraph
-from app.graphs.replay.replay_toffset_multimap import ReplayTOffsetMultimap
-from app.graphs.replay.hit_distr_graph import HitDistrGraph
-from app.graphs.replay.doffset_distr_graph import DoffsetsDistrGraph
-from app.graphs.replay.aim_graph import AimGraph
+from app.graphs.score.hit_offset_graph import HitOffsetGraph
+from app.graphs.score.score_hit_doffset_graph import ScoreHitDOffsetGraph
+from app.graphs.score.score_toffset_multimap import ScoreTOffsetMultimap
+from app.graphs.score.hit_distr_graph import HitDistrGraph
+from app.graphs.score.doffset_distr_graph import DoffsetsDistrGraph
+from app.graphs.score.aim_graph import AimGraph
 
 from app.graphs.time.graph_timing_bpm_dec import GraphTimingBPMDec
 from app.graphs.time.graph_timing_bpm_inc import GraphTimingBPMInc
@@ -50,8 +50,8 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.setWindowTitle('Data graphs')
 
         self.hit_offset_graph = HitOffsetGraph()
-        self.replay_offset_multimap_graph = ReplayTOffsetMultimap()
-        self.replay_hit_doffset_graph = ReplayHitDOffsetGraph()
+        self.score_offset_multimap_graph = ScoreTOffsetMultimap()
+        self.score_hit_doffset_graph = ScoreHitDOffsetGraph()
         self.hit_distr_graph = HitDistrGraph()
         self.doffset_distr_graph = DoffsetsDistrGraph()
         self.aim_display = AimGraph()
@@ -78,13 +78,13 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.dev_t_ar = DevTGraphAR()
         self.dev_visible_ar = DevVisibleAR()
 
-        self.replay_tabs = PyQt5.QtWidgets.QTabWidget()
-        self.replay_tabs.addTab(self.hit_offset_graph, 'Hit offsets')
-        self.replay_tabs.addTab(self.replay_offset_multimap_graph, 'Replay offsets multimap')
-        self.replay_tabs.addTab(self.replay_hit_doffset_graph, 'Replay hit doffsets')
-        self.replay_tabs.addTab(self.hit_distr_graph, 'Hit distribution')
-        self.replay_tabs.addTab(self.doffset_distr_graph, 'Doffset distribution')
-        self.replay_tabs.addTab(self.aim_display, 'Aim display')
+        self.score_tabs = PyQt5.QtWidgets.QTabWidget()
+        self.score_tabs.addTab(self.hit_offset_graph, 'Hit offsets')
+        self.score_tabs.addTab(self.score_offset_multimap_graph, 'Score offsets multimap')
+        self.score_tabs.addTab(self.score_hit_doffset_graph, 'Score hit doffsets')
+        self.score_tabs.addTab(self.hit_distr_graph, 'Hit distribution')
+        self.score_tabs.addTab(self.doffset_distr_graph, 'Doffset distribution')
+        self.score_tabs.addTab(self.aim_display, 'Aim display')
 
         self.time_tabs = PyQt5.QtWidgets.QTabWidget()
         self.time_tabs.addTab(self.timing_bpm_dec, 'Timing BPM dec')
@@ -113,7 +113,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.play_data_tabs.addTab(self.dev_visible_ar, 'AR vs # Misses')
 
         self.main_widget = PyQt5.QtWidgets.QTabWidget()
-        self.main_widget.addTab(self.replay_tabs, 'Replay graphs')
+        self.main_widget.addTab(self.score_tabs, 'Score graphs')
         self.main_widget.addTab(self.time_tabs, 'Time graphs')
         self.main_widget.addTab(self.difficulty_tabs, 'Diff graphs')
         self.main_widget.addTab(self.map_tabs, 'Map graphs')
@@ -139,7 +139,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.logger.debug('new_replay_event')
 
         self.hit_offset_graph.plot_data(score_data)
-        self.replay_hit_doffset_graph.plot_data(score_data)
+        self.score_hit_doffset_graph.plot_data(score_data)
         self.hit_distr_graph.plot_data(score_data)
         self.doffset_distr_graph.plot_data(score_data)
         self.aim_display.plot_data(score_data)
@@ -171,8 +171,8 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.logger.debug('overview_single_map_selection_event')
 
         self.hit_offset_graph.plot_data(score_data)
-        self.replay_offset_multimap_graph.plot_data(score_data)
-        self.replay_hit_doffset_graph.plot_data(score_data)
+        self.score_offset_multimap_graph.plot_data(score_data)
+        self.score_hit_doffset_graph.plot_data(score_data)
         self.hit_distr_graph.plot_data(score_data)
         self.doffset_distr_graph.plot_data(score_data)
         self.aim_display.plot_data(score_data)

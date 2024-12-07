@@ -9,18 +9,18 @@ from osu_analysis import StdScoreData
 from app.misc.utils import Utils
 
 
-class ReplayHitDOffsetGraph(PyQt5.QtWidgets.QWidget):
+class ScoreHitDOffsetGraph(PyQt5.QtWidgets.QWidget):
     '''
     Hit delta-offset graph
 
     This graph shows the average and absolute difference between two delta-offsets throughout the replay.
     Delta-offsets consist of 3 offsets, reduced to a difference pair: (x[1] - x[0], x[2] - x[1]).
-    
-    Displayed as a gray bar is the average between the two d-offsets. 
+
+    Displayed as a gray bar is the average between the two d-offsets.
         When it's positive, the offset is increasing. When it's negative, the offset is decreasing.
 
     Displayed as a green line, is the absolute difference between the two d-offsets.
-        The larger it is, the greater the increase or decrease in hit offset is. It is centered at 
+        The larger it is, the greater the increase or decrease in hit offset is. It is centered at
         the average between the two d-offsets. Its displayed span is 2x the actual range.
 
     This graph is useful for examining the instability within the player's hit timing.
@@ -98,7 +98,7 @@ class ReplayHitDOffsetGraph(PyQt5.QtWidgets.QWidget):
         # Set plot data
         self.__plot_delta.setData(x=x, y=y_avg/2, top=y_avg/2, bottom=y_avg/2, pen=mkPen((200, 200, 200, 200), width=5))
         self.__plot_range.setData(x=x, y=y_avg, top=y_range/2, bottom=y_range/2, pen=mkPen((50, 100, 50, 150), width=2))
-        
+
         self.__graph.setLimits(xMin=xMin - 100, xMax=xMax + 100)
         self.__graph.setRange(xRange=[ xMin - 100, xMax + 100 ])
 
