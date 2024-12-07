@@ -78,9 +78,8 @@ class MapDisplay(QtWidgets.QWidget):
 
         # Pattern Visualization
         self.visual = pyqtgraph.PlotWidget(title='Pattern visualization')
-        self.plot_notes = HitobjectPlot()
-        self.visual.addItem(self.plot_notes)
-        self.plot_cursor = self.visual.plot(pen=None, symbol='+', symbolPen=(0, 166, 31, 255), symbolBrush=None, symbolSize=6, pxMode=True)
+        self.plot_notes    = HitobjectPlot()
+        self.plot_cursor   = self.visual.plot(pen=None, symbol='+', symbolPen=(0, 166, 31, 255), symbolBrush=None, symbolSize=6, pxMode=True)
         self.plot_approach = self.visual.plot(pen=None, symbol='o', symbolPen=(100, 100, 255, 200), symbolBrush=None, symbolSize=100, pxMode=False)
 
         # Timing visualization
@@ -111,6 +110,7 @@ class MapDisplay(QtWidgets.QWidget):
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(0)
 
+        self.visual.addItem(self.plot_notes)
         self.visual.showGrid(True, True)
         self.visual.setXRange(0, 540)
         self.visual.setYRange(-410, 0)
