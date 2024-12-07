@@ -74,7 +74,7 @@ class MapDisplay(QtWidgets.QWidget):
         self.open_map_action    = QtWidgets.QAction("&Open *.osu", self.file_menu, triggered=lambda: self.__open_map_dialog())
         self.open_replay_action = QtWidgets.QAction("&Open *.osr", self.file_menu, triggered=lambda: self.__open_replay_dialog())
 
-        self.layout = QtWidgets.QVBoxLayout(self)
+        self.__layout = QtWidgets.QVBoxLayout(self)
 
         # Pattern Visualization
         self.visual = pyqtgraph.PlotWidget(title='Pattern visualization')
@@ -103,13 +103,13 @@ class MapDisplay(QtWidgets.QWidget):
         self.file_menu.addAction(self.open_map_action)
         self.file_menu.addAction(self.open_replay_action)
 
-        self.layout.addWidget(self.menu_bar)
-        self.layout.addWidget(self.visual)
-        self.layout.addWidget(self.timeline)
-        self.layout.addWidget(self.status_label)
+        self.__layout.addWidget(self.menu_bar)
+        self.__layout.addWidget(self.visual)
+        self.__layout.addWidget(self.timeline)
+        self.__layout.addWidget(self.status_label)
 
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(0)
+        self.__layout.setContentsMargins(0, 0, 0, 0)
+        self.__layout.setSpacing(0)
 
         self.visual.showGrid(True, True)
         self.visual.setXRange(0, 540)
