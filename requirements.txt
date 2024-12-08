@@ -1,5 +1,7 @@
 -r osu_analysis/requirements.txt
 
+pylint
+
 setuptools>41.2.0
 numpy>=1.22.0,<=1.26.4
 pyqt5

@@ -12,6 +12,6 @@ if __name__ == '__main__':
 
     app = QtWidgets.QApplication(sys.argv)
     app.setStyleSheet(open('stylesheet.css').read())
-    
+
     ex = App()
     sys.exit(app.exec_())
