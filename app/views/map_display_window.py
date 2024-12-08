@@ -24,8 +24,10 @@ from PyQt5 import QtWidgets
 from osu_analysis import StdMapData
 
 from app.misc.Logger import Logger
-from app.misc.osu_utils import OsuUtils
 from app.widgets.map_display import MapDisplay
+from app.widgets.mouse_graph import MouseGraph
+
+from app.file_managers import AppConfig
 
 
 class MapDisplayWindow(QtWidgets.QMainWindow):
@@ -34,30 +36,55 @@ class MapDisplayWindow(QtWidgets.QMainWindow):
 
     time_changed_event = QtCore.pyqtSignal(object)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent = None):
         self.logger.debug('__init__ enter')
 
         QtWidgets.QMainWindow.__init__(self, parent)
         self.setWindowTitle('Map Display')
 
-        self.selected_map_display  = MapDisplay()
-        self.generated_map_display = MapDisplay()
-        self.processed_map_display = MapDisplay()
+        self.widget = QtWidgets.QWidget()
+        self.setCentralWidget(self.widget)
+
+        self.__layout = QtWidgets.QVBoxLayout()
+        self.widget.setLayout(self.__layout)
+
+        self.menu_bar = QtWidgets.QMenuBar()
+        self.__layout.addWidget(self.menu_bar)
+
+        self.file_menu = QtWidgets.QMenu("&File")
+        self.menu_bar.addMenu(self.file_menu)
+
+        self.open_map_action = QtWidgets.QAction("&Open *.osu", self.file_menu, triggered=lambda: self.__open_map_dialog())
+        self.file_menu.addAction(self.open_map_action)
+
+        self.open_replay_action = QtWidgets.QAction("&Open *.osr", self.file_menu, triggered=lambda: self.__open_replay_dialog())
+        self.file_menu.addAction(self.open_replay_action)
+
+        self.disp_tabs = QtWidgets.QTabWidget()
+        self.__layout.addWidget(self.disp_tabs)
+
         self.map_tabs = QtWidgets.QTabWidget()
+        self.disp_tabs.addTab(self.map_tabs, 'Map Displays')
 
-        self.map_tabs.addTab(self.selected_map_display, 'Selected')
-        self.map_tabs.addTab(self.generated_map_display, 'Generated')
-        self.map_tabs.addTab(self.processed_map_display, 'Processed')
+        self.map_display_selected = MapDisplay()
+        self.map_tabs.addTab(self.map_display_selected, 'Selected')
 
-        self.selected_map_display.time_changed_event.connect(self.time_changed_event)
+        self.map_display_generated = MapDisplay()
+        self.map_tabs.addTab(self.map_display_generated, 'Generated')
 
-        self.setCentralWidget(self.map_tabs)
+        self.map_display_processed = MapDisplay()
+        self.map_tabs.addTab(self.map_display_processed, 'Processed')
+
+        self.graph_mouse = MouseGraph()
+        self.disp_tabs.addTab(self.graph_mouse, 'Graphs')
+
+        self.map_display_selected.time_changed_event.connect(self.time_changed_event)
 
         self.logger.debug('__init__ exit')
 
 
     def set_from_score_data(self, score_data):
-        self.selected_map_display.set_from_score_data(score_data)
+        self.map_display_selected.set_from_score_data(score_data)
 
         '''
         cs = score_data['cs'][0]
@@ -81,15 +108,15 @@ class MapDisplayWindow(QtWidgets.QMainWindow):
 
     def new_replay_event(self, map_data, replay_data, cs, ar, mods, name):
         self.logger.debug('new_replay_event')
-        self.selected_map_display.new_replay_event(map_data, replay_data, cs, ar, mods, name)
+        self.map_display_selected.new_replay_event(map_data, replay_data, cs, ar, mods, name)
 
 
     def set_time(self, time):
-        self.selected_map_display.set_time(time)
+        self.map_display_selected.set_time(time)
 
 
     def set_from_generated(self, osu_data):
-        self.generated_map_display.open_map_from_osu_data(osu_data)
+        self.map_display_generated.open_map_from_osu_data(osu_data)
 
 
     def set_from_generated_old(self, gen_data, cs, ar):
@@ -107,4 +134,37 @@ class MapDisplayWindow(QtWidgets.QMainWindow):
         #map_data['time'] /= 1000
         map_data['y'] = -map_data['y']
 
-        self.generated_map_display.set_map_full(map_data, cs, ar)
+        self.map_display_generated.set_map_full(map_data, cs, ar)
+
+
+    def __open_replay_dialog(self):
+        map_disp: MapDisplay = self.map_tabs.currentWidget()
+        if not isinstance(map_disp, MapDisplay):
+            self.logger.error('Current map display is not `MapDisplay` type')
+            return
+
+        name_filter = 'osu! replay files (*.osr)' if map_disp.map_md5 == None else f'osu! replay files ({map_disp.map_md5}-*.osr)\nosu! replay files (*.osr)'
+
+        file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open replay',  f'{AppConfig.cfg["osu_dir"]}/Data/r', name_filter)
+        file_name = file_name[0]
+
+        if len(file_name) == 0:
+            return
+
+        map_disp.open_replay_from_file_name(file_name)
+        self.graph_mouse.open_replay_from_file_name(file_name)
+
+
+    def __open_map_dialog(self):
+        map_disp: MapDisplay = self.map_tabs.currentWidget()
+        if not isinstance(map_disp, MapDisplay):
+            self.logger.error('Current map display is not `MapDisplay` type')
+            return
+
+        file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file',  f'{AppConfig.cfg["osu_dir"]}/Songs', 'osu! map files (*.osu)')
+        file_name = file_name[0]
+
+        if len(file_name) == 0:
+            return
+
+        map_disp.open_map_from_file_name(file_name)

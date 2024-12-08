@@ -11,8 +11,8 @@ from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 import pyqtgraph
 
-from osu_analysis import BeatmapIO, ReplayIO, StdMapData, StdReplayData, StdScoreData, Gamemode, Mod
 from osu_db import MapsDB
+from osu_analysis import BeatmapIO, ReplayIO, StdMapData, StdReplayData, StdScoreData, Gamemode, Mod
 
 from app.misc.Logger import Logger
 from app.misc.utils import Utils
@@ -68,11 +68,6 @@ class MapDisplay(QtWidgets.QWidget):
 
 
     def __init_gui(self):
-        self.menu_bar  = QtWidgets.QMenuBar()
-        self.file_menu = QtWidgets.QMenu("&File")
-
-        self.open_map_action    = QtWidgets.QAction("&Open *.osu", self.file_menu, triggered=lambda: self.__open_map_dialog())
-        self.open_replay_action = QtWidgets.QAction("&Open *.osr", self.file_menu, triggered=lambda: self.__open_replay_dialog())
 
         self.__layout = QtWidgets.QVBoxLayout(self)
 
@@ -95,14 +90,16 @@ class MapDisplay(QtWidgets.QWidget):
 
 
     def __build_layout(self):
-        self.visual.plotItem.hideButtons()
-        self.timeline.plotItem.hideButtons()
+        plot_item = self.visual.plotItem
+        if not isinstance(plot_item, pyqtgraph.PlotItem):
+            raise AttributeError('visual PlotItem is none')
+        plot_item.hideButtons()
 
-        self.menu_bar.addMenu(self.file_menu)
-        self.file_menu.addAction(self.open_map_action)
-        self.file_menu.addAction(self.open_replay_action)
+        plot_item = self.timeline.plotItem
+        if not isinstance(plot_item, pyqtgraph.PlotItem):
+            raise AttributeError('timeline PlotItem is none')
+        plot_item.hideButtons()
 
-        self.__layout.addWidget(self.menu_bar)
         self.__layout.addWidget(self.visual)
         self.__layout.addWidget(self.timeline)
         self.__layout.addWidget(self.status_label)
@@ -281,7 +278,7 @@ class MapDisplay(QtWidgets.QWidget):
         map_file_name = self.__maps_db.get_map_file_name(md5)
         if map_file_name:
             try:
-                self.__open_map_from_file_name(map_file_name, score_data.index.get_level_values(2)[0])
+                self.open_map_from_file_name(map_file_name, score_data.index.get_level_values(2)[0])
 
                 # Draw notes in timeline
                 self.hitobject_plot.set_map_timeline(self.map_data)
@@ -396,16 +393,6 @@ class MapDisplay(QtWidgets.QWidget):
         self.__draw_replay_data()
 
 
-    def __open_map_dialog(self):
-        file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file',  f'{AppConfig.cfg["osu_dir"]}/Songs', 'osu! map files (*.osu)')
-        file_name = file_name[0]
-
-        if len(file_name) == 0:
-            return
-
-        self.__open_map_from_file_name(file_name)
-
-
     def open_map_from_osu_data(self, osu_data):
         try: beatmap = BeatmapIO.load_beatmap(osu_data)
         except Exception as e:
@@ -436,7 +423,7 @@ class MapDisplay(QtWidgets.QWidget):
         self.status_label.setText(f'Viewing: {viewing_text}')
 
 
-    def __open_map_from_file_name(self, file_name, mods=0):
+    def open_map_from_file_name(self, file_name, mods=0):
         try: beatmap = BeatmapIO.open_beatmap(file_name)
         except Exception as e:
             print(Utils.get_traceback(e, 'Error opening map'))
@@ -482,19 +469,7 @@ class MapDisplay(QtWidgets.QWidget):
         self.status_label.setText(f'Viewing: {viewing_text}')
 
 
-    def __open_replay_dialog(self):
-        name_filter = 'osu! replay files (*.osr)' if self.map_md5 == None else f'osu! replay files ({self.map_md5}-*.osr)\nosu! replay files (*.osr)'
-
-        file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open replay',  f'{AppConfig.cfg["osu_dir"]}/Data/r', name_filter)
-        file_name = file_name[0]
-
-        if len(file_name) == 0:
-            return
-
-        self.__open_replay_from_file_name(file_name)
-
-
-    def __open_replay_from_file_name(self, file_name):
+    def open_replay_from_file_name(self, file_name):
         try: replay = ReplayIO.open_replay(file_name)
         except Exception as e:
             print(Utils.get_traceback(e, 'Error opening replay'))
