@@ -26,6 +26,7 @@ from osu_analysis import StdMapData
 from app.misc.Logger import Logger
 from app.widgets.map_display import MapDisplay
 from app.widgets.mouse_graph import MouseGraph
+from app.widgets.map_mouse_graph import MapMouseGraph
 
 from app.file_managers import AppConfig
 
@@ -76,7 +77,10 @@ class MapDisplayWindow(QtWidgets.QMainWindow):
         self.map_tabs.addTab(self.map_display_processed, 'Processed')
 
         self.graph_mouse = MouseGraph()
-        self.disp_tabs.addTab(self.graph_mouse, 'Graphs')
+        self.disp_tabs.addTab(self.graph_mouse, 'Replay Graphs')
+
+        self.graph_map_mouse = MapMouseGraph()
+        self.disp_tabs.addTab(self.graph_map_mouse, 'Map mouse graph')
 
         self.map_display_selected.time_changed_event.connect(self.time_changed_event)
 
@@ -138,12 +142,9 @@ class MapDisplayWindow(QtWidgets.QMainWindow):
 
 
     def __open_replay_dialog(self):
-        map_disp: MapDisplay = self.map_tabs.currentWidget()
-        if not isinstance(map_disp, MapDisplay):
-            self.logger.error('Current map display is not `MapDisplay` type')
-            return
-
-        name_filter = 'osu! replay files (*.osr)' if map_disp.map_md5 == None else f'osu! replay files ({map_disp.map_md5}-*.osr)\nosu! replay files (*.osr)'
+        name_filter = 'osu! replay files (*.osr)'
+        if self.map_display_selected.map_md5 is not None:
+            name_filter = f'osu! replay files ({self.map_display_selected.map_md5}-*.osr)\nosu! replay files (*.osr)'
 
         file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open replay',  f'{AppConfig.cfg["osu_dir"]}/Data/r', name_filter)
         file_name = file_name[0]
@@ -151,20 +152,18 @@ class MapDisplayWindow(QtWidgets.QMainWindow):
         if len(file_name) == 0:
             return
 
-        map_disp.open_replay_from_file_name(file_name)
+        self.map_display_selected.open_replay_from_file_name(file_name)
         self.graph_mouse.open_replay_from_file_name(file_name)
+        self.graph_map_mouse.open_replay_from_file_name(file_name)
 
 
     def __open_map_dialog(self):
-        map_disp: MapDisplay = self.map_tabs.currentWidget()
-        if not isinstance(map_disp, MapDisplay):
-            self.logger.error('Current map display is not `MapDisplay` type')
-            return
-
         file_name = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file',  f'{AppConfig.cfg["osu_dir"]}/Songs', 'osu! map files (*.osu)')
         file_name = file_name[0]
 
         if len(file_name) == 0:
             return
 
-        map_disp.open_map_from_file_name(file_name)
+        self.map_display_selected.open_map_from_file_name(file_name)
+        self.graph_map_mouse.open_map_from_file_name(file_name)
+
