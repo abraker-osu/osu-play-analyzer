@@ -188,7 +188,7 @@ class MapDisplay(QtWidgets.QWidget):
         self.timeline.update()
 
 
-    def set_replay_from_replay_data(self, replay_data):
+    def set_replay_from_replay_data(self, replay_data: pd.DataFrame):
         if isinstance(replay_data, type(None)):
             return
 
@@ -400,7 +400,7 @@ class MapDisplay(QtWidgets.QWidget):
             return
 
         if beatmap.gamemode != Gamemode.OSU:
-            print(f'{Gamemode(beatmap.gamemode)} gamemode is not supported')
+            print(f'{beatmap.gamemode} gamemode is not supported')
             return
 
         try: map_data = StdMapData.get_map_data(beatmap)
@@ -430,7 +430,7 @@ class MapDisplay(QtWidgets.QWidget):
             raise
 
         if beatmap.gamemode != Gamemode.OSU:
-            print(f'{Gamemode(beatmap.gamemode)} gamemode is not supported')
+            print(f'{beatmap.gamemode} gamemode is not supported')
             raise Exception
 
         try: map_data = StdMapData.get_map_data(beatmap)
@@ -439,8 +439,8 @@ class MapDisplay(QtWidgets.QWidget):
             raise
 
         mods = Mod(int(mods))
-        cs = beatmap.difficulty.cs
-        ar = beatmap.difficulty.ar
+        cs = beatmap.difficulty.cs or beatmap.difficulty.od or 0
+        ar = beatmap.difficulty.ar or beatmap.difficulty.od or 0
 
         if mods.has_mod(Mod.HardRock):
             cs *= 1.3
