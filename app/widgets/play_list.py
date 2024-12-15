@@ -6,7 +6,7 @@ The user is able to select a range of cells in the grid display to filter/select
 Clicking on a non selected cell will select it, and dragging the mouse will select a range of cells.
 Clicking on a selected cell will deselect it, and dragging the mouse will deselect a range of cells.
 
-Since the grid is 2D, only two attributes can be compared at a time. The user can select which attribute to compare by 
+Since the grid is 2D, only two attributes can be compared at a time. The user can select which attribute to compare by
 selecting which of the two attributes should be displayed in a dropdown on the side.
 
 The is a selection menu on the side that allows the user to select which player's data to view and which timestamped play.
@@ -22,11 +22,11 @@ import numpy as np
 import pandas as pd
 from app.file_managers.config_mgr import AppConfig
 
-from osu_analysis import Mod
+from osu_interfaces import Mod
+from osu_db import MapsDB
 
 from app.misc.Logger import Logger
 
-from osu_db.osu_db.maps_db import MapsDB
 
 
 class PlayListHelper():
@@ -70,7 +70,7 @@ class PlayListHelper():
 
 
     @staticmethod
-    def map_avg_bpm(score_data): 
+    def map_avg_bpm(score_data):
         # TODO: This needs to be select by single timestamp
         data = 15000/score_data['DIFF_T_PRESS_DIFF'].values
         data = data[~np.isnan(data)]
@@ -79,7 +79,7 @@ class PlayListHelper():
 
 
     @staticmethod
-    def map_avg_lin_vel(score_data):  
+    def map_avg_lin_vel(score_data):
         # TODO: This needs to be select by single timestamp
         data = score_data['DIFF_XY_LIN_VEL'].values
         data = data[~np.isnan(data)]
@@ -88,7 +88,7 @@ class PlayListHelper():
 
 
     @staticmethod
-    def map_avg_ang_vel(score_data):    
+    def map_avg_ang_vel(score_data):
         # TODO: This needs to be select by single timestamp
         data = score_data['DIFF_XY_ANG_VEL'].values
         data = data[~np.isnan(data)]
@@ -124,7 +124,7 @@ class PlayList(pyqtgraph.TableWidget):
 
         self.__batch_processed.connect(self.__add_data)
         self.__table_is_configured = False
-            
+
         self.selectionModel().selectionChanged.connect(self.__list_select_event)
 
         self.logger.debug(f'__init__ - exit')
@@ -162,7 +162,7 @@ class PlayList(pyqtgraph.TableWidget):
             # TODO: Update timestamp column
             pass
 
-        # Check if one or no map is selected. If multiple maps 
+        # Check if one or no map is selected. If multiple maps
         # are selected, it is likely undesirable to switch to
         # any one specific map, so don't do it
         is_not_multiple_selected = (len(self.selectionModel().selectedRows()) <= 1)
@@ -185,10 +185,10 @@ class PlayList(pyqtgraph.TableWidget):
             #if self.rowCount() > 0:
             #    self.selectRow(0)
 
-            
+
     def reload_map_list(self, score_data):
         self.logger.debug('reload_map_list - enter')
-        
+
         # Deselect selection before changes to play list
         # Block the `selectionChanged` signal
         self.selectionModel().blockSignals(True)
@@ -248,7 +248,7 @@ class PlayList(pyqtgraph.TableWidget):
         #print([ row.data() for row in self.selectionModel().selectedRows() ])
         #print([ row.row() for row in self.selectionModel().selectedRows() ])
 
-        return [ 
+        return [
             (
                 self.model().data(self.model().index(selection.row(), 0), role=PyQt5.QtCore.Qt.DisplayRole)#,  # MD5
                 #self.model().data(self.model().index(selection.row(), 2), role=PyQt5.QtCore.Qt.DisplayRole)   # MOD
@@ -256,12 +256,12 @@ class PlayList(pyqtgraph.TableWidget):
             for selection in self.selectionModel().selectedRows()
         ]
 
-    
+
     def __add_data(self, data):
         self.appendData(data.values)
         self.__check_table_config()
 
-    
+
     def __check_table_config(self):
         """
         Configures table if it's not already configured

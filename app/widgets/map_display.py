@@ -12,7 +12,10 @@ from PyQt5 import QtCore
 import pyqtgraph
 
 from osu_db import MapsDB
-from osu_analysis import BeatmapIO, ReplayIO, StdMapData, StdReplayData, StdScoreData, Gamemode, Mod
+from osu_interfaces import Gamemode, Mod
+from beatmap_reader import BeatmapIO
+from replay_reader import ReplayIO
+from osu_analysis import StdMapData, StdReplayData, StdScoreData
 
 from app.misc.Logger import Logger
 from app.misc.utils import Utils

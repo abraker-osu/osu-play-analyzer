@@ -7,7 +7,8 @@ import numpy as np
 
 import PyQt5
 
-from osu_analysis import BeatmapIO, Gamemode
+from osu_interfaces import Gamemode
+from beatmap_reader import BeatmapIO
 
 from app.misc.Logger import Logger
 from app.file_managers import AppConfig

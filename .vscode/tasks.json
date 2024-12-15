@@ -1,10 +1,25 @@
 {
     "version": "2.0.0",
 
+    "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+    },
+
     "tasks": [
         {
             "label": "Setup",
+            "command": "scripts\\setup.bat install",
+            "type": "shell"
+        },
+        {
+            "label":   "Fix project",
             "command": "scripts\\setup.bat",
+            "type":    "shell"
+        },
+        {
+            "label": "Clean",
+            "command": "scripts\\clean.bat",
             "type": "shell"
         },
         {
@@ -17,9 +32,5 @@
             "command": "scripts\\build.bat",
             "type": "shell"
         }
-    ],
-    "presentation": {
-        "reveal": "always",
-        "panel": "new"
-      }
+    ]
 }

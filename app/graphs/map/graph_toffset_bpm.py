@@ -4,9 +4,6 @@ import pyqtgraph
 import numpy as np
 import threading
 
-from osu_analysis import StdScoreData
-from app.data_recording.data import PlayNpyData
-
 
 class GraphTOffsetBPM(PyQt5.QtWidgets.QWidget):
 
@@ -36,16 +33,16 @@ class GraphTOffsetBPM(PyQt5.QtWidgets.QWidget):
         self.__label_style = pyqtgraph.PlotDataItem(pen=(0,0,0))
         self.__graph.getPlotItem().legend.addItem(self.__label_style, '')
         self.__text = self.__graph.getPlotItem().legend.getLabel(self.__label_style)
-   
+
         # Put it all together
         self.__layout = PyQt5.QtWidgets.QHBoxLayout(self)
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(2)
         self.__layout.addWidget(self.__graph)
-                       
+
         # Connect signals
         self.__calc_data_event.connect(self.__display_data)
-        
+
 
     def plot_data(self, score_data, diff_data):
         # Clear plots for redraw
@@ -56,6 +53,7 @@ class GraphTOffsetBPM(PyQt5.QtWidgets.QWidget):
             return
         thread = threading.Thread(target=self.__proc_data, args=(score_data, diff_data))
         thread.start()
+
 
     def __proc_data(self, score_data, diff_data):
         data = np.zeros((score_data.shape[0], 3))
@@ -73,7 +71,7 @@ class GraphTOffsetBPM(PyQt5.QtWidgets.QWidget):
 
             y_data_dev = np.asarray([ np.std(x_data[x_data == x]) for x in x_data_uniques ])
             y_data_avg = np.asarray([ np.mean(y_data[x_data == x]) for x in x_data_uniques ])
-            
+
             x_data = x_data_uniques
             y_data = y_data_avg
 

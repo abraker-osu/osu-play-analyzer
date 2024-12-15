@@ -1,8 +1,10 @@
-import statistics
 import numpy as np
 import pandas as pd
 
-from osu_analysis import BeatmapIO, ReplayIO, StdMapData, StdReplayData, StdScoreData, Gamemode
+from osu_interfaces import Gamemode
+from beatmap_reader import BeatmapIO
+from replay_reader import ReplayIO
+from osu_analysis import StdMapData, StdReplayData, StdScoreData
 
 from app.misc.Logger import Logger
 from app.misc.utils import Utils

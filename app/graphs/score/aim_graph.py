@@ -1,11 +1,11 @@
-import scipy.special
 import numpy as np
-import math
 
 import PyQt5
 import pyqtgraph
 
-from osu_analysis import StdScoreData, Mod
+from osu_interfaces import Mod
+from osu_analysis import StdScoreData
+
 from app.misc.utils import Utils
 
 
@@ -37,7 +37,7 @@ class AimGraph(PyQt5.QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         PyQt5.QtWidgets.QWidget.__init__(self, parent)
-        
+
         self.setWindowTitle('Aim visualization')
         #self.setSizePolicy(QtGui.QSizePolicy.Policy.Minimum, QtGui.QSizePolicy.Policy.Minimum)
         self.setMaximumSize(PyQt5.QtCore.QSize(int(AimGraph.SIZE + AimGraph.DEV_WIDTH + 1), int(AimGraph.SIZE + AimGraph.DEV_WIDTH + 32 + 1)))
@@ -45,7 +45,7 @@ class AimGraph(PyQt5.QtWidgets.QWidget):
         self.main_layout = PyQt5.QtWidgets.QGridLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(1)
-        
+
         self.win_hits = pyqtgraph.PlotWidget(show=False, title='Hit visualization')
         self.win_hits.setWindowTitle('osu! Aim Tool Hit Visualization')
         self.win_hits.setFixedSize(int(AimGraph.SIZE), int(AimGraph.SIZE + 32))
@@ -60,7 +60,7 @@ class AimGraph(PyQt5.QtWidgets.QWidget):
         self.win_hits.getViewBox().setMouseEnabled(x=False, y=False)
         self.win_hits.enableAutoRange(axis='x', enable=False)
         self.win_hits.enableAutoRange(axis='y', enable=False)
-        
+
         # Hit circle visualization
         self.circle_item = AimGraph.HitCircle((0, 0))
         self.win_hits.addItem(self.circle_item)
@@ -115,7 +115,7 @@ class AimGraph(PyQt5.QtWidgets.QWidget):
     def set_cs(self, cs):
         # From https://github.com/ppy/osu/blob/master/osu.Game.Rulesets.Osu/Objects/OsuHitObject.cs#L137
         cs_px = (108.8 - 8.96*cs)/2
-        
+
         self.circle_item.radius = cs_px*AimGraph.SCALE
         self.win_hits.update()
 
@@ -141,7 +141,7 @@ class AimGraph(PyQt5.QtWidgets.QWidget):
             return
 
         cs = play_data['CS'].values[0]
-        
+
         mods = Mod(int(play_data.index.get_level_values(2)[0]))
         if mods.has_mod(Mod.HardRock): cs *= 1.3
         if mods.has_mod(Mod.Easy):     cs *= 0.5
@@ -182,13 +182,13 @@ class AimGraph(PyQt5.QtWidgets.QWidget):
         lambda2_len = self.lambda2.opts['tailLen'] + self.lambda2.opts['headLen']
 
         self.lambda1.setPos(
-            -lambda1_len*math.cos(self.lambda1.opts['angle'] * math.pi/180), 
+            -lambda1_len*math.cos(self.lambda1.opts['angle'] * math.pi/180),
             -lambda1_len*math.sin(self.lambda1.opts['angle'] * math.pi/180)
         )
 
         self.lambda2.setPos(
-            -lambda2_len*math.cos(self.lambda2.opts['angle'] * math.pi/180), 
-            -lambda2_len*math.sin(self.lambda2.opts['angle'] * math.pi/180), 
+            -lambda2_len*math.cos(self.lambda2.opts['angle'] * math.pi/180),
+            -lambda2_len*math.sin(self.lambda2.opts['angle'] * math.pi/180),
         )
 
 

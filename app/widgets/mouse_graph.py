@@ -5,7 +5,8 @@ from PyQt5 import QtWidgets
 
 import numpy as np
 
-from osu_analysis import ReplayIO, StdReplayData, StdScoreData
+from replay_reader import ReplayIO
+from osu_analysis import StdReplayData, StdScoreData
 
 from app.misc.Logger import Logger
 from app.misc.utils import Utils

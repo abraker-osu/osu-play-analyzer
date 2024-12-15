@@ -6,7 +6,10 @@ from PyQt5 import QtWidgets
 import numpy as np
 import pandas as pd
 
-from osu_analysis import BeatmapIO, ReplayIO, StdMapData, StdReplayData, StdScoreData, Gamemode, Mod
+from osu_interfaces import Gamemode, Mod
+from beatmap_reader import BeatmapIO
+from replay_reader import ReplayIO
+from osu_analysis import StdMapData, StdReplayData
 
 from app.misc.Logger import Logger
 from app.misc.utils import Utils
@@ -72,8 +75,10 @@ class MapMouseGraph(QtWidgets.QTabWidget):
             self.__graph_vel_algn, self.__graph_vel_orth,
             self.__graph_acc_algn, self.__graph_acc_orth
         ]:
-            graph.getPlotItem().getAxis('left').enableAutoSIPrefix(False)
-            graph.getPlotItem().getAxis('bottom').enableAutoSIPrefix(False)
+            assert ( plot_item := graph.getPlotItem() ) is not None
+
+            plot_item.getAxis('left').enableAutoSIPrefix(False)
+            plot_item.getAxis('bottom').enableAutoSIPrefix(False)
             graph.enableAutoRange(axis='x', enable=False)
             graph.enableAutoRange(axis='y', enable=False)
             graph.setRange(xRange=[-10, 550], yRange=[-410, 10])
@@ -83,6 +88,7 @@ class MapMouseGraph(QtWidgets.QTabWidget):
 
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(0)
+
         # Put it all together
         for graph in [
             ( self.__layout_pos, self.__graph_pos_algn, self.__graph_pos_orth, ),
@@ -102,40 +108,15 @@ class MapMouseGraph(QtWidgets.QTabWidget):
             return
 
         self.replay_data = np.zeros((len(replay_data['time']), 7))
-        self.replay_data[:, self.REPLAY_T]  = np.asarray(replay_data['time'])
-        self.replay_data[:, self.REPLAY_X]  = np.asarray(replay_data['x'])
-        self.replay_data[:, self.REPLAY_Y]  = -np.asarray(replay_data['y'])
-        self.replay_data[:, self.REPLAY_K]  = np.asarray(
+        self.replay_data[:, self.REPLAY_T] =  np.asarray(replay_data['time'])
+        self.replay_data[:, self.REPLAY_X] =  np.asarray(replay_data['x'])
+        self.replay_data[:, self.REPLAY_Y] = -np.asarray(replay_data['y'])
+        self.replay_data[:, self.REPLAY_K] =  np.asarray(
             ( replay_data['k1'] == StdReplayData.PRESS ) +
             ( replay_data['k2'] == StdReplayData.PRESS ) +
             ( replay_data['m1'] == StdReplayData.PRESS ) +
             ( replay_data['m2'] == StdReplayData.PRESS )
         )
-        self.__draw_data()
-
-
-    def set_replay_from_play_data(self, score_data: pd.DataFrame):
-        # Assumes play data pertianing to only one replay is passed
-        #
-        # Play data only has score info, so at best only score points are recoverable
-        # Basically how old osu! 2007 - 2009 era replays looked like
-        # Press timings are easy to recover, however matching cursor positions to map data is not
-        #   because note/aimpoint positions are not saved in play data
-        data_filter = (score_data['TYPE_HIT'] == StdScoreData.TYPE_HITP)
-        score_data = score_data[data_filter]
-
-        self.replay_data = np.zeros((score_data.shape[0]*2, 7))
-
-        # Press timings
-        self.replay_data[::2, self.REPLAY_T]   = score_data['T_HIT']
-        self.replay_data[::2, self.REPLAY_X]   = score_data['X_HIT']
-        self.replay_data[::2, self.REPLAY_Y]   = -score_data['Y_HIT']
-
-        # Release timings
-        self.replay_data[1::2, self.REPLAY_T]  = score_data['T_HIT'] + 50
-        self.replay_data[1::2, self.REPLAY_X]  = score_data['X_HIT']
-        self.replay_data[1::2, self.REPLAY_Y]  = -score_data['Y_HIT']
-
         self.__draw_data()
 
 
@@ -304,7 +285,6 @@ class MapMouseGraph(QtWidgets.QTabWidget):
             vel_t = data[np.argmax(vel), self.REPLAY_T]
             data[:, self.REPLAY_T] -= vel_t
 
-
             replay_data.append(data)
 
         # Determine and set graph view
@@ -340,8 +320,11 @@ class MapMouseGraph(QtWidgets.QTabWidget):
 
             for i, data in enumerate(replay_data):
                 # TODO: Colorize based on distance
-                plot_x = graph_x.plotItem.plot(pen=pyqtgraph.mkPen(color=(255, 0, 0, 150)), symbol='o', symbolPen=None, symbolSize=2, symbolBrush='y')
-                plot_y = graph_y.plotItem.plot(pen=pyqtgraph.mkPen(color=(255, 0, 0, 150)), symbol='o', symbolPen=None, symbolSize=2, symbolBrush='y')
+                assert ( plot_item := graph_x.plotItem ) is not None
+                plot_x = plot_item.plot(pen=pyqtgraph.mkPen(color=(255, 0, 0, 150)), symbol='o', symbolPen=None, symbolSize=2, symbolBrush='y')
+
+                assert ( plot_item := graph_y.plotItem ) is not None
+                plot_y = plot_item.plot(pen=pyqtgraph.mkPen(color=(255, 0, 0, 150)), symbol='o', symbolPen=None, symbolSize=2, symbolBrush='y')
 
                 plot_x.setData(data[:, self.REPLAY_T], data[:, self.REPLAY_X])
                 plot_y.setData(data[:, self.REPLAY_T], data[:, self.REPLAY_Y])
