@@ -75,7 +75,8 @@ class MapMouseGraph(QtWidgets.QTabWidget):
             self.__graph_vel_algn, self.__graph_vel_orth,
             self.__graph_acc_algn, self.__graph_acc_orth
         ]:
-            assert ( plot_item := graph.getPlotItem() ) is not None
+            plot_item = graph.getPlotItem()
+            assert plot_item is not None
 
             plot_item.getAxis('left').enableAutoSIPrefix(False)
             plot_item.getAxis('bottom').enableAutoSIPrefix(False)
@@ -320,10 +321,12 @@ class MapMouseGraph(QtWidgets.QTabWidget):
 
             for i, data in enumerate(replay_data):
                 # TODO: Colorize based on distance
-                assert ( plot_item := graph_x.plotItem ) is not None
+                plot_item = graph_x.plotItem
+                assert plot_item is not None
                 plot_x = plot_item.plot(pen=pyqtgraph.mkPen(color=(255, 0, 0, 150)), symbol='o', symbolPen=None, symbolSize=2, symbolBrush='y')
 
-                assert ( plot_item := graph_y.plotItem ) is not None
+                plot_item = graph_y.plotItem
+                assert plot_item is not None
                 plot_y = plot_item.plot(pen=pyqtgraph.mkPen(color=(255, 0, 0, 150)), symbol='o', symbolPen=None, symbolSize=2, symbolBrush='y')
 
                 plot_x.setData(data[:, self.REPLAY_T], data[:, self.REPLAY_X])
