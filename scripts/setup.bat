@@ -5,19 +5,19 @@ if NOT EXIST "venv" (
     python -m venv venv
 
     if %ERRORLEVEL% GEQ 1 (
-        echo Failed to create virtual environment!
+        echo Failed to create virtual environment
         EXIT /B 1
     )
 )
 
 call venv\\Scripts\\activate.bat
 if %ERRORLEVEL% GEQ 1 (
-    echo Failed to activate virtual environment!
+    echo Failed to activate virtual environment
     EXIT /B 1
 )
 
 if "%VIRTUAL_ENV%" == "" (
-    echo Virtual environment not active!
+    echo Virtual environment not active
     EXIT /B 1
 )
 
@@ -38,7 +38,7 @@ if "%1" == "install" (
 :: Changes folders in venv/src from dashes to undescore
 python "scripts\\helper\\src_fix.py"
 if %ERRORLEVEL% GEQ 1 (
-    echo Failed to fix src paths!
+    echo Failed to fix src paths
     EXIT /B 1
 )
 
@@ -64,7 +64,7 @@ echo import sys > "%hook_file%"
 echo sys.path.insert^(0, f'{sys.prefix}\\src'^) >> "%hook_file%"
 
 if NOT EXIST "%hook_file%" (
-    echo Failed to create sitecustomize.py!
+    echo Failed to create sitecustomize.py
     EXIT /B 1
 )
 
