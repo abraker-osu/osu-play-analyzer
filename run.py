@@ -11,7 +11,7 @@ if __name__ == '__main__':
     Logger.get_logger('core').debug('Starting app')
 
     app = QtWidgets.QApplication(sys.argv)
-    app.setStyleSheet(open('stylesheet.css').read())
+    app.setStyleSheet(open('res/stylesheet.css').read())
 
     ex = App()
     sys.exit(app.exec_())
