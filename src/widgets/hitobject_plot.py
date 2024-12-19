@@ -1,6 +1,8 @@
+from PyQt6 import QtCore
+from PyQt6 import QtWidgets
 import pyqtgraph
+
 import numpy as np
-from pyqtgraph import QtCore, QtGui
 
 from osu_analysis import StdMapData
 
@@ -14,13 +16,13 @@ class HitobjectPlot(pyqtgraph.GraphItem):
         pyqtgraph.setConfigOptions(antialias=True)
 
         self.pen = pyqtgraph.mkPen(width=HitobjectPlot.HITOBJECT_RADIUS)
-        self.pen.setCapStyle(QtCore.Qt.RoundCap)
+        self.pen.setCapStyle(QtCore.Qt.PenCapStyle.RoundCap)
         self.setPen(self.pen)
-    
+
 
     def set_map_timeline(self, map_data, y_pos=0):
         self.scatter.clear()
-        
+
         press_select = map_data['type'] == StdMapData.TYPE_PRESS
         release_select = map_data['type'] == StdMapData.TYPE_RELEASE
 
@@ -60,7 +62,7 @@ class HitobjectPlot(pyqtgraph.GraphItem):
         pos = np.zeros((0, 2), dtype=np.float32)
         adj = np.zeros((0, ), dtype=np.int32)
         self.setData(pos=pos, adj=adj, size=[], symbol='o', pxMode=False)
-        
+
         # Select hitobjects within AR range of currently viewed timing
         ar_select = (t <= map_data['time']) & (map_data['time'] <= (t + ar_ms))
         hitobject_idxs = map_data[ar_select].index.get_level_values(0).drop_duplicates()

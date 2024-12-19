@@ -1,4 +1,6 @@
-import PyQt5
+from PyQt6 import QtCore
+from PyQt6 import QtWidgets
+
 import pyqtgraph
 import numpy as np
 
@@ -7,10 +9,10 @@ from data_recording.data import ScoreNpyData
 
 
 
-class DevGraphAngle(PyQt5.QtWidgets.QWidget):
+class DevGraphAngle(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
-        PyQt5.QtWidgets.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
 
         self.DEV_DATA_X = 0
         self.DEV_DATA_Y = 1
@@ -38,7 +40,7 @@ class DevGraphAngle(PyQt5.QtWidgets.QWidget):
         self.__graph.addLegend()
 
         # Deviation marker indicating expected deviation according to set CS
-        self.__dev_marker_95 = pyqtgraph.InfiniteLine(angle=0, movable=False, pen=pyqtgraph.mkPen(color=(255, 100, 0, 100), style=pyqtgraph.QtCore.Qt.DashLine))
+        self.__dev_marker_95 = pyqtgraph.InfiniteLine(angle=0, movable=False, pen=pyqtgraph.mkPen(color=(255, 100, 0, 100), style=QtCore.Qt.PenStyle.DashLine))
         self.__graph.addItem(self.__dev_marker_95, ignoreBounds=True)
 
         # Used to set text in legend item
@@ -47,7 +49,7 @@ class DevGraphAngle(PyQt5.QtWidgets.QWidget):
         self.__text = self.__graph.getPlotItem().legend.getLabel(self.__label_style)
 
         # Put it all together
-        self.__layout = PyQt5.QtWidgets.QHBoxLayout(self)
+        self.__layout = QtWidgets.QHBoxLayout(self)
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(2)
         self.__layout.addWidget(self.__graph)

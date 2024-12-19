@@ -6,9 +6,9 @@ import sys
 import time
 import ctypes
 
-from PyQt5 import QtCore
-from PyQt5 import QtGui
-from PyQt5 import QtWidgets
+from PyQt6 import QtCore
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
 
 import pyqtgraph as pg
 
@@ -22,7 +22,7 @@ class MainUI(QtWidgets.QWidget):
         self.gridLayout_2 = QtWidgets.QGridLayout(self)
 
         self.splitter = QtWidgets.QSplitter(self)
-        self.splitter.setOrientation(QtCore.Qt.Horizontal)
+        self.splitter.setOrientation(QtCore.Qt.Orientation.Horizontal)
 
         self.layoutWidget = QtWidgets.QWidget(self.splitter)
 

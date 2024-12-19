@@ -9,7 +9,7 @@ if __name__ == '__main__':
         # See: https://stackoverflow.com/a/27694505
         multiprocessing.freeze_support()
 
-    from PyQt5 import QtWidgets
+    from PyQt6 import QtWidgets
 
     from misc.Logger import Logger
     from app import App
@@ -20,4 +20,4 @@ if __name__ == '__main__':
     app.setStyleSheet(open('res/stylesheet.css').read())
 
     ex = App()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

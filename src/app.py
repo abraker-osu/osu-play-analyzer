@@ -5,7 +5,7 @@ import traceback
 import time
 import numpy as np
 
-import PyQt5
+import PyQt6
 
 from osu_interfaces import Gamemode
 from beatmap_reader import BeatmapIO
@@ -74,27 +74,27 @@ sys.excepthook = exception_hook
 """
 Main app class
 """
-class App(PyQt5.QtWidgets.QMainWindow):
+class App(PyQt6.QtWidgets.QMainWindow):
 
-    __play_handler_signal = PyQt5.QtCore.pyqtSignal(object, object)
+    __play_handler_signal = PyQt6.QtCore.pyqtSignal(object, object)
 
     logger = Logger.get_logger(__name__)
     debug = True
 
     def __init__(self):
-        PyQt5.QtWidgets.QMainWindow.__init__(self)
+        PyQt6.QtWidgets.QMainWindow.__init__(self)
 
         self.__contruct_gui_stage1()
 
         if not os.path.isdir(AppConfig.cfg['osu_dir']):
-            msg = PyQt5.QtWidgets.QMessageBox()
-            msg.setIcon(PyQt5.QtWidgets.QMessageBox.Information)
+            msg = PyQt6.QtWidgets.QMessageBox()
+            msg.setIcon(PyQt6.QtWidgets.QMessageBox.Information)
             msg.setWindowTitle('osu! folder config')
             msg.setText('Locate your osu! folder')
-            msg.setStandardButtons(PyQt5.QtWidgets.QMessageBox.Ok)
+            msg.setStandardButtons(PyQt6.QtWidgets.QMessageBox.Ok)
             msg.exec_()
 
-            osu_dir = str(PyQt5.QtWidgets.QFileDialog.getExistingDirectory(self, 'Select osu! folder'))
+            osu_dir = str(PyQt6.QtWidgets.QFileDialog.getExistingDirectory(self, 'Select osu! folder'))
             if len(osu_dir) == 0:
                 self.status_text.setText(
                     'Invalid osu! path! Alternatively find config.json in app folder and edit it.\n' + \
@@ -132,27 +132,27 @@ class App(PyQt5.QtWidgets.QMainWindow):
 
         self.setWindowTitle('osu! performance analyzer')
 
-        self.data_overview_button = PyQt5.QtWidgets.QPushButton('Data overview')
+        self.data_overview_button = PyQt6.QtWidgets.QPushButton('Data overview')
         self.data_overview_button.clicked.connect(self.data_overview_button_clicked)
         self.data_overview_button.setToolTip('Select maps and view their composition')
 
-        self.data_graphs_button = PyQt5.QtWidgets.QPushButton('Data graphs')
+        self.data_graphs_button = PyQt6.QtWidgets.QPushButton('Data graphs')
         self.data_graphs_button.clicked.connect(self.data_graphs_button_clicked)
         self.data_graphs_button.setToolTip('View map metrics and statistics')
 
-        self.map_architect_button = PyQt5.QtWidgets.QPushButton('Map architect')
+        self.map_architect_button = PyQt6.QtWidgets.QPushButton('Map architect')
         self.map_architect_button.clicked.connect(self.map_architect_button_clicked)
         self.map_architect_button.setToolTip('Generate maps for player performance data recording')
 
-        self.map_display_button = PyQt5.QtWidgets.QPushButton('Map display')
+        self.map_display_button = PyQt6.QtWidgets.QPushButton('Map display')
         self.map_display_button.clicked.connect(self.map_display_button_clicked)
         self.map_display_button.setToolTip('Display selected and generated map')
 
-        self.status_text = PyQt5.QtWidgets.QLabel()
-        self.main_widget = PyQt5.QtWidgets.QWidget()
+        self.status_text = PyQt6.QtWidgets.QLabel()
+        self.main_widget = PyQt6.QtWidgets.QWidget()
         self.setCentralWidget(self.main_widget)
 
-        self.layout = PyQt5.QtWidgets.QVBoxLayout(self.main_widget)
+        self.layout = PyQt6.QtWidgets.QVBoxLayout(self.main_widget)
         self.layout.addWidget(self.data_overview_button)
         self.layout.addWidget(self.data_graphs_button)
         self.layout.addWidget(self.map_architect_button)

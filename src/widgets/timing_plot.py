@@ -1,7 +1,9 @@
+from PyQt6 import QtCore
+from PyQt6 import QtWidgets
 import pyqtgraph
+
 import numpy as np
 import math
-from pyqtgraph import QtCore, QtGui
 
 
 class TimingPlot(pyqtgraph.GraphItem):
@@ -11,9 +13,9 @@ class TimingPlot(pyqtgraph.GraphItem):
         pyqtgraph.setConfigOptions(antialias=True)
 
         self.pen = pyqtgraph.mkPen(width=width, color=color)
-        self.pen.setCapStyle(QtCore.Qt.RoundCap)
+        self.pen.setCapStyle(QtCore.Qt.PenCapStyle.RoundCap)
         self.setPen(self.pen)
-    
+
 
     def setTimings(self, start_times=[], end_times=[], y_pos=0, color=(255, 255, 255, 255), width=3):
         try:
@@ -21,7 +23,7 @@ class TimingPlot(pyqtgraph.GraphItem):
                 self.scatter.clear()
                 self.pos = None
                 return
-        except ValueError: 
+        except ValueError:
             return
 
         self.pen = pyqtgraph.mkPen(width=width, color=color)
@@ -32,7 +34,7 @@ class TimingPlot(pyqtgraph.GraphItem):
         pos  = np.zeros((num_intervals*2, 2), dtype=np.float32)
         adj  = np.zeros((num_intervals, 2), dtype=np.int32)
         size = np.zeros(num_intervals*2, dtype=np.int32)
-        
+
         if (len(start_times) != len(end_times)):
             raise AssertionError(f'start_times and end_times are not the same length, len(start_times)={len(start_times)}, len(end_times)={len(end_times)}')
             return

@@ -1,7 +1,7 @@
 import scipy
 import numpy as np
 
-import PyQt5
+import PyQt6
 import pyqtgraph
 from pyqtgraph.functions import mkPen
 
@@ -12,7 +12,7 @@ from misc.utils import Utils
 
 
 
-class ScoreTOffsetMultimap(PyQt5.QtWidgets.QWidget):
+class ScoreTOffsetMultimap(PyQt6.QtWidgets.QWidget):
 
     __OFFSET_OD4 = 55.5  # +/-ms window
     __OFFSET_OD5 = 49.5  # +/-ms window
@@ -21,7 +21,7 @@ class ScoreTOffsetMultimap(PyQt5.QtWidgets.QWidget):
     __OFFSET_OD8 = 31.5  # +/-ms window
 
     def __init__(self, parent=None):
-        PyQt5.QtWidgets.QWidget.__init__(self, parent)
+        PyQt6.QtWidgets.QWidget.__init__(self, parent)
 
         self.cache_miss_count = 0
 
@@ -56,7 +56,7 @@ class ScoreTOffsetMultimap(PyQt5.QtWidgets.QWidget):
         self.__hit_metrics.setText('Select a map to display data')
 
         # Put it all together
-        self.__layout = PyQt5.QtWidgets.QHBoxLayout(self)
+        self.__layout = PyQt6.QtWidgets.QHBoxLayout(self)
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(2)
         self.__layout.addWidget(self.__graph)

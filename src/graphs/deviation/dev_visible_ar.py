@@ -1,7 +1,7 @@
 '''
 The purpose of this graph is
 '''
-import PyQt5
+import PyQt6
 import pyqtgraph
 
 import numpy as np
@@ -10,10 +10,10 @@ from osu_analysis import StdScoreData
 from misc.osu_utils import OsuUtils
 
 
-class DevVisibleAR(PyQt5.QtWidgets.QWidget):
+class DevVisibleAR(PyQt6.QtWidgets.QWidget):
 
     def __init__(self, parent=None):
-        PyQt5.QtWidgets.QWidget.__init__(self, parent)
+        PyQt6.QtWidgets.QWidget.__init__(self, parent)
 
         # Main graph
         self.__graph = pyqtgraph.PlotWidget(title='# Notes visible vs # misses')
@@ -33,7 +33,7 @@ class DevVisibleAR(PyQt5.QtWidgets.QWidget):
         self.__text = self.__graph.getPlotItem().legend.getLabel(self.__label_style)
 
         # Put it all together
-        self.__layout = PyQt5.QtWidgets.QHBoxLayout(self)
+        self.__layout = PyQt6.QtWidgets.QHBoxLayout(self)
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(2)
         self.__layout.addWidget(self.__graph)
