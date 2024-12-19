@@ -1,11 +1,22 @@
 #!/bin/bash
 
-# Needed for pyqt6
-sudo apt install -y libxkbcommon-x11-0 libxcb-cursor-dev libxcb-icccm4 libxcb-keysyms1
+if [ -f /etc/debian_version ]; then
+    # Needed for pyqt6
+    sudo apt install -y libxkbcommon-x11-0 libxcb-cursor-dev libxcb-icccm4 libxcb-keysyms1
 
-# Python prereqs
-sudo apt install -y python3
-sudo apt install -y python3-venv
+    # Python prereqs
+    sudo apt install -y python3
+    sudo apt install -y python3-venv
+elif [ -f /etc/arch-release ]; then
+    # Needed for PyQt6
+    sudo pacman -Syu --noconfirm xorg-xkbcommon xcb-util-cursor xcb-util-keysyms
+
+    # Python prerequisites
+    sudo pacman -Syu --noconfirm python python-virtualenv
+else
+    echo "Unsupported distribution."
+    exit 1
+fi
 
 # Create venv
 if [ ! -d "venv_nix/bin" ]; then
