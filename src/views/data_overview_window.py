@@ -78,7 +78,7 @@ class DataOverviewWindow(QtWidgets.QWidget):
         self.__file_menu.addAction(self.__new_data_action)
 
         self.__open_data_action = QtGui.QAction('&Load data file (*.h5)')
-        self.__open_data_action.triggered.connect(lambda: self.__open_data_dialog)
+        self.__open_data_action.triggered.connect(self.__open_data_dialog)
         self.__file_menu.addAction(self.__open_data_action)
 
         self.__open_replay_action = QtGui.QAction('&Add replay (*.osr)')
@@ -291,7 +291,6 @@ class DataOverviewWindow(QtWidgets.QWidget):
         self.logger.debug('__open_data_dialog')
 
         name_filter = 'h5 files (*.h5)'
-
         file_pathname = QtWidgets.QFileDialog.getOpenFileName(self, 'Open data file',  f'./data', name_filter)[0]
         if len(file_pathname) == 0:
             return
