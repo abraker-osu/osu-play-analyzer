@@ -1,7 +1,6 @@
 # Everything is put under __main__ so that the map architect
 #  could load code without invoking the GUI
 if __name__ == '__main__':
-    if sys.platform.startswith('win'):
     import os, sys
     import multiprocessing
 
