@@ -302,7 +302,7 @@ def unnestedDict(exDict):
 
 class MapArchitectWindow(QtWidgets.QMainWindow):
 
-    FOLDER_LOCATION = 'res/map_gen_scripts'
+    FOLDER_LOCATION = f'res{os.sep}map_gen_scripts'
 
     gen_map_event = QtCore.pyqtSignal(str)
 
@@ -457,20 +457,20 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
 
         results = os.walk(MapArchitectWindow.FOLDER_LOCATION, topdown=True, onerror=None, followlinks=False)
         for dirpath, _, filenames in results:
-            dirpath = os.path.normpath(dirpath + '\\')
+            dirpath = os.path.normpath(dirpath + os.sep)
 
             # Take out the root folder name
             dirpath = dirpath.split(os.path.normpath(MapArchitectWindow.FOLDER_LOCATION))
             dirpath = dirpath[-1]
 
             data_nest = data
-            for dir in dirpath.split('\\'):
+            for dir in dirpath.split(os.sep):
                 if not dir: continue
                 if not dir in data_nest:
                     data_nest[dir] = { }
 
                 data_nest = data_nest[dir]
-                dirpath += '\\'
+                dirpath += os.sep
 
             for filename in filenames:
                 data_nest[filename.split('.')[0]] = f'{dirpath}{filename}'
@@ -523,7 +523,7 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
             # This happens if the user clicks on a folder in the QTreeWidget
             return
 
-        file_pathname = f'{MapArchitectWindow.FOLDER_LOCATION}/{script_pathname}'
+        file_pathname = f'{MapArchitectWindow.FOLDER_LOCATION}{os.sep}{script_pathname}'
 
         self.__ui.code_editor.setPlainText(self.__get_code_content(file_pathname))
         self.__ui.title_editor.setText(script_pathname)
@@ -531,7 +531,7 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
 
     def __save_file(self):
         script_pathname = self.__ui.title_editor.text()
-        file_pathname   = f'{MapArchitectWindow.FOLDER_LOCATION}/{script_pathname}'
+        file_pathname   = f'{MapArchitectWindow.FOLDER_LOCATION}{os.sep}{script_pathname}'
         file_path       = os.path.dirname(file_pathname)
 
         if not os.path.exists(file_path):
@@ -568,15 +568,15 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
 
         if getattr(sys, 'frozen', False):
             # Indication that this is being run via the pyinstaller exe
-            cwd = os.getcwd().replace("\\", "/")
-            add_paths.append(f'{cwd}/res')
+            cwd = os.getcwd()
+            add_paths.append(f'{cwd}{os.sep}res')
         else:
             # Indication that this is being run via python directly
             script_path = os.path.abspath(os.path.dirname(__file__))
-            path        = os.path.dirname(os.path.dirname(script_path)).replace('\\', '/')
+            path        = os.path.dirname(os.path.dirname(script_path))
 
-            add_paths.append(f'{path}/map_generator')
-            add_paths.append(f'{path}/app/misc')
+            add_paths.append(f'{path}{os.sep}map_generator')
+            add_paths.append(f'{path}{os.sep}app{os.sep}misc')
 
         add_paths = ''.join([ f'sys.path.append("{add_path}")\n' for add_path in add_paths ])
 
