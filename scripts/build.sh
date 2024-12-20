@@ -33,8 +33,7 @@ fi
 
 # Copy res to dist
 rm -rf "dist/res"
-mkdir -p "dist/res"
-rsync -a --delete "res/" "dist/res/"
+cp -r "res" "dist/res"
 if [ $? -ne 0 ]; then
     echo "Failed to copy res to dist"
     exit 1
