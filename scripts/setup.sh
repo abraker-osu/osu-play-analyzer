@@ -9,10 +9,10 @@ if [ -f /etc/debian_version ]; then
     sudo apt install -y python3-venv
 elif [ -f /etc/arch-release ]; then
     # Needed for PyQt6
-    sudo pacman -Syu --noconfirm xorg-xkbcommon xcb-util-cursor xcb-util-keysyms
+    sudo pacman -Syy --noconfirm xorg-xkbcommon xcb-util-cursor xcb-util-keysyms
 
     # Python prerequisites
-    sudo pacman -Syu --noconfirm python python-virtualenv
+    sudo pacman -Syy --noconfirm python python-virtualenv
 else
     echo "Unsupported distribution."
     exit 1
