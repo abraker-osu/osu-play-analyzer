@@ -543,7 +543,7 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
             msg.setText('Unable to save: Please name the script!\nUse the "Script name" edit box above')
             msg.setWindowTitle('Error saving file')
             msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-            msg.exec_()
+            msg.exec()
             return
 
         try:
@@ -555,7 +555,7 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
             msg.setText('Unable to save: Permission error!')
             msg.setWindowTitle('Error saving file')
             msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-            msg.exec_()
+            msg.exec()
             return
 
         self.__script_list = self.__get_script_list()
@@ -608,7 +608,7 @@ class MapArchitectWindow(QtWidgets.QMainWindow):
             msg.setWindowTitle('Warning')
             msg.setText('Script timed out')
             msg.setStandardButtons(QtWidgets.QMessageBox.StandardButton.Ok)
-            msg.exec_()
+            msg.exec()
 
             # Thanks https://docs.python.org/3/c-api/init.html?highlight=pythreadstate_setasyncexc#c.PyThreadState_SetAsyncExc
             # Thanks https://stackoverflow.com/questions/65089503/raising-exceptions-in-a-thread
