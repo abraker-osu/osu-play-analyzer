@@ -56,15 +56,12 @@ if [ $? -ne 0 ]; then
 fi
 
 # Zip relevant files
-rm -f "dist/osu-performance-analyzer.zip" 2>/dev/null
+rm -f "dist/osu-performance-analyzer_linux.tar.gz" 2>/dev/null
 
-pushd "dist"
-zip "osu-performance-analyzer.zip" "osu-performance-analyzer" "res"
+tar -czf -C "dist" -f "dist/osu-performance-analyzer_linux.tar.gz" "osu-performance-analyzer" "res"
 if [ $? -ne 0 ]; then
-    echo "Failed to zip files"
-    popd
+    echo "Failed to tar files"
     exit 1
 fi
-popd
 
 echo "[ DONE ]"

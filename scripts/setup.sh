@@ -7,7 +7,7 @@ if [ -f /etc/debian_version ]; then
     sudo apt install -y libxkbcommon-x11-0 libxcb-cursor-dev libxcb-icccm4 libxcb-keysyms1
 
     # Needed for pyinstaller and built binary metadata info setting
-    sudo apt install -y binutils attr zip
+    sudo apt install -y binutils attr
 
     # Python prereqs
     sudo apt install -y python3 python3-venv
@@ -16,7 +16,7 @@ elif [ -f /etc/arch-release ]; then
     sudo pacman -Syy --noconfirm xorg-xkbcommon xcb-util-cursor xcb-util-keysyms
 
     # Needed for pyinstaller and built binary metadata info setting
-    sudo pacman -Syy --noconfirm binutils attr zip
+    sudo pacman -Syy --noconfirm binutils attr
 
     # Python prerequisites
     sudo pacman -Syy --noconfirm python python-virtualenv
