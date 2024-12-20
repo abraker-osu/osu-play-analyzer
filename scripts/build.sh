@@ -24,25 +24,10 @@ rm -rf "build"
 # rm -rf "dist"
 
 # Build exe
-rm -f "dist/osu-performance-analyzer.exe" 2>/dev/null
+rm -f "dist/osu-performance-analyzer" 2>/dev/null
 pyinstaller -y "build.spec"
 if [ $? -ne 0 ]; then
     echo "Failed to build exe"
-    exit 1
-fi
-
-# Generate version file to set exe version
-rm -f "data/version.txt" 2>/dev/null
-python "scripts/helper/gen_ver.py"
-if [ $? -ne 0 ]; then
-    echo "Failed to generate version file"
-    exit 1
-fi
-
-# Set exe version (shown in file properties metadata)
-pyi-set_version "data/version.txt" "dist/osu-performance-analyzer.exe"
-if [ $? -ne 0 ]; then
-    echo "Failed to set version to exe"
     exit 1
 fi
 
@@ -55,9 +40,16 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Set binary metadata
+ver_date=$(date +'%Y.%m.%d')
+ver_time=$(printf "%05d" $((10000*$(date +'%H') + 100*$(date +'%M') + $(date +'%S'))))
+
+setfattr -n user.version -v "${ver_date}.${ver_time}" dist/osu-performance-analyzer
+setfattr -n user.description -v "An analysis tool for osu! beatmaps, replays, scores, and more!" dist/osu-performance-analyzer
+
 # Copy map_generator library to dist (used by map architect)
 mkdir -p "dist/res/map_generator"
-rsync -a --include='*.py' --exclude='*' "venv_nix/src/map_generator/src/" "dist/res/map_generator/"
+cp "venv_nix/src/map_generator/src/"*.py "dist/res/map_generator/"
 if [ $? -ne 0 ]; then
     echo "Failed to copy map_generator to dist"
     exit 1
@@ -65,10 +57,14 @@ fi
 
 # Zip relevant files
 rm -f "dist/osu-performance-analyzer.zip" 2>/dev/null
-tar -a -c -C "dist" -f "dist/osu-performance-analyzer.zip" "osu-performance-analyzer.exe" "res"
+
+pushd "dist"
+zip "osu-performance-analyzer.zip" "osu-performance-analyzer" "res"
 if [ $? -ne 0 ]; then
     echo "Failed to zip files"
+    popd
     exit 1
 fi
+popd
 
 echo "[ DONE ]"

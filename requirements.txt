@@ -18,3 +18,4 @@ PyInstaller>=4.8
 requests
 tinydb
 tables
+pefile; sys_platform == 'linux'

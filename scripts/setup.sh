@@ -6,8 +6,8 @@ if [ -f /etc/debian_version ]; then
     # Needed for pyqt6
     sudo apt install -y libxkbcommon-x11-0 libxcb-cursor-dev libxcb-icccm4 libxcb-keysyms1
 
-    # Needed for pyinstaller
-    sudo apt install -y binutils
+    # Needed for pyinstaller and built binary metadata info setting
+    sudo apt install -y binutils attr zip
 
     # Python prereqs
     sudo apt install -y python3 python3-venv
@@ -15,8 +15,8 @@ elif [ -f /etc/arch-release ]; then
     # Needed for PyQt6
     sudo pacman -Syy --noconfirm xorg-xkbcommon xcb-util-cursor xcb-util-keysyms
 
-    # Needed for pyinstaller
-    sudo pacman -Syy --noconfirm binutils
+    # Needed for pyinstaller and built binary metadata info setting
+    sudo pacman -Syy --noconfirm binutils attr zip
 
     # Python prerequisites
     sudo pacman -Syy --noconfirm python python-virtualenv
