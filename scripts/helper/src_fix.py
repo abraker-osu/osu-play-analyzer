@@ -17,12 +17,12 @@ if 'VIRTUAL_ENV' not in os.environ:
     raise Exception('No virtual environment active!')
 
 
-path = f'{os.environ["VIRTUAL_ENV"]}\\src'
+path = f'{os.environ["VIRTUAL_ENV"]}{os.sep}src'
 for subdir in os.listdir(path):
-    old_path = f'{path}\\{subdir}'
+    old_path = f'{path}{os.sep}{subdir}'
 
     # Make path relative
-    old_path = old_path.replace(f'{os.getcwd()}\\', '')
+    old_path = old_path.replace(f'{os.getcwd()}{os.sep}', '')
 
     if '-' in subdir:
         new_path = old_path.replace('-', '_')

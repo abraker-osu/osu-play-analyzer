@@ -1,11 +1,11 @@
 @echo off
 
-if NOT EXIST "venv" (
+if NOT EXIST "venv_win" (
     echo No venv found
     EXIT /B 1
 )
 
-call "venv\Scripts\activate.bat"
+call "venv_win\Scripts\activate.bat"
 if %ERRORLEVEL% GEQ 1 (
     echo Failed to activate virtual environment
     EXIT /B 1
@@ -56,7 +56,7 @@ if %ERRORLEVEL% GEQ 8 (
 
 :: Copy map_generator library to dist (used by map architect)
 mkdir "dist\res\map_generator"
-robocopy "venv\src\map_generator\src" "dist\res\map_generator" "*.py" /MIR /NJH /NJS
+robocopy "venv_win\src\map_generator\src" "dist\res\map_generator" "*.py" /MIR /NJH /NJS
 if %ERRORLEVEL% GEQ 8 (
     echo Failed to copy res to dist
     EXIT /B 1
@@ -65,8 +65,8 @@ if %ERRORLEVEL% GEQ 8 (
 :: zip relevant files
 :: apprently tar can create zip files
 :: https://superuser.com/questions/201371/create-zip-folder-from-the-command-line-windows#comment2831491_898508
-del /s "dist\osu-performance-analyzer.zip" >nul 2>&1
-tar -a -c -C "dist" -f "dist/osu-performance-analyzer.zip" "osu-performance-analyzer.exe" "res"
+del /s "dist\osu-performance-analyzer_win.zip" >nul 2>&1
+tar -a -c -C "dist" -f "dist/osu-performance-analyzer_win.zip" "osu-performance-analyzer.exe" "res"
 if %ERRORLEVEL% GEQ 1 (
     echo Failed to zip files
     EXIT /B 1whr

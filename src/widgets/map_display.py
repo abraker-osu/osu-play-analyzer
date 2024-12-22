@@ -7,8 +7,8 @@ Maps being made in the map_architect_window are also displayed here
 import numpy as np
 import pandas as pd
 
-from PyQt5 import QtWidgets
-from PyQt5 import QtCore
+from PyQt6 import QtWidgets
+from PyQt6 import QtCore
 import pyqtgraph
 
 from osu_db import MapsDB

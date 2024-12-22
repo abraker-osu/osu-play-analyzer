@@ -1,6 +1,6 @@
 import numpy as np
 
-import PyQt5
+import PyQt6
 import pyqtgraph
 
 from osu_interfaces import Mod
@@ -9,24 +9,24 @@ from osu_analysis import StdScoreData
 from misc.utils import Utils
 
 
-class AimGraph(PyQt5.QtWidgets.QWidget):
+class AimGraph(PyQt6.QtWidgets.QWidget):
 
     SCALE = 3.0
     SIZE = 140*SCALE
     DEV_WIDTH = 64 + 4*SCALE
 
     # Construct a unit radius circle for a graph
-    class HitCircle(PyQt5.QtWidgets.QGraphicsObject):
+    class HitCircle(PyQt6.QtWidgets.QGraphicsObject):
         def __init__(self, center=(0.0, 0.0), radius=1.0, pen=pyqtgraph.mkPen(color=(255, 255, 255, 255), width=0.5)):
-            PyQt5.QtWidgets.QGraphicsObject.__init__(self)
+            PyQt6.QtWidgets.QGraphicsObject.__init__(self)
             self.center = center
             self.radius = radius
             self.pen = pen
 
 
         def boundingRect(self):
-            rect = PyQt5.QtCore.QRectF(0, 0, 2*self.radius, 2*self.radius)
-            rect.moveCenter(PyQt5.QtCore.QPointF(*self.center))
+            rect = PyQt6.QtCore.QRectF(0, 0, 2*self.radius, 2*self.radius)
+            rect.moveCenter(PyQt6.QtCore.QPointF(*self.center))
             return rect
 
 
@@ -36,13 +36,13 @@ class AimGraph(PyQt5.QtWidgets.QWidget):
 
 
     def __init__(self, parent=None):
-        PyQt5.QtWidgets.QWidget.__init__(self, parent)
+        PyQt6.QtWidgets.QWidget.__init__(self, parent)
 
         self.setWindowTitle('Aim visualization')
         #self.setSizePolicy(QtGui.QSizePolicy.Policy.Minimum, QtGui.QSizePolicy.Policy.Minimum)
-        self.setMaximumSize(PyQt5.QtCore.QSize(int(AimGraph.SIZE + AimGraph.DEV_WIDTH + 1), int(AimGraph.SIZE + AimGraph.DEV_WIDTH + 32 + 1)))
+        self.setMaximumSize(PyQt6.QtCore.QSize(int(AimGraph.SIZE + AimGraph.DEV_WIDTH + 1), int(AimGraph.SIZE + AimGraph.DEV_WIDTH + 32 + 1)))
 
-        self.main_layout = PyQt5.QtWidgets.QGridLayout(self)
+        self.main_layout = PyQt6.QtWidgets.QGridLayout(self)
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(1)
 

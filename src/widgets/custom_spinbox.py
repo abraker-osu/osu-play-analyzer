@@ -1,4 +1,4 @@
-from PyQt5 import QtCore, QtWidgets
+from PyQt6 import QtCore, QtWidgets
 
 
 # Thanks https://stackoverflow.com/a/55010348
@@ -39,7 +39,7 @@ class CustomSpinBox(QtWidgets.QSpinBox):
             value_action = QtWidgets.QWidgetAction(menu)
 
             value_action.setDefaultWidget(value_widget)
-            
+
             menu.insertAction(first_action, value_action)
             menu.insertSeparator(first_action)
 
@@ -48,6 +48,6 @@ class CustomSpinBox(QtWidgets.QSpinBox):
         self.auto_value_cache = value
         self.value_changed.emit(value)
 
-    
+
     def set_auto_value(self, value):
         self.auto_value_cache = value

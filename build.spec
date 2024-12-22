@@ -1,4 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
 from PyInstaller.utils.hooks import collect_dynamic_libs
 
 binaries = []
@@ -7,7 +8,10 @@ binaries += collect_dynamic_libs('tables')
 
 a = Analysis(
     [ 'src/run.py' ],
-    pathex                  = [ '.' ],
+    pathex                  = [
+        '.',
+        f'{os.environ["VIRTUAL_ENV"]}{os.sep}src'
+    ],
     binaries                = binaries,
     datas                   = [],
     hiddenimports           = [],

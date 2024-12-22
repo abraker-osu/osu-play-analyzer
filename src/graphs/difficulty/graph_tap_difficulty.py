@@ -2,7 +2,7 @@ import numpy as np
 import threading
 import math
 
-import PyQt5
+import PyQt6
 import pyqtgraph
 from pyqtgraph.functions import mkPen
 
@@ -10,12 +10,12 @@ from osu_analysis import StdScoreData
 from misc.utils import Utils
 
 
-class GraphTapDifficulty(PyQt5.QtWidgets.QWidget):
+class GraphTapDifficulty(PyQt6.QtWidgets.QWidget):
 
-    __calc_data_event = PyQt5.QtCore.pyqtSignal(object, object, object)
+    __calc_data_event = PyQt6.QtCore.pyqtSignal(object, object, object)
 
     def __init__(self, parent=None):
-        PyQt5.QtWidgets.QWidget.__init__(self, parent)
+        PyQt6.QtWidgets.QWidget.__init__(self, parent)
 
         # Main graph
         self.__graph = pyqtgraph.PlotWidget(title='Tap difficulty graph')
@@ -43,7 +43,7 @@ class GraphTapDifficulty(PyQt5.QtWidgets.QWidget):
         self.__graph.addItem(self.__graph_text)
 
         # Put it all together
-        self.__layout = PyQt5.QtWidgets.QHBoxLayout(self)
+        self.__layout = PyQt6.QtWidgets.QHBoxLayout(self)
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(2)
         self.__layout.addWidget(self.__graph)

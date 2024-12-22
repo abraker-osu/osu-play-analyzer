@@ -1,4 +1,5 @@
-from PyQt5 import QtWidgets
+from PyQt6 import QtCore
+from PyQt6 import QtWidgets
 import pyqtgraph
 
 import numpy as np
@@ -34,10 +35,10 @@ class DevTGraphAR(QtWidgets.QWidget):
         self.__graph.addItem(self.__graph_text)
 
         # Deviation marker indicating expected deviation according to set CS
-        self.__dev_marker_95 = pyqtgraph.InfiniteLine(angle=0, movable=False, pen=pyqtgraph.mkPen(color=(255, 100, 0, 100), style=pyqtgraph.QtCore.Qt.DashLine))
+        self.__dev_marker_95 = pyqtgraph.InfiniteLine(angle=0, movable=False, pen=pyqtgraph.mkPen(color=(255, 100, 0, 100), style=QtCore.Qt.PenStyle.DashLine))
         self.__graph.addItem(self.__dev_marker_95, ignoreBounds=True)
 
-        self.__vel_marker = pyqtgraph.InfiniteLine(angle=90, movable=False, pen=pyqtgraph.mkPen(color=(200, 200, 0, 100), style=pyqtgraph.QtCore.Qt.DashLine))
+        self.__vel_marker = pyqtgraph.InfiniteLine(angle=90, movable=False, pen=pyqtgraph.mkPen(color=(200, 200, 0, 100), style=QtCore.Qt.PenStyle.DashLine))
         self.__graph.addItem(self.__vel_marker, ignoreBounds=True)
 
         # Used to set text in legend item

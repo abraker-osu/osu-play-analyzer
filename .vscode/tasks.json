@@ -9,27 +9,32 @@
     "tasks": [
         {
             "label": "Setup",
-            "command": "scripts\\setup.bat install",
+            "windows": { "command": "scripts\\setup.bat install" },
+            "linux":   { "command": "scripts/setup.sh install" },
             "type": "shell"
         },
         {
             "label":   "Fix project",
-            "command": "scripts\\setup.bat",
+            "windows": { "command": "scripts\\setup.bat" },
+            "linux":   { "command": "scripts/setup.sh" },
             "type":    "shell"
         },
         {
             "label": "Clean",
-            "command": "scripts\\clean.bat",
+            "windows": { "command": "scripts\\clean.bat" },
+            "linux":   { "command": "scripts/clean.sh" },
             "type": "shell"
         },
         {
             "label": "Run",
-            "command": "scripts\\run.bat",
+            "windows": { "command": "scripts\\run.bat" },
+            "linux":   { "command": "scripts/run.sh" },
             "type": "shell",
         },
         {
             "label": "Build",
-            "command": "scripts\\build.bat",
+            "windows": { "command": "scripts\\build.bat" },
+            "linux":   { "command": "scripts/build.sh" },
             "type": "shell"
         }
     ]

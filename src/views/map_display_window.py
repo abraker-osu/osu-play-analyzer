@@ -18,8 +18,9 @@ Different tabs available:
 """
 import pandas as pd
 
-from PyQt5 import QtCore
-from PyQt5 import QtWidgets
+from PyQt6 import QtCore
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
 
 from osu_analysis import StdMapData
 
@@ -55,10 +56,12 @@ class MapDisplayWindow(QtWidgets.QMainWindow):
         self.file_menu = QtWidgets.QMenu("&File")
         self.menu_bar.addMenu(self.file_menu)
 
-        self.open_map_action = QtWidgets.QAction("&Open *.osu", self.file_menu, triggered=lambda: self.__open_map_dialog())
+        self.open_map_action = QtGui.QAction('&Open *.osu')
+        self.open_map_action.triggered.connect(self.__open_map_dialog)
         self.file_menu.addAction(self.open_map_action)
 
-        self.open_replay_action = QtWidgets.QAction("&Open *.osr", self.file_menu, triggered=lambda: self.__open_replay_dialog())
+        self.open_replay_action = QtGui.QAction('&Open *.osr')
+        self.open_replay_action.triggered.connect(self.__open_replay_dialog)
         self.file_menu.addAction(self.open_replay_action)
 
         self.disp_tabs = QtWidgets.QTabWidget()

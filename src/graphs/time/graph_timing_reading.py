@@ -1,6 +1,6 @@
 import threading
 
-import PyQt5
+import PyQt6
 import pyqtgraph
 
 import numpy as np
@@ -13,14 +13,14 @@ from widgets.bar_plot import BarGraphItem
 
 
 
-class GraphTimeReadingDifficulty(PyQt5.QtWidgets.QWidget):
+class GraphTimeReadingDifficulty(PyQt6.QtWidgets.QWidget):
 
-    time_changed_event = PyQt5.QtCore.pyqtSignal(object)
+    time_changed_event = PyQt6.QtCore.pyqtSignal(object)
 
-    __calc_data_event = PyQt5.QtCore.pyqtSignal(object, object, object)
+    __calc_data_event = PyQt6.QtCore.pyqtSignal(object, object, object)
 
     def __init__(self, parent=None):
-        PyQt5.QtWidgets.QWidget.__init__(self, parent)
+        PyQt6.QtWidgets.QWidget.__init__(self, parent)
 
         # Main graph
         self.__graph = pyqtgraph.PlotWidget(title='Time vs Reading difficulty graph')
@@ -50,7 +50,7 @@ class GraphTimeReadingDifficulty(PyQt5.QtWidgets.QWidget):
         self.__graph.getPlotItem().addItem(self.timeline_marker, ignoreBounds=True)
 
         # Put it all together
-        self.__layout = PyQt5.QtWidgets.QHBoxLayout(self)
+        self.__layout = PyQt6.QtWidgets.QHBoxLayout(self)
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(2)
         self.__layout.addWidget(self.__graph)

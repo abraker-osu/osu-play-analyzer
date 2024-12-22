@@ -13,8 +13,8 @@ The is a selection menu on the side that allows the user to select which player'
 
 Design note: Maybe have a scatter plot instead. Really depends on how much data there is and how laggy it will get.
 """
-from PyQt5 import QtCore
-from PyQt5 import QtWidgets
+from PyQt6 import QtCore
+from PyQt6 import QtWidgets
 
 import pyqtgraph
 
@@ -73,7 +73,7 @@ class CompositionViewer(QtWidgets.QWidget):
         self.plot_widget.addItem(self.data_plot)
 
         self.data_type_selection = QtWidgets.QListWidget()
-        self.data_type_selection.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection)
+        self.data_type_selection.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.NoSelection)
 
         self.num_data_points_label = QtWidgets.QLabel('Num data points selected: 0')
 

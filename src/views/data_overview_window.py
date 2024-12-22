@@ -13,8 +13,9 @@ The data overview window manages and displays loaded data. The are 3 data displa
 """
 import os
 
-from PyQt5 import QtWidgets
-from PyQt5 import QtCore
+from PyQt6 import QtCore
+from PyQt6 import QtGui
+from PyQt6 import QtWidgets
 
 import numpy as np
 import pandas as pd
@@ -72,16 +73,20 @@ class DataOverviewWindow(QtWidgets.QWidget):
 
         self.__file_menu = QtWidgets.QMenu("&File")
 
-        self.__new_data_action = QtWidgets.QAction("&New data file", triggered=lambda: self.__new_data_dialog())
+        self.__new_data_action = QtGui.QAction('&New data file')
+        self.__new_data_action.triggered.connect(self.__new_data_dialog)
         self.__file_menu.addAction(self.__new_data_action)
 
-        self.__open_data_action = QtWidgets.QAction("&Load data file (*.h5)", triggered=lambda: self.__open_data_dialog())
+        self.__open_data_action = QtGui.QAction('&Load data file (*.h5)')
+        self.__open_data_action.triggered.connect(self.__open_data_dialog)
         self.__file_menu.addAction(self.__open_data_action)
 
-        self.__open_replay_action = QtWidgets.QAction("&Add replay (*.osr)", triggered=lambda: self.__open_replay_dialog())
+        self.__open_replay_action = QtGui.QAction('&Add replay (*.osr)')
+        self.__open_replay_action.triggered.connect(self.__open_replay_dialog)
         self.__file_menu.addAction(self.__open_replay_action)
 
-        self.__recalc_difficulties_action = QtWidgets.QAction("&Recalculate difficulties", triggered=lambda: self.__recalc_difficulties())
+        self.__recalc_difficulties_action = QtGui.QAction('&Recalculate difficulties')
+        self.__recalc_difficulties_action.triggered.connect(self.__recalc_difficulties)
         self.__file_menu.addAction(self.__recalc_difficulties_action)
 
         self.__menu_bar = QtWidgets.QMenuBar()
@@ -286,7 +291,6 @@ class DataOverviewWindow(QtWidgets.QWidget):
         self.logger.debug('__open_data_dialog')
 
         name_filter = 'h5 files (*.h5)'
-
         file_pathname = QtWidgets.QFileDialog.getOpenFileName(self, 'Open data file',  f'./data', name_filter)[0]
         if len(file_pathname) == 0:
             return

@@ -3,7 +3,7 @@ Window displaying various graphs pertaining to the data selected in the data_ove
 A menubar on the top allows the user to select which graph to display.
 """
 import time
-import PyQt5
+import PyQt6
 
 from misc.Logger import Logger
 
@@ -38,16 +38,16 @@ from graphs.deviation.dev_xy_graph_ar import DevXYGraphAR
 from graphs.deviation.dev_visible_ar import DevVisibleAR
 
 
-class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
+class DataGraphsWindow(PyQt6.QtWidgets.QMainWindow):
 
     logger = Logger.get_logger(__name__)
 
-    time_changed_event = PyQt5.QtCore.pyqtSignal(object)
+    time_changed_event = PyQt6.QtCore.pyqtSignal(object)
 
     def __init__(self, parent=None):
         self.logger.debug('__init__ enter')
 
-        PyQt5.QtWidgets.QMainWindow.__init__(self, parent)
+        PyQt6.QtWidgets.QMainWindow.__init__(self, parent)
         self.setWindowTitle('Data graphs')
 
         self.hit_offset_graph = HitOffsetGraph()
@@ -80,9 +80,9 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.dev_xy_ar = DevXYGraphAR()
         self.dev_visible_ar = DevVisibleAR()
 
-        self.replay_tabs = PyQt5.QtWidgets.QTabWidget()
+        self.replay_tabs = PyQt6.QtWidgets.QTabWidget()
 
-        self.score_tabs = PyQt5.QtWidgets.QTabWidget()
+        self.score_tabs = PyQt6.QtWidgets.QTabWidget()
         self.score_tabs.addTab(self.hit_offset_graph, 'Hit offsets')
         self.score_tabs.addTab(self.score_offset_multimap_graph, 'Score offsets multimap')
         self.score_tabs.addTab(self.score_hit_doffset_graph, 'Score hit doffsets')
@@ -90,24 +90,24 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.score_tabs.addTab(self.doffset_distr_graph, 'Doffset distribution')
         self.score_tabs.addTab(self.aim_display, 'Aim display')
 
-        self.time_tabs = PyQt5.QtWidgets.QTabWidget()
+        self.time_tabs = PyQt6.QtWidgets.QTabWidget()
         self.time_tabs.addTab(self.timing_bpm_dec, 'Timing BPM dec')
         self.time_tabs.addTab(self.timing_bpm_inc, 'Timing BPM inc')
         self.time_tabs.addTab(self.timing_aim_diff, 'Timing Aim diff')
         self.time_tabs.addTab(self.timing_reading_diff, 'Timing Reading diff')
 
-        self.difficulty_tabs = PyQt5.QtWidgets.QTabWidget()
+        self.difficulty_tabs = PyQt6.QtWidgets.QTabWidget()
         self.difficulty_tabs.addTab(self.aim_difficulty, 'Aim difficulty')
         self.difficulty_tabs.addTab(self.tap_difficulty, 'Tap difficulty')
 
-        self.map_tabs = PyQt5.QtWidgets.QTabWidget()
+        self.map_tabs = PyQt6.QtWidgets.QTabWidget()
         self.map_tabs.addTab(self.toffset_bpm_inc, 'T-offset vs BPM Inc')
         self.map_tabs.addTab(self.toffset_bpm, 'T-offset vs Note interval')
         self.map_tabs.addTab(self.toffset_rhy_graph, 'T-offset vs Rhythm')
         #self.map_tabs.addTab(self.toffset_rhyd_graph, 'T-offset vs Rhythm delta')
         self.map_tabs.addTab(self.toffset_velocity, 'T-offset vs Velocity')
 
-        self.play_data_tabs = PyQt5.QtWidgets.QTabWidget()
+        self.play_data_tabs = PyQt6.QtWidgets.QTabWidget()
         self.play_data_tabs.addTab(self.dev_graph_angle, 'Dev vs Angle')
         self.play_data_tabs.addTab(self.dev_graph_vel, 'Dev vs Velocity')
         self.play_data_tabs.addTab(self.dev_graph_rhythm, 'Dev vs Rhythm')
@@ -117,7 +117,7 @@ class DataGraphsWindow(PyQt5.QtWidgets.QMainWindow):
         self.play_data_tabs.addTab(self.dev_xy_ar, 'AR vs xy-dev')
         self.play_data_tabs.addTab(self.dev_visible_ar, 'AR vs # Misses')
 
-        self.main_widget = PyQt5.QtWidgets.QTabWidget()
+        self.main_widget = PyQt6.QtWidgets.QTabWidget()
         self.main_widget.addTab(self.score_tabs, 'Score graphs')
         self.main_widget.addTab(self.time_tabs, 'Time graphs')
         self.main_widget.addTab(self.difficulty_tabs, 'Diff graphs')

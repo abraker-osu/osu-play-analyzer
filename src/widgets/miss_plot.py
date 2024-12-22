@@ -1,14 +1,14 @@
 import pyqtgraph
-import PyQt5
+import PyQt6
 
 
 class MissPlotItem(pyqtgraph.GraphicsObject):
 
     def __init__(self):
         pyqtgraph.GraphicsObject.__init__(self)
-    
+
         self._data = None
-        self._picture = PyQt5.QtGui.QPicture()
+        self._picture = PyQt6.QtGui.QPicture()
 
         self._px_h = self.pixelHeight()
         self._px_w = self.pixelWidth()
@@ -28,36 +28,36 @@ class MissPlotItem(pyqtgraph.GraphicsObject):
         if type(self._data) == type(None):
             return
 
-        ## pre-computing a QPicture object allows paint() to run much more quickly, 
+        ## pre-computing a QPicture object allows paint() to run much more quickly,
         ## rather than re-drawing the shapes every time.
-        self._picture = PyQt5.QtGui.QPicture()
+        self._picture = PyQt6.QtGui.QPicture()
 
-        painter = PyQt5.QtGui.QPainter(self._picture)
+        painter = PyQt6.QtGui.QPainter(self._picture)
         painter.setPen(pyqtgraph.mkPen(color=(255, 0, 0, 50), width=1))
 
         vr = self.viewRect()
         for timing in self._data:
-            painter.drawLine(PyQt5.QtCore.QPointF(float(timing), vr.bottom()), PyQt5.QtCore.QPointF(float(timing), vr.top()))
+            painter.drawLine(PyQt6.QtCore.QPointF(float(timing), vr.bottom()), PyQt6.QtCore.QPointF(float(timing), vr.top()))
 
         painter.end()
-    
+
 
     def paint(self, painter, *args):
         painter.drawPicture(0, 0, self._picture)
-    
+
 
     def boundingRect(self):
         if type(self._data) == type(None):
-            return PyQt5.QtCore.QRectF()
+            return PyQt6.QtCore.QRectF()
 
         if len(self._data) == 0:
-            return PyQt5.QtCore.QRectF()
+            return PyQt6.QtCore.QRectF()
 
         if type(self._cached_bounding) == type(None):
             # boundingRect _must_ indicate the entire area that will be drawn on
             # or else we will get artifacts and possibly crashing.
             # (in this case, QPicture does all the work of computing the bouning rect for us)
-            self._cached_bounding = PyQt5.QtCore.QRectF(0, -200, max(self._data), 200)
+            self._cached_bounding = PyQt6.QtCore.QRectF(0, -200, max(self._data), 200)
 
         return self._cached_bounding
 

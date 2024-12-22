@@ -1,6 +1,6 @@
 import numpy as np
 
-import PyQt5
+import PyQt6
 import pyqtgraph
 
 from osu_analysis import StdScoreData
@@ -9,10 +9,10 @@ from misc.utils import Utils, MathUtils
 from widgets.miss_plot import MissPlotItem
 
 
-class HitOffsetGraph(PyQt5.QtWidgets.QWidget):
+class HitOffsetGraph(PyQt6.QtWidgets.QWidget):
 
     def __init__(self, parent=None):
-        PyQt5.QtWidgets.QWidget.__init__(self, parent)
+        PyQt6.QtWidgets.QWidget.__init__(self, parent)
 
         # Main graph
         self.__graph = pyqtgraph.PlotWidget(title='Hit offset graph')
@@ -51,7 +51,7 @@ class HitOffsetGraph(PyQt5.QtWidgets.QWidget):
         self.__graph.addItem(self.hit_metrics)
 
         # Put it all together
-        self.__layout = PyQt5.QtWidgets.QHBoxLayout(self)
+        self.__layout = PyQt6.QtWidgets.QHBoxLayout(self)
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(2)
         self.__layout.addWidget(self.__graph)

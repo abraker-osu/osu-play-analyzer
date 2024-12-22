@@ -1,4 +1,4 @@
-import PyQt5
+import PyQt6
 import pyqtgraph
 
 import numpy as np
@@ -7,12 +7,12 @@ from widgets.bar_plot import BarGraphItem
 from misc.utils import Utils
 
 
-class GraphTimingVisibleAR(PyQt5.QtWidgets.QWidget):
+class GraphTimingVisibleAR(PyQt6.QtWidgets.QWidget):
 
-    time_changed_event = PyQt5.QtCore.pyqtSignal(object)
+    time_changed_event = PyQt6.QtCore.pyqtSignal(object)
 
     def __init__(self, parent=None):
-        PyQt5.QtWidgets.QWidget.__init__(self, parent)
+        PyQt6.QtWidgets.QWidget.__init__(self, parent)
 
         # Main graph
         self.__graph = pyqtgraph.PlotWidget(title='Time vs Number objects visible per AR period')
@@ -42,7 +42,7 @@ class GraphTimingVisibleAR(PyQt5.QtWidgets.QWidget):
         self.__graph.getPlotItem().addItem(self.timeline_marker, ignoreBounds=True)
 
         # Put it all together
-        self.__layout = PyQt5.QtWidgets.QHBoxLayout(self)
+        self.__layout = PyQt6.QtWidgets.QHBoxLayout(self)
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(2)
         self.__layout.addWidget(self.__graph)

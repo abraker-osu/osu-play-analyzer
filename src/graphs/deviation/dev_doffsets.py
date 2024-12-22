@@ -9,7 +9,7 @@ It has been noticed that for equidistant notes, the difference in hit offset bet
         90  bpm - https://i.imgur.com/0gt7kMH.png
         100 bpm - https://i.imgur.com/QiCWoJK.png
 '''
-import PyQt5
+import PyQt6
 import pyqtgraph
 
 import numpy as np
@@ -17,10 +17,10 @@ import numpy as np
 from osu_analysis import StdScoreData
 
 
-class DevDOffsets(PyQt5.QtWidgets.QWidget):
+class DevDOffsets(PyQt6.QtWidgets.QWidget):
 
     def __init__(self, parent=None):
-        PyQt5.QtWidgets.QWidget.__init__(self, parent)
+        PyQt6.QtWidgets.QWidget.__init__(self, parent)
 
         # Main graph
         self.__graph = pyqtgraph.PlotWidget(title='Avg BPM vs doffset deviation')
@@ -38,13 +38,13 @@ class DevDOffsets(PyQt5.QtWidgets.QWidget):
         self.__label_style = pyqtgraph.PlotDataItem(pen=(0,0,0))
         self.__graph.getPlotItem().legend.addItem(self.__label_style, '')
         self.__text = self.__graph.getPlotItem().legend.getLabel(self.__label_style)
-   
+
         # Put it all together
-        self.__layout = PyQt5.QtWidgets.QHBoxLayout(self)
+        self.__layout = PyQt6.QtWidgets.QHBoxLayout(self)
         self.__layout.setContentsMargins(0, 0, 0, 0)
         self.__layout.setSpacing(2)
         self.__layout.addWidget(self.__graph)
-        
+
 
     def plot_data(self, score_data, diff_data):
         if 0 in [ score_data.shape[0], diff_data.shape[0] ]:
@@ -60,7 +60,7 @@ class DevDOffsets(PyQt5.QtWidgets.QWidget):
         for i, ((idx_score, df_score), (idx_diff, df_diff)) in enumerate(zip(score_data, diff_data)):
             bpms = 15000/df_diff['DIFF_T_PRESS_DIFF'].values
             bpms = bpms[~np.isnan(bpms)]
-            
+
             # Keep just the press taps
             df_score = df_score[df_score['TYPE_MAP'] == StdScoreData.ACTION_PRESS]
 
