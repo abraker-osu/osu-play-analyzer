@@ -57,7 +57,7 @@ fi
 # Zip relevant files
 rm -f "dist/osu-performance-analyzer_linux.tar.gz" 2>/dev/null
 
-tar -czf -C "dist" -f "dist/osu-performance-analyzer_linux.tar.gz" "osu-performance-analyzer" "res"
+tar -czf "dist/osu-performance-analyzer_linux.tar.gz" -C "dist" "osu-performance-analyzer" "res"
 if [ $? -ne 0 ]; then
     echo "Failed to tar files"
     exit 1
