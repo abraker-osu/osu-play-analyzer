@@ -17,29 +17,27 @@
     },
 
     "folders": [ {
+            "name": "osu_performance_analyzer",
             "path": "."
         }, {
-            "path": "${env:VIRTUAL_ENV}/src/osu_analysis",
             "name": "osu_analysis",
+            "path": "venv_win/src/osu_analysis",
         }, {
-            "path": "${env:VIRTUAL_ENV}/src/beatmap_reader",
             "name": "beatmap_reader",
+            "path": "venv_win/src/beatmap_reader",
         }, {
-            "path": "${env:VIRTUAL_ENV}/src/replay_reader",
             "name": "replay_reader",
+            "path": "venv_win/src/replay_reader",
         }, {
-            "path": "${env:VIRTUAL_ENV}/src/map_generator",
             "name": "map_generator",
+            "path": "venv_win/src/map_generator",
         }, {
-            "path": "${env:VIRTUAL_ENV}/src/osu_recorder",
             "name": "osu_recorder",
+            "path": "venv_win/src/osu_recorder",
         }, {
-            "path": "${env:VIRTUAL_ENV}/src/osu_db",
             "name": "osu_db",
-        }, {
-            "path": "${env:VIRTUAL_ENV}/src/osu_interfaces",
-            "name": "osu_interfaces",
-        },
+            "path": "venv_win/src/osu_db",
+        }
     ],
 
     "tasks": {
