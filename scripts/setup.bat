@@ -6,11 +6,10 @@
 ::   > scripts\setup.bat install all
 ::
 :: Args
-::   1: "install"\"upgrade" (optional)
+::   1: "install" (optional)
 ::       install: Installs python libraries if not already installed and initializes submodules
-::       upgrade: Upgrades python libraries
 ::
-::   2: "all"               (optional)
+::   2: "all"     (optional)
 ::       all: Installs requirements for each submodule as well
 ::
 :: ENVIRONMENT VARIABLES
@@ -65,36 +64,18 @@ if %ERRORLEVEL% NEQ 0 (
     EXIT /B 1
 )
 
-if "%1" == "install" (
-    python -m pip install -r requirements.txt
-    if !ERRORLEVEL! NEQ 0 (
-        echo Failed to install editable libraries
-        EXIT /B 1
-    )
-)
-
-:: Upgrades project libraries
-if "%1" == "upgrade" (
-    python -m pip install --require-virtualenv --upgrade pip
-    if !ERRORLEVEL! NEQ 0 (
-        echo Failed to upgrade pip!
-        EXIT /B 1
-    )
-
-    python -m pip install --require-virtualenv --upgrade -r requirements.txt
-    if !ERRORLEVEL! NEQ 0 (
-        echo Failed to upgrade editable libraries
-        EXIT /B 1
-    )
-
-    echo.
-)
-
 :: Installs project libraries if not already installed
+:: NOTE: Editables will be re-installed
 if "%1" == "install" (
     python -m pip install --require-virtualenv -r requirements.txt
     if !ERRORLEVEL! NEQ 0 (
         echo Failed to install libraries
+        EXIT /B 1
+    )
+
+    python -m pip install --require-virtualenv -r requirements_editable.txt
+    if !ERRORLEVEL! NEQ 0 (
+        echo Failed to upgrade editable libraries
         EXIT /B 1
     )
 )

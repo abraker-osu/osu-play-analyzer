@@ -58,11 +58,17 @@
                 "type":    "shell",
                 "detail":  "Sets up the project for development",
             }, {
+                "label":   "Analyzer - Update libs",
+                "windows": { "command": "scripts\\update.bat all" },
+                "linux":   { "command": "scripts/update.sh all" },
+                "type":    "shell",
+                "detail":  "Updates the project libraries",
+            }, {
                 "label":   "Analyzer - Setup all",
                 "windows": { "command": "scripts\\setup.bat install all" },
                 "linux":   { "command": "scripts/setup.sh install all" },
                 "type":    "shell",
-                "detail":  "Sets up the project for development",
+                "detail":  "Sets up the project and submodules for development",
             }, {
                 "label":   "Analyzer - Fix project",
                 "windows": { "command": "scripts\\setup.bat" },

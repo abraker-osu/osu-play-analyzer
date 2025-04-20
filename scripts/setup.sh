@@ -7,8 +7,11 @@
 #   $ scripts\setup.sh install all
 #
 # Args
-#   1: "install"\"upgrade" (optional)
-#   2: "all"               (optional)
+#   1: "install" (optional)
+#       install: Installs python libraries if not already installed and initializes submodules
+#
+#   2: "all"     (optional)
+#       all: Installs requirements for each submodule as well
 
 if [ -f /etc/debian_version ]; then
     sudo apt update
@@ -63,35 +66,18 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Installs project libraries if not already installed
+# NOTE: Editables will be re-installed
 if [ "$1" == "install" ]; then
-    python3 -m pip install -r requirements.txt
+    python3 -m pip install --require-virtualenv -r requirements.txt
     if [ $? -ne 0 ]; then
         echo "Failed to install editable libraries!"
         exit 1
     fi
-fi
 
-if [ "$1" == "upgrade" ]; then
-    python3 -m pip install --require-virtualenv --upgrade pip
+    python3 -m pip install --require-virtualenv -r requirements_editable.txt
     if [ $? -ne 0 ]; then
-        echo "Failed to upgrade pip"
-        exit 1
-    fi
-
-    python3 -m pip install --require-virtualenv --upgrade -r requirements.txt
-    if [ $? -ne 0 ]; then
-        echo "Failed to upgrade editable libraries"
-        exit 1
-    fi
-
-    echo ""
-fi
-
-# Installs project libraries if not already installed
-if [ "$1" == "install" ]; then
-    python3 -m pip install --require-virtualenv -r requirements.txt
-    if [ $? -ne 0 ]; then
-        echo "Failed to install libraries"
+        echo "Failed to install editable libraries!"
         exit 1
     fi
 fi
