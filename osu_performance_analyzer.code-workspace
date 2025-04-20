@@ -4,8 +4,16 @@
             "build.spec" : "python",
         },
         "terminal.integrated.env.windows": {
-            "PYTHON" : ""
-        }
+            "PYTHON" : "",
+            "GIT"    : "",
+        },
+
+        "python.analysis.typeCheckingMode": "standard",
+        "python.envFile":                   "${workspaceFolder}/.env",
+        "python.analysis.extraPaths": [
+            "${workspaceFolder}/venv_win/src",
+            "${workspaceFolder}/venv_nix/src"
+        ]
     },
 
     "folders": [ {
