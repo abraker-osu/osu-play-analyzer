@@ -8,34 +8,39 @@
 
     "tasks": [
         {
-            "label": "Setup",
+            "label":   "Setup",
             "windows": { "command": "scripts\\setup.bat install" },
             "linux":   { "command": "scripts/setup.sh install" },
-            "type": "shell"
+            "type":    "shell",
+            "detail":  "Sets up the project for development",
         },
         {
             "label":   "Fix project",
             "windows": { "command": "scripts\\setup.bat" },
             "linux":   { "command": "scripts/setup.sh" },
-            "type":    "shell"
+            "type":    "shell",
+            "detail":  "Fixes submodules paths and git index",
         },
         {
-            "label": "Clean",
+            "label":   "Clean",
             "windows": { "command": "scripts\\clean.bat" },
             "linux":   { "command": "scripts/clean.sh" },
-            "type": "shell"
+            "type":    "shell",
+            "detail":  "Removes all pycache, generated files, and builds",
         },
         {
-            "label": "Run",
+            "label":   "Run",
             "windows": { "command": "scripts\\run.bat" },
             "linux":   { "command": "scripts/run.sh" },
-            "type": "shell",
+            "type":    "shell",
+            "detail":  "Runs the project",
         },
         {
-            "label": "Build",
+            "label":   "Build",
             "windows": { "command": "scripts\\build.bat" },
             "linux":   { "command": "scripts/build.sh" },
-            "type": "shell"
+            "type":    "shell",
+            "detail":  "Builds the project for distribution",
         }
     ]
 }
