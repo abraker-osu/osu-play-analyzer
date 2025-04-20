@@ -77,8 +77,8 @@
                 "detail":  "Removes all pycache, generated files, and builds",
             }, {
                 "label":   "Analyzer - Run",
-                "windows": { "command": "scripts\\run.bat" },
-                "linux":   { "command": "scripts/run.sh" },
+                "windows": { "command": "scripts\\run.bat \"src\\run.py\"" },
+                "linux":   { "command": "scripts/run.sh \"src/run.py\"" },
                 "type":    "shell",
                 "detail":  "Runs the project",
             }, {
