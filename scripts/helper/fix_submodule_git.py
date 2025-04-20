@@ -52,10 +52,10 @@ def get_repo_url(repo_path: str) -> str:
     subprocess.CalledProcessError
         If the command fails
     """
-    try: return run_subprocess([ f'{git}', '-C', repo_path, 'get-url', 'origin' ]).strip()
+    try: return run_subprocess([ f'{git}', '-C', repo_path, 'remote', 'get-url', 'origin' ]).strip()
     except subprocess.CalledProcessError as e:
-        print(f'Failed to get repo URL for {repo_path}')
-        print(f'{e.cmd} returned {e.returncode}: {e.stderr}')
+        print(f'Failed to get repo URL for "{repo_path}"')
+        print(f'Err: {e.cmd} returned {e.returncode}; {e.stderr}')
         raise
 
 
@@ -87,7 +87,7 @@ def check_submodule(repo_path: str):
 
 
 if __name__ == '__main__':
-    if 'VIRUAL_ENV' not in os.environ:
+    if 'VIRTUAL_ENV' not in os.environ:
         raise Exception('No virtual environment active')
 
     git       = os.environ.get('GIT', 'git')

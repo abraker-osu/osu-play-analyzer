@@ -100,7 +100,9 @@ if "%1" == "install" (
 )
 
 if EXIST "%VIRTUAL_ENV%\src" (
-    dir "%VIRTUAL_ENV%\src"
+
+    echo.
+    dir /AD "%VIRTUAL_ENV%\src"
     echo.
 
     if "%2" == "all" (
@@ -121,13 +123,14 @@ if EXIST "%VIRTUAL_ENV%\src" (
     )
 
     @REM Changes folders in "venv_win\src" from dashes to undescore
-    python "scripts\\helper\\src_fix.py"
+    python "scripts\helper\fix_submodule_path.py"
     if %ERRORLEVEL% NEQ 0 (
         echo Failed to fix src paths
         EXIT /B 1
     )
 
-   python "scripts\\helper\\fix_submodules.py"
+    @REM Initializes python editable libraries as submodules and adds them to git index
+    python "scripts\helper\fix_submodule_git.py"
 
 ) else (
     echo "%VIRTUAL_ENV%\src" does not exist
