@@ -27,3 +27,4 @@ if "%VIRTUAL_ENV%" == "" (
 python %1
 
 echo [ DONE ]
+EXIT /B 0

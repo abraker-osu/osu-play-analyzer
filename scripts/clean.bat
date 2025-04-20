@@ -50,3 +50,4 @@ if "%VIRTUAL_ENV%" == "" (
 python -m pip cache purge
 
 echo [ DONE ]
+EXIT /B 0

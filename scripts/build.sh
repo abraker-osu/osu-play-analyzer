@@ -68,3 +68,4 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "[ DONE ]"
+exit 0

@@ -26,3 +26,4 @@ fi
 python3 $1
 
 echo "[ DONE ]"
+exit 0

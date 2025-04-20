@@ -136,3 +136,4 @@ python3 -m pip list
 echo ""
 
 echo "[ DONE ]"
+exit 0

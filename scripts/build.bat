@@ -74,3 +74,4 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo [ DONE ]
+EXIT /B 0

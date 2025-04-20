@@ -141,3 +141,4 @@ python -m pip list
 echo.
 
 echo [ DONE ]
+EXIT /B 0

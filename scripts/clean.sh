@@ -49,3 +49,4 @@ fi
 python3 -m pip cache purge
 
 echo "[ DONE ]"
+exit 0
