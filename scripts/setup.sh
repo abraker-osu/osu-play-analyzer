@@ -1,4 +1,14 @@
 #!/bin/bash
+# Description
+#   Sets up the virtual environment and installs editable libraries
+#   Also initializes/fixes submodules
+#
+# Usage
+#   $ scripts\setup.sh install all
+#
+# Args
+#   1: "install"\"upgrade" (optional)
+#   2: "all"               (optional)
 
 if [ -f /etc/debian_version ]; then
     sudo apt update
@@ -61,11 +71,68 @@ if [ "$1" == "install" ]; then
     fi
 fi
 
-# Changes folders in venv/src from dashes to underscores
-python3 "scripts/helper/src_fix.py"
-if [ $? -ne 0 ]; then
-    echo "Failed to fix src paths"
+if [ "$1" == "upgrade" ]; then
+    python3 -m pip install --require-virtualenv --upgrade pip
+    if [ $? -ne 0 ]; then
+        echo "Failed to upgrade pip"
+        exit 1
+    fi
+
+    python3 -m pip install --require-virtualenv --upgrade -r requirements.txt
+    if [ $? -ne 0 ]; then
+        echo "Failed to upgrade editable libraries"
+        exit 1
+    fi
+
+    echo ""
+fi
+
+# Installs project libraries if not already installed
+if [ "$1" == "install" ]; then
+    python3 -m pip install --require-virtualenv -r requirements.txt
+    if [ $? -ne 0 ]; then
+        echo "Failed to install libraries"
+        exit 1
+    fi
+fi
+
+if [ -d "${VIRTUAL_ENV}/src}" ]; then
+    dir "${VIRTUAL_ENV}/src"
+    echo ""
+
+    if [ "$2" == "all" ]; then
+        # Installs requirements for each submodule
+        for dir in "${VIRTUAL_ENV}/src"/*; do
+            echo "processing \"${VIRTUAL_ENV}/src/$dir/requirements.txt\""
+            if [ -f "${VIRTUAL_ENV}/src/$dir/requirements.txt" ]; then
+                python3 -m pip install --require-virtualenv -r "${VIRTUAL_ENV}/src/$dir/requirements.txt"
+                if [ $? -ne 0 ]; then
+                    echo "Failed to install requirements for \"${VIRTUAL_ENV}/src/$dir\""
+                    exit 1
+                fi
+            fi
+            else
+                echo "\"${VIRTUAL_ENV}/src/$dir/requirements.txt\" not found"
+            fi
+        done
+        echo ""
+    fi
+
+    # Changes folders in venv/src from dashes to underscores
+    python3 "scripts/helper/src_fix.py"
+    if [ $? -ne 0 ]; then
+        echo "Failed to fix src paths"
+        exit 1
+    fi
+
+    python3 "scripts/helper/fix_submodules.py"
+fi
+else
+    echo "\"${VIRTUAL_ENV}/src\" not found"
     exit 1
 fi
+
+python3 -m pip list
+echo ""
 
 echo "[ DONE ]"

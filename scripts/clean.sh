@@ -1,4 +1,13 @@
 #!/bin/bash
+# Description
+#   Cleans up the project
+#
+# Usage
+#   $ scripts\clean.bat
+#
+# Args
+#   1: "all"  (optional)
+#       all: Cleans logs and removes venv
 
 echo "Removing '.eggs/...'..."
 rm -rf .eggs
@@ -14,6 +23,16 @@ python3 -Bc "import pathlib; import shutil; [shutil.rmtree(path) for path in pat
 if [ ! -d "venv_nix" ]; then
     echo "No venv found"
     exit 1
+fi
+
+if [ "$1" == "all" ]; then
+    echo "Removing 'logs/...'..."
+    rm -rf logs
+
+    echo "Removing 'venv_nix/...'..."
+    rm -rf venv_nix
+
+    exit 0
 fi
 
 source venv_nix/bin/activate

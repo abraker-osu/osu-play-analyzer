@@ -1,5 +1,12 @@
 #!/bin/bash
-
+# Description:
+#   Runs a python file with the virtual environment activated
+#
+# Usage:
+#   $ scripts/run.sh <python file>
+#
+# Args
+#   1: python file to run
 if [ ! -d "venv_nix" ]; then
     echo "No venv found"
     exit 1
@@ -16,6 +23,6 @@ if [ -z "$VIRTUAL_ENV" ]; then
     exit 1
 fi
 
-python3 src/run.py
+python3 $1
 
 echo "[ DONE ]"

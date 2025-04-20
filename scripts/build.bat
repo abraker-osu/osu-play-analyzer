@@ -1,3 +1,8 @@
+:: Description
+::   Builds the project
+::
+:: Usage
+::   > scripts\build.bat
 @echo off
 
 if NOT EXIST "venv_win" (
@@ -6,7 +11,7 @@ if NOT EXIST "venv_win" (
 )
 
 call "venv_win\Scripts\activate.bat"
-if %ERRORLEVEL% GEQ 1 (
+if %ERRORLEVEL% NEQ 0 (
     echo Failed to activate virtual environment
     EXIT /B 1
 )
@@ -16,16 +21,12 @@ if "%VIRTUAL_ENV%" == "" (
     EXIT /B 1
 )
 
-echo Removing "build/..."
-rd /s /q "build"
-
-@REM echo Removing "dist/..."
-@REM rd /s /q "dist"
+call "$~dp0\clean.bat"
 
 :: Build exe
 del /s "dist\osu-performance-analyzer.exe" >nul 2>&1
 pyinstaller -y "build.spec"
-if %ERRORLEVEL% GEQ 1 (
+if %ERRORLEVEL% NEQ 0 (
     echo Failed to build exe
     EXIT /B 1
 )
@@ -33,14 +34,14 @@ if %ERRORLEVEL% GEQ 1 (
 :: Generate version file to set exe version
 del /s "data\version.txt" >nul 2>&1
 python "scripts\helper\gen_ver.py"
-if %ERRORLEVEL% GEQ 1 (
+if %ERRORLEVEL% NEQ 0 (
     echo Failed to generate version file
     EXIT /B 1
 )
 
 :: Set exe version (shown in file properties metadata)
 pyi-set_version "data\version.txt" "dist\osu-performance-analyzer.exe"
-if %ERRORLEVEL% GEQ 1 (
+if %ERRORLEVEL% NEQ 0 (
     echo Failed to set version to exe
     EXIT /B 1
 )
@@ -67,7 +68,7 @@ if %ERRORLEVEL% GEQ 8 (
 :: https://superuser.com/questions/201371/create-zip-folder-from-the-command-line-windows#comment2831491_898508
 del /s "dist\osu-performance-analyzer_win.zip" >nul 2>&1
 tar -a -c -C "dist" -f "dist/osu-performance-analyzer_win.zip" "osu-performance-analyzer.exe" "res"
-if %ERRORLEVEL% GEQ 1 (
+if %ERRORLEVEL% NEQ 0 (
     echo Failed to zip files
     EXIT /B 1whr
 )

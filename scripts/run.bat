@@ -1,3 +1,11 @@
+:: Description:
+::   Runs a python file with the virtual environment activated
+::
+:: Usage:
+::   > scripts/run.bat <python file>
+::
+:: Args
+::   1: python file to run
 @echo off
 
 if NOT EXIST "venv_win" (
@@ -5,7 +13,7 @@ if NOT EXIST "venv_win" (
     EXIT /B 1
 )
 
-call venv_win\\Scripts\\activate.bat
+call "venv_win\Scripts\activate.bat"
 if %ERRORLEVEL% GEQ 1 (
     echo Failed to activate virtual environment
     EXIT /B 1
@@ -16,6 +24,6 @@ if "%VIRTUAL_ENV%" == "" (
     EXIT /B 1
 )
 
-python src/run.py
+python %1
 
 echo [ DONE ]

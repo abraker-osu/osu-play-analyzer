@@ -1,4 +1,9 @@
 #!/bin/bash
+# Description
+#   Builds the project
+#
+# Usage
+#   $ scripts\build.bat
 
 if [ ! -d "venv_nix" ]; then
     echo "No venv found"
