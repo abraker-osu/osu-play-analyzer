@@ -17,7 +17,7 @@ for dir in "venv_nix/src"/*; do
     if [ $? -ne 0 ]; then
         echo "Failed to fetch"
         exit 1
-    find
+    fi
 
     # Check if 'main' branch exists
     git show-ref --verify --quiet refs/heads/main

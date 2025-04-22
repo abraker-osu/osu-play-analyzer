@@ -96,7 +96,6 @@ if [ -d "${VIRTUAL_ENV}/src}" ]; then
                     echo "Failed to install requirements for \"${VIRTUAL_ENV}/src/$dir\""
                     exit 1
                 fi
-            fi
             else
                 echo "\"${VIRTUAL_ENV}/src/$dir/requirements.txt\" not found"
             fi
@@ -112,7 +111,6 @@ if [ -d "${VIRTUAL_ENV}/src}" ]; then
     fi
 
     python3 "scripts/helper/fix_submodules.py"
-fi
 else
     echo "\"${VIRTUAL_ENV}/src\" not found"
     exit 1
