@@ -112,7 +112,7 @@ Install the following prerequisites:
 - Python prerequsites
   - `python` `python-virtualenv`
 
-In cmd run the setup script. This will set up the python virtual environment as `venv_win` and install python libraries.
+In terminal run the setup script. This will set up the python virtual environment as `venv_nix` and install python libraries.
 - `$ bash scripts/setup.bat install` - To setup the project for osu_performance_analyzer development.
 - `$ bash scripts/setup.bat install all` - To install osu analysis libraries for development as well.
 
