@@ -104,13 +104,13 @@ if [ -d "${VIRTUAL_ENV}/src" ]; then
     fi
 
     # Changes folders in venv/src from dashes to underscores
-    python3 "scripts/helper/src_fix.py"
+    python3 "scripts/helper/fix_submodule_path.py"
     if [ $? -ne 0 ]; then
         echo "Failed to fix src paths"
         exit 1
     fi
 
-    python3 "scripts/helper/fix_submodules.py"
+    python3 "scripts/helper/fix_submodule_git.py"
 else
     echo "\"${VIRTUAL_ENV}/src\" not found"
     exit 1
