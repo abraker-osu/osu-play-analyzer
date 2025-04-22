@@ -82,7 +82,7 @@ if [ "$1" == "install" ]; then
     fi
 fi
 
-if [ -d "${VIRTUAL_ENV}/src}" ]; then
+if [ -d "${VIRTUAL_ENV}/src" ]; then
     dir "${VIRTUAL_ENV}/src"
     echo ""
 
