@@ -1,0 +1,108 @@
+{
+    "settings": {
+        "files.associations": {
+            "build.spec" : "python",
+        },
+        "terminal.integrated.env.windows": {
+            "PYTHON" : "",
+            "GIT"    : "",
+        },
+
+        "python.analysis.typeCheckingMode": "standard",
+        "python.envFile":                   "${workspaceFolder}/.env",
+        "python.analysis.extraPaths": [
+            "${workspaceFolder}/venv_win/src",
+            "${workspaceFolder}/venv_nix/src"
+        ]
+    },
+
+    "folders": [ {
+            "name": "osu_performance_analyzer",
+            "path": "."
+        }, {
+            "name": "osu_analysis",
+            "path": "venv_win/src/osu_analysis",
+        }, {
+            "name": "beatmap_reader",
+            "path": "venv_win/src/beatmap_reader",
+        }, {
+            "name": "replay_reader",
+            "path": "venv_win/src/replay_reader",
+        }, {
+            "name": "map_generator",
+            "path": "venv_win/src/map_generator",
+        }, {
+            "name": "osu_recorder",
+            "path": "venv_win/src/osu_recorder",
+        }, {
+            "name": "osu_db",
+            "path": "venv_win/src/osu_db",
+        }
+    ],
+
+    "tasks": {
+        "version": "2.0.0",
+
+        "presentation": {
+            "echo"   : false,
+            "reveal" : "always",
+            "focus"  : true,
+            "panel"  : "shared",
+            "clear"  : false
+        },
+
+        "tasks": [ {
+                "label":   "Analyzer - Setup",
+                "windows": { "command": "scripts\\setup.bat install" },
+                "linux":   { "command": "scripts/setup.sh install" },
+                "type":    "shell",
+                "detail":  "Sets up the project for development",
+            }, {
+                "label":   "Analyzer - Update libs",
+                "windows": { "command": "scripts\\update.bat all" },
+                "linux":   { "command": "scripts/update.sh all" },
+                "type":    "shell",
+                "detail":  "Updates the project libraries",
+            }, {
+                "label":   "Analyzer - Setup all",
+                "windows": { "command": "scripts\\setup.bat install all" },
+                "linux":   { "command": "scripts/setup.sh install all" },
+                "type":    "shell",
+                "detail":  "Sets up the project and submodules for development",
+            }, {
+                "label":   "Analyzer - Fix project",
+                "windows": { "command": "scripts\\setup.bat" },
+                "linux":   { "command": "scripts/setup.sh" },
+                "type":    "shell",
+                "detail":  "Fixes submodules paths and git index",
+            }, {
+                "label":   "Analyzer - Clean",
+                "windows": { "command": "scripts\\clean.bat" },
+                "linux":   { "command": "scripts/clean.sh" },
+                "type":    "shell",
+                "detail":  "Removes all pycache, generated files, and builds",
+            }, {
+                "label":   "Analyzer - Run",
+                "windows": { "command": "scripts\\run.bat \"src\\run.py\"" },
+                "linux":   { "command": "scripts/run.sh \"src/run.py\"" },
+                "type":    "shell",
+                "detail":  "Runs the project",
+            }, {
+                "label":   "Analyzer - Build",
+                "windows": { "command": "scripts\\build.bat" },
+                "linux":   { "command": "scripts/build.sh" },
+                "type":    "shell",
+                "detail":  "Builds the project for distribution",
+            }
+        ]
+    },
+
+    "extensions": {
+        "recommendations": [
+            "forbeslindesay.forbeslindesay-taskrunner",
+            "ms-python.pylint",
+            "ms-python.python",
+            "ms-python.vscode-pylance"
+        ]
+    },
+}

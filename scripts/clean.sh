@@ -1,4 +1,13 @@
 #!/bin/bash
+# Description
+#   Cleans up the project
+#
+# Usage
+#   $ scripts\clean.bat
+#
+# Args
+#   1: "all"  (optional)
+#       all: Cleans logs and removes venv
 
 echo "Removing '.eggs/...'..."
 rm -rf .eggs
@@ -16,6 +25,16 @@ if [ ! -d "venv_nix" ]; then
     exit 1
 fi
 
+if [ "$1" == "all" ]; then
+    echo "Removing 'logs/...'..."
+    rm -rf logs
+
+    echo "Removing 'venv_nix/...'..."
+    rm -rf venv_nix
+
+    exit 0
+fi
+
 source venv_nix/bin/activate
 if [ $? -ne 0 ]; then
     echo "Failed to activate virtual environment"
@@ -30,3 +49,4 @@ fi
 python3 -m pip cache purge
 
 echo "[ DONE ]"
+exit 0

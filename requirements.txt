@@ -1,11 +1,3 @@
--e git+https://github.com/abraker-osu/osu_interfaces.git@main#egg=osu_interfaces
--e git+https://github.com/abraker-osu/osu_beatmap_reader.git@master#egg=beatmap_reader
--e git+https://github.com/abraker-osu/osu_replay_reader.git@master#egg=replay_reader
--e git+https://github.com/abraker-osu/osu_analysis.git@main#egg=osu_analysis
--e git+https://github.com/abraker-osu/map_generator.git@main#egg=map_generator
--e git+https://github.com/abraker-osu/osu_recorder.git@master#egg=osu_recorder
--e git+https://github.com/abraker-osu/osu_db.git@master#egg=osu_db
-
 pylint
 
 setuptools>41.2.0

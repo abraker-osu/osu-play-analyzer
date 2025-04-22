@@ -1,4 +1,9 @@
 #!/bin/bash
+# Description
+#   Builds the project
+#
+# Usage
+#   $ scripts\build.bat
 
 if [ ! -d "venv_nix" ]; then
     echo "No venv found"
@@ -16,12 +21,11 @@ if [ -z "$VIRTUAL_ENV" ]; then
     exit 1
 fi
 
-echo "Removing 'build/...'..."
-rm -rf "build"
-
-# Uncomment the following lines if you want to remove 'dist/' as well
-# echo "Removing 'dist/...'..."
-# rm -rf "dist"
+bash scripts/clean.sh
+if [ $? -ne 0 ]; then
+    echo "Failed to clean project"
+    exit 1
+fi
 
 # Build exe
 rm -f "dist/osu-performance-analyzer" 2>/dev/null
@@ -64,3 +68,4 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "[ DONE ]"
+exit 0
